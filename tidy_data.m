@@ -1,15 +1,17 @@
+function tidy_data(FolderNames)
+
 %% This script is for tidying the data after an experiment
-%Run only one time
+% Enter a string of the folder name where raw data is located. raw file
+% name must be "expsave.mat"
 % This will reorganize the data for the following analyses 
-clear all
-%
-% FolderNames='dec5'; 
-% only one file at a time 
+% Only one file at a time 
+
+FolderNames=["jan7"]; 
 % FolderNames=["nov8", "nov28_2","dec5"];  % Foldername to be loaded
-FolderNames=["dec5","nov28_2","nov27","nov8","nov7"]; 
-iFolder=5;
+% FolderNames=["dec5","nov28_2","nov27","nov8","nov7"]; 
+iFolder=1;
 FolderName=FolderNames(iFolder);
-FileName='Expsave';     % File name
+FileName='expsave';     % File name
 ExpStruct=sprintf('%s_test',FolderName);
 
 str=sprintf('%s/%s.mat',FolderName,FileName);
@@ -22,6 +24,10 @@ S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
 S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
 S.(ExpStruct).ExpPar.sample_t=temp.handles.sample_t;
 S.(ExpStruct).ExpPar.fs=1/temp.handles.sample_t;
+S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
+S.(ExpStruct).ExpPar.freq_list=temp.handles.freq_list;
+S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
+S.(ExpStruct).ExpPar.DataIndTable=temp.handles.DataIndTable;
 
 
 S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
@@ -75,13 +81,17 @@ end
 % RC turn off times and data length
 %
 
-RCTurnOffTimes= table([ 10 ],[10],[ 10],[8],[10],...
-    'VariableNames',["dec5","nov28_2","nov27","nov8","nov7"]);
-S.(ExpStruct).RCCurveTrials.TurnOffTime=table2array(RCTurnOffTimes(:,FolderName));
+% RCTurnOffTimes= table([ 10 ],[10],[ 10],[8],[10],...
+%     'VariableNames',["dec5","nov28_2","nov27","nov8","nov7"]);
+
+TurnOffInd=4;
+S.(ExpStruct).RCCurveTrials.TurnOffInd=TurnOffInd;
+S.(ExpStruct).RCCurveTrials.TurnOffTime=S.(ExpStruct).RCCurveTrials.PWProfile(1,TurnOffInd);
 
 mrg=1.8;
-T=S.(ExpStruct).RCCurveTrials.Trial_1.data(1000:2000,5);
-sample_t=abs((T(1)-T(end))/(2000-1000));
+% T=S.(ExpStruct).RCCurveTrials.Trial_1.data(1000:2000,5);
+% sample_t=abs((T(1)-T(end))/(2000-1000));
+sample_t=S.(ExpStruct).ExpPar.sample_t;
 fs=1/sample_t;
 
 T_turnoff=S.(ExpStruct).RCCurveTrials.TurnOffTime;
@@ -166,108 +176,6 @@ end
 str=sprintf('%s/%s',FolderName,ExpStruct);
 save(str,'-struct','S',ExpStruct)
 
-
-%% First plotting program
-%File loading section
-
-clear all
-
-iTestPlot=1;  % pick a test to plot 
-iExp=2;    % pick an exp to plot 
-FolderNames={'nov8','dec5'};  %% Folders to be loaded 
-FileNames={'nov8_test','dec5_test'};  %% Files to be loaded 
-
-M = load_exp(FolderNames,FileNames);
-Fields = fieldnames(M);
-ExpStruct=Fields{iTestPlot};
-ExpLabels=M.(ExpStruct).ExpLabels;
-ExpLabel=ExpLabels{iExp};
-DtInd= M.(ExpStruct).ExpPar.DataInd;
-TimeRange=[4 22];  % in seconds
-PlotRange=[ 10 10 ]; 
-
-iForce=table2array(DtInd(:,"Force"));
-iTrigger=table2array(DtInd(:,"Trigger"));
-iEMG=table2array(DtInd(:,"EMG"));
-iTime=table2array(DtInd(:,"Time"));
-iPW=table2array(DtInd(:,"PW"));
-
-%
-for iTrial=PlotRange(1):PlotRange(2)
-    TrialLabel=sprintf('Trial_%d',iTrial);
-    
-    Time=M.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTime);
-    TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
-    
-    EMG=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iEMG);
-    Trigger=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iTrigger);
-    Force=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iForce);
-    PW=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iPW);
-    figure(iTrial)
-    subplot(2,1,1)
-    plot(Time(TimeInd),Trigger/5,'r','LineWidth',1)
-    hold
-    plot(Time(TimeInd),EMG,'b','LineWidth',2)
-    legend({'Trigger(a.u.)','Raw EMG (a.u.)'})
-    title('Trigger and EMG Signal')
-    xlabel('Time (s)')
-    
-    subplot(2,1,2)
-    plot(Time(TimeInd),PW/20,'r','LineWidth',1)
-    hold
-    plot(Time(TimeInd),Force,'b','LineWidth',2)
-    legend({'PW (a.u.)','Force(N)'})
-    title('Pulse Width and Force Signal')
-%     set(gca,'XTick',[5 8 11 12 15 18 21])
-    xlabel('Time (s)')
-
-%     legend({'Pre-BPFiltered', 'Post-BPFiltered'})
-%     ttl=sprintf('%dth order BP filtered %s at %s, TrialNum: %d',BPOrder,DataLabels{iEMG},ExpLabel,iTrial);
-%     title(ttl);
-%     xlabel(DataLabels{iTime})
-%     ylabel(DataLabels{iEMG})
-
+str=sprintf("%s.mat is created",ExpStruct);
+disp(str)
 end
-M.(ExpStruct).OccTrials.RepTableMat
-
-%% Checking the recruitment curves
-% NOT READY
-iTestPlot=2;  % pick a test to plot 
-FolderNames={'nov28_2','dec5'};  %% Folders to be loaded 
-iExp=2;
-TimeRange=[4 22];  % in seconds
-PlotRange=[ 10   15 ]; 
-iForce=3;
-iTrigger=2;
-iEMG=1;
-iTime=5;
-iPW=4;
-
-for iFile=1:length(FolderNames)
-    ExpStruct=sprintf('%s_test',char(FolderNames{iFile}));
-    str=sprintf('%s/%s',char(FolderNames{iFile}),ExpStruct);
-    load (str);
-    fields = fieldnames(S);
-    M.(fields{1})=S.(fields{1});
-end
-
-% works only with dec5 for now 
-ExpStruct=sprintf('%s_test',char(FolderNames{iTestPlot}));
-ExpLabels=M.(ExpStruct).ExpLabels;
-y=M.(ExpStruct).(ExpLabels{iTestPlot}).MeanForce;
-RedoTrials=M.(ExpStruct).(ExpLabels{iTestPlot}).RedoTrials;
-for iRedo=1:length(RedoTrials)
-    RedoLabel=sprintf('RedoTrial_%d',iRedo);
-    y(iRedo)=M.(ExpStruct).(ExpLabels{iTestPlot}).(RedoLabel).AvgForce;
-end
-
-%     gompertz
-
-
-
-function Vars = gompertz(a, PW)
-
-Vars = a(1)*exp(a(2)*exp(a(3)*PW));
-
-end
-
