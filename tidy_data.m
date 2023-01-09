@@ -1,4 +1,4 @@
-function tidy_data(FolderNames)
+function S=tidy_data(FolderNames)
 
 %% This script is for tidying the data after an experiment
 % Enter a string of the folder name where raw data is located. raw file
@@ -6,7 +6,7 @@ function tidy_data(FolderNames)
 % This will reorganize the data for the following analyses 
 % Only one file at a time 
 
-FolderNames=["jan7"]; 
+% FolderNames=["jan7"]; 
 % FolderNames=["nov8", "nov28_2","dec5"];  % Foldername to be loaded
 % FolderNames=["dec5","nov28_2","nov27","nov8","nov7"]; 
 iFolder=1;
@@ -27,7 +27,14 @@ S.(ExpStruct).ExpPar.fs=1/temp.handles.sample_t;
 S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
 S.(ExpStruct).ExpPar.freq_list=temp.handles.freq_list;
 S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
-S.(ExpStruct).ExpPar.DataIndTable=temp.handles.DataIndTable;
+
+DataLabels= {'EMG', 'Trigger Signal', 'Force (N)','Pulse Width','Time (s)','BP Filtered EMG',...
+    'Blanked EMG','Comb Filtered vEMG','Comb Filtered m-Waves','GS Filtered vEMG','GS Filtered m-Waves'};
+FeatLabels={'MAV','MedFreq','MeanFreq','Ssc','Zc'};
+FiltLabels={'Comb','GS','Unfilt','Blanking'};
+S.(ExpStruct).ExpPar.DataLabels=DataLabels;
+S.(ExpStruct).ExpPar.FeatLabels=FeatLabels;
+S.(ExpStruct).ExpPar.FiltLabels=FiltLabels;
 
 
 S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
@@ -44,7 +51,6 @@ S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
 DataInd={'EMG','Trigger','Force','PW','Time'};
 ExpLabels={'MVCTrials','RCCurveTrials','CustomTrials','OccTrials','FatigueTrials' };
 S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
-S.(ExpStruct).ExpLabels=ExpLabels;
 S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,'VariableNames',DataInd);
 
 
@@ -52,7 +58,7 @@ S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,'VariableNames',DataInd);
 % Num of Trials might not be needed anymore
 %
 for iExp=1:length(ExpLabels)
-    ExpLabels=S.(ExpStruct).ExpLabels;
+    ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
     ExpLabel=ExpLabels{iExp};
     
     NumofTrials=S.(ExpStruct).(ExpLabel).iTrial-1;
@@ -78,29 +84,29 @@ end
 
 
 %
-% RC turn off times and data length
+% Consistent data-length
 %
 
 % RCTurnOffTimes= table([ 10 ],[10],[ 10],[8],[10],...
 %     'VariableNames',["dec5","nov28_2","nov27","nov8","nov7"]);
 
-TurnOffInd=4;
-S.(ExpStruct).RCCurveTrials.TurnOffInd=TurnOffInd;
-S.(ExpStruct).RCCurveTrials.TurnOffTime=S.(ExpStruct).RCCurveTrials.PWProfile(1,TurnOffInd);
 
-mrg=1.8;
+mrg=[1.8 2 1];
 % T=S.(ExpStruct).RCCurveTrials.Trial_1.data(1000:2000,5);
 % sample_t=abs((T(1)-T(end))/(2000-1000));
 sample_t=S.(ExpStruct).ExpPar.sample_t;
 fs=1/sample_t;
+TurnOffInd=4;
+S.(ExpStruct).RCCurveTrials.StimProfile=10;
+S.(ExpStruct).OccTrials.StimProfile=15;
+S.(ExpStruct).FatigueTrials.StimProfile=35;
+Lbl=S.(ExpStruct).ExpPar.ExpLabels([2,4,5]);
 
-T_turnoff=S.(ExpStruct).RCCurveTrials.TurnOffTime;
-lgt=round(T_turnoff*fs+fs*mrg);
+for iExp=1:length(Lbl)
+    ExpLabel=Lbl{iExp};
 
-
-for iExp=2:2
-    ExpLabels=S.(ExpStruct).ExpLabels;
-    ExpLabel=ExpLabels{iExp};
+    T_turnoff=S.(ExpStruct).(ExpLabel).StimProfile;
+    lgt=round(T_turnoff*fs+fs*mrg(iExp));
     
     NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
     RedoTrials=S.(ExpStruct).(ExpLabel).RedoTrials;
@@ -141,19 +147,38 @@ S.(ExpStruct).ExpPar.sample_t_calc=sample_t;
 %Fixing PW invalid values issue (-inf)
 %
 
+TrigThres=1;
+S.(ExpStruct).ExpPar.TrigThres=TrigThres;
 DtInd=S.(ExpStruct).ExpPar.DataInd;
 iPW=table2array(DtInd(:,"PW"));
+iTrigger=table2array(DtInd(:,"Trigger"));
+
 for iExp=1:length(ExpLabels)
-    ExpLabels=S.(ExpStruct).ExpLabels;
+    ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
     ExpLabel=ExpLabels{iExp};
-    
      NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
     for iTrial=1:NumofTrials
         TrialLabel=sprintf('Trial_%d',iTrial);
         
         x=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW);
+        y=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger);
+            % # PW
         x(x<0)=0;
+        x(isnan(x))=0;
+       
         S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW)=x;
+                    % # trigger
+        y(y>TrigThres)=1;
+        y(y<TrigThres)=0;
+        S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger)=y;
+
+        T=table([]);
+        %% Making "data" a table
+            dt=S.(ExpStruct).(ExpLabel).(TrialLabel).data;
+            [r,~]=size(dt);
+            T=array2table(dt,'VariableNames',DataInd);
+        
+        S.(ExpStruct).(ExpLabel).(TrialLabel).data=T;
     end
     
     RedoTrials=S.(ExpStruct).(ExpLabel).RedoTrials;

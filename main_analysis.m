@@ -1,29 +1,27 @@
 %% mainscript v0.2
 % Strcut S contains experimental data without any processing 
 % Struct P contains processed data
-%% Data Inject (Dec 19)
+% this file is for running the analysis for one file only but will be a
+% function for running all the files in future
+%% Run tidy_data if you have not yet done so 
 clear all
-S=load('Dec19.21-2.mat');  
-IndexVec=[ 1 2 3 4 5 6 7]; %% 1- EMG 2-Trigger 3-Force 4-PW 5-Time
+FolderName="jan7";
+S=tidy_data(FolderName);
 
-iEMG=IndexVec(1);
-iTrig=IndexVec(2);
-iForce=IndexVec(3);
-iPW=IndexVec(4);
-iTime=IndexVec(5);
-iBPFilter=IndexVec(6);
-iBlankEMG=IndexVec(7); %% blanked and BP filtered
-%%
-% The data is saved in the individual struct segments. Each column of data
-% type is given below
-% # EMG
-% # Trigger
-% # Force  
-% # PW
-% # Time
+%% Data Inject 
+
+clc
+clear all
+TestFolders=["jan7"];
+TestFiles=["jan7_test"];
+StructstoLoad=["ExpPar"]; 
+TestStruct=TestFiles(1);
+AnaStruct=sprintf("%s_ana",TestFolders);
+S = load_test(TestFolders,TestFiles);
+
+
 %% Some Experimental Parameters Required for the Analysis
 % Experimental Parameters
-ExpNum=4;
 BlankingTime= 0.004; % secs
 StimTime=0.007;
 TrigDelay=0.006;
@@ -38,19 +36,8 @@ StimLength=floor(StimTime/(1/fs));
 TrigLength=floor(TrigTime/(1/fs));
 TrigDelLength=floor(TrigDelay/(1/fs));
 
-% these labels below can be acquired directly from the experiment structure
-ExpLabels={ 'MVCTrials','RCCurveTrials', 'ExpTrials','FatigueTrials'};
-DataLabels= {'EMG', 'Trigger Signal', 'Force (N)','Pulse Width','Time (s)','BP Filtered EMG',...
-    'Blanked EMG','Comb Filtered vEMG','Comb Filtered m-Waves','GS Filtered vEMG','GS Filtered m-Waves'};
-FeatLabels={'MAV','MedFreq','MeanFreq','Ssc','Zc'};
-FiltLabels={'Comb','GS','Unfilt'};
-
 FeatNum=length(FeatLabels);
 
-P.Labels.DataLabels=DataLabels;
-P.Labels.ExpLabels=ExpLabels;
-P.Labels.FiltLabels=FiltLabels;
-P.Labels.FeatLabels=FeatLabels;
 
 % EMG Filter Parameters
 FiltNum=length(FiltLabels);
@@ -69,32 +56,69 @@ P.Param.StimFreq=StimFreq;
 P.Param.GsOrder=GsOrder;
 P.Param.FiltNum=FiltNum;
 P.Param.FeatNum=FeatNum;
+%% Defining the parameters 
+% Experiment Parameters
+
+ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
+DataInd= S.(TestStruct).ExpPar.DataInd;
+TableInd=DataInd.Properties.VariableNames;
+iForce=table2array(DataInd(:,"Force"));
+iTrigger=table2array(DataInd(:,"Trigger"));
+iEMG=table2array(DataInd(:,"EMG"));
+iTime=table2array(DataInd(:,"Time"));
+iPW=table2array(DataInd(:,"PW"));
+
+% Analysis Parameters
+S.(AnaStruct).AnaPar.AnaLabels=["BPFilt_EMG"];
+S.(AnaStruct).AnaPar.AnaInd=table([],'VariableNames',S.(AnaStruct).AnaPar.AnaLabels);
 
 
+%%
+% creating the structs
 
-
-
-%% Bandpass 10-500Hz 6rd order butterworth:
-[b, a] = butter(BPOrder, [fcutlow fcuthigh]/(fs/2), 'bandpass');
-for iExp=1:ExpNum
-    ExpLabel=P.Labels.ExpLabels{iExp};
-    
-    TrialNum=S.(ExpLabel).iTrial-1;
-    P.(ExpLabel).TrialNum=TrialNum;
-    
-    for iTrial=1:TrialNum
+for iExp=1:length(ExpLabels)
+    ExpLabel=ExpLabels{iExp};
+    NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
+    for iTrial=1:NumofTrials
         TrialLabel=sprintf('Trial_%d',iTrial);
+        S.(AnaStruct).(ExpLabel).(TrialLabel)=struct;
+%         S.(AnaStruct).(ExpLabel).(TrialLabel).data=table([],[],[],[],[],'VariableNames',TableInd);
 
-        x=S.(ExpLabel).(TrialLabel).data(:,iEMG)/AmpGain;
-        P.(ExpLabel).(TrialLabel).data(:,iEMG)=x;
-        
-        y=filter(b,a,x);
-        P.(ExpLabel).(TrialLabel).data(:,iBPFilter)=y;
-        
-        %Do the filtering here for force
-        x=S.(ExpLabel).(TrialLabel).data(:,iForce);
-        P.(ExpLabel).(TrialLabel).data(:,iForce)=x;
+    end
+end
 
+%% Design 10-500Hz 20th order butterworth for filtfilt
+
+fs=S.(TestStruct).ExpPar.fs;
+BPOrder=20;
+fcutlow = 10;
+fcuthigh = 500;
+
+S.(AnaStruct).ExpPar.BPFilter.BPOrder=BPOrder;
+S.(AnaStruct).ExpPar.BPFilter.fcutlow=fcutlow;
+S.(AnaStruct).ExpPar.BPFilter.fcuthigh=fcuthigh;
+%
+d1 = designfilt('bandpassiir','FilterOrder',BPOrder, ...
+         'HalfPowerFrequency1',fcutlow,'HalfPowerFrequency2',fcuthigh, ...
+         'SampleRate',fs,'DesignMethod',"butter");
+
+% d2=butter(BPOrder, [fcutlow fcuthigh]/(fs/2), 'bandpass');
+% fvtool(d1,'MagnitudeDisplay','magnitude')
+%%
+AnaLabels=S.(AnaStruct).AnaPar.AnaLabels;
+AmpGain=990;
+for iExp=1:length(ExpLabels)
+    ExpLabel=ExpLabels{iExp};
+    
+    NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
+    
+    for iTrial=1:NumofTrials
+        TrialLabel=sprintf('Trial_%d',iTrial);
+% 
+        x=S.(TestStruct).(ExpLabel).(TrialLabel).data.(TableInd{iEMG})/AmpGain;
+%         
+        x_filtered = filtfilt(d1,x);
+        S.(AnaStruct).(ExpLabel).(TrialLabel).data=table(x_filtered,'VariableNames',AnaLabels(1));
     end
 end
 
@@ -263,7 +287,6 @@ for iExp=1:ExpNum
 end
 
 %% Seperating dropped frames
-
 
 for iExp=1:ExpNum
     ExpLabel=P.Labels.ExpLabels{iExp};

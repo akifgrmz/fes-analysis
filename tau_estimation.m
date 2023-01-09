@@ -11,7 +11,7 @@ S = load_exp(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2-
 % Filter Design
 d1 = designfilt("lowpassiir",'FilterOrder',3, ...
     'HalfPowerFrequency',0.01,'DesignMethod',"butter");
-%  fvtool(d1)
+ fvtool(d1)
 
 %% Main code 
 % This code will execute the estimation of the time constant 

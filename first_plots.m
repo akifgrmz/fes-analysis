@@ -10,10 +10,10 @@ iExp=2;    % pick an exp to plot
 FolderNames={'jan7'};  %% Folders to be loaded 
 FileNames={'jan7_test'};  %% Files to be loaded 
 
-M = load_exp(FolderNames,FileNames);
+M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);
 ExpStruct=Fields{iTestPlot};
-ExpLabels=M.(ExpStruct).ExpLabels;
+ExpLabels=M.(ExpStruct).ExpPar.ExpLabels;
 ExpLabel=ExpLabels{iExp};
 DtInd= M.(ExpStruct).ExpPar.DataInd;
 TimeRange=[4 22];  % in seconds
@@ -24,18 +24,18 @@ iTrigger=table2array(DtInd(:,"Trigger"));
 iEMG=table2array(DtInd(:,"EMG"));
 iTime=table2array(DtInd(:,"Time"));
 iPW=table2array(DtInd(:,"PW"));
+TableInd=DtInd.Properties.VariableNames;
 
-%
 for iTrial=PlotRange(1):PlotRange(2)
     TrialLabel=sprintf('Trial_%d',iTrial);
     
-    Time=M.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTime);
+    Time=M.(ExpStruct).(ExpLabel).(TrialLabel).data.(TableInd{iTime});
     TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
     
-    EMG=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iEMG);
-    Trigger=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iTrigger);
-    Force=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iForce);
-    PW=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iPW);
+    EMG=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iEMG});
+    Trigger=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iTrigger});
+    Force=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iForce});
+    PW=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iPW});
     figure(iTrial)
     subplot(2,1,1)
     plot(Time(TimeInd),Trigger/5,'r','LineWidth',1)

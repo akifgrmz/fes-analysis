@@ -1,4 +1,4 @@
-function M=load_exp(FolderNames,FileName,StructNames)
+function M=load_test(FolderNames,FileName,StructNames)
 % This function is designed to load the experiment data.
 %Files must be in format defined previously.
 % 1-enter an array of strings whose entries are folder names
