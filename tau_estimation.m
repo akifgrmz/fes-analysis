@@ -1,43 +1,50 @@
 %% Time constant estimation of RCCurve Trials
 % Identify tau (time constant) for a given RCCurve trial
-%% Load files, and Filter Design
+%% Data Inject
 clc
 clear all
-TestFolders=["dec5","nov28_2","nov27","nov8",];
-TestFiles=["dec5_test","nov28_2_test","nov27_test","nov8_test"];
+TestFolders=["jan7"];
+TestFiles=["jan7_test"];
 StructstoLoad=["ExpPar","RCCurveTrials"]; 
 ExpName=["RCCurveTrials"];
-S = load_exp(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2- substructures exp numbers
-% Filter Design
-d1 = designfilt("lowpassiir",'FilterOrder',3, ...
-    'HalfPowerFrequency',0.01,'DesignMethod',"butter");
- fvtool(d1)
+S = load_test(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2- substructures exp numbers
 
+%% Filter Design
+fs=S.(TestFiles{1}).ExpPar.fs;
+d1 = designfilt("lowpassiir",'FilterOrder',3, ...
+    'HalfPowerFrequency',0.01,'DesignMethod',"butter"); %,'SampleRate',fs
+
+% fvtool(d1)
 %% Main code 
 % This code will execute the estimation of the time constant 
 % Redo Trials must be incorporated 
-%%
+
 clc
 TauTime=.37;
 clear Tau F_mat IndTau
+
+
 for iTest=1:length(TestFiles)
     TestLabel=sprintf("%s",TestFiles{iTest});
+    TestStruct=TestLabel;
     NumofTrials=S.(TestLabel).(ExpName).NumofTrials;
     
-    iForce=table2array(S.(TestLabel).ExpPar.DataInd(:,"Force"));
-    iTime=table2array(S.(TestLabel).ExpPar.DataInd(:,"Time"));
+    DataInd= S.(TestStruct).ExpPar.DataInd;
+    DataVars=DataInd.Properties.VariableNames;
+    iForce=(S.(TestLabel).ExpPar.DataInd.("Force"));
+    iTime=(S.(TestLabel).ExpPar.DataInd.("Time"));
+    
     PWVal=S.(TestLabel).(ExpName).PWTrials;
-    TurnOffTime=S.(TestLabel).(ExpName).TurnOffTime;
+    TurnOffTime=S.(TestLabel).(ExpName).PWProfile(1,4);
     AvgRangePostOff=[TurnOffTime+.5 TurnOffTime+.8];
     AvgRangePreOff=[TurnOffTime-1.5 TurnOffTime];    
     fs=S.(TestFiles{iTest}).ExpPar.fs_calc;
 
-    
     for iTrial=1:NumofTrials
         TrialLabel=sprintf("Trial_%d",iTrial);
 
-        F=S.(TestLabel).(ExpName).(TrialLabel).data(:,iForce);
-        T=S.(TestLabel).(ExpName).(TrialLabel).data(:,iTime);
+        F=S.(TestLabel).(ExpName).(TrialLabel).data.(DataVars{iForce});
+        T=S.(TestLabel).(ExpName).(TrialLabel).data.(DataVars{iTime});
          %% 
          %There is no need for this 
          %%
@@ -164,7 +171,7 @@ for iTest=1:length(TestFiles)
 
     end
     Tau.(TestLabel).(ExpName).Tau_table=Tau_table;
-%     Tau.(TestLabel).(ExpName).F_table=F_table;
+    Tau.(TestLabel).(ExpName).F_table=F_table;
 
 end
 
@@ -248,10 +255,12 @@ end
 
 %% ----------------LoaD-------------------
 clear all
-TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
-TestFolder=["dec5","nov28_2","nov27","nov8"];
+% TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
+% TestFolder=["dec5","nov28_2","nov27","nov8"];
+TestFiles=["jan7_tau_test"];
+TestFolder=["jan7"];
 ExpName=["RCCurveTrials"];
-K = load_exp(TestFolder,TestFiles);
+K = load_test(TestFolder,TestFiles);
 
 for iTest=1:length(TestFiles)
     TestLabel=sprintf("%s_test",TestFolder{iTest});
@@ -269,8 +278,8 @@ end
 PWPoints{1:length(TestFolder)}
 
 close all
-PlotPW=[ 100 145 115 115 120];
-for iTest=1:length(TestFolder)-1
+PlotPW=[ 140];
+for iTest=1:length(TestFolder)
     TestLabel=sprintf('%s_test',TestFolder{iTest});
     
     Ind(iTest)=find( table2array(PWPoints{iTest})==PlotPW(iTest));
@@ -289,10 +298,12 @@ for iTest=1:length(TestFolder)-1
     
     %%
     %Plotting here
-    h=figure(1);
-%     set(h, 'Visible', 'off');
+    h= figure(1);
+    set(h, 'Visible', 'on');
     subplot(length(TestFolder),1,iTest)
     plot(table2array(F_PW(:,1)),table2array(F_PW(:,2:end)),'LineWidth',2)
+    hold on
+    plot([0 5 6 10 10.00001 11],[0 0 PlotPW(iTest) PlotPW(iTest) 0  0]/20)
     xlabel('Time(s)')
     ylabel('Force(N)')
     PWvalues=table2array(PWPoints{iTest});
@@ -305,10 +316,11 @@ for iTest=1:length(TestFolder)-1
     lgd_str{1}= sprintf ("Trial %d",TrialVals(1));
     lgd_str{2}= sprintf ("Trial %d",TrialVals(2));
     lgd_str{3}= sprintf ("Trial %d",TrialVals(3));
+    lgd_str{4}= sprintf ("Norm PW");
+
     legend(lgd_str,'Location','NorthWest','AutoUpdate','off')
     xlim([5 11.9])
     grid on
-    hold on
     
 
     %% 
@@ -332,7 +344,6 @@ for iTest=1:length(TestFolder)-1
     plot([TurnOffTime TurnOffTime]',[0 y1max]','--','Color','k')
     plot([AvgRangePreOff(1) AvgRangePreOff(2)],[PreAvgForce(:,iTest) PreAvgForce(:,iTest)],'--','Color','k')
     plot([AvgRangePostOff(1) AvgRangePostOff(2)],[PostAvgForce(:,iTest) PostAvgForce(:,iTest)],'--','Color','k')
-    
 end
 
 Tau{1:end}

@@ -19,46 +19,22 @@ TestStruct=TestFiles(1);
 AnaStruct=sprintf("%s_ana",TestFolders);
 S = load_test(TestFolders,TestFiles);
 
+fs=S.(TestStruct).ExpPar.fs;
 
 %% Some Experimental Parameters Required for the Analysis
 % Experimental Parameters
+
+
+
+%% Defining the parameters 
+% Experiment Parameters
+
 BlankingTime= 0.004; % secs
 StimTime=0.007;
 TrigDelay=0.006;
 TrigTime=0.003;
-AmpGain=990;
-fs=1/S.Ts;
-StimFreq=35;
 
-FrameLength = floor(fs/StimFreq); % "theoretical" frame length
-BlankLength=floor(BlankingTime/(1/fs));
-StimLength=floor(StimTime/(1/fs));
-TrigLength=floor(TrigTime/(1/fs));
-TrigDelLength=floor(TrigDelay/(1/fs));
-
-FeatNum=length(FeatLabels);
-
-
-% EMG Filter Parameters
-FiltNum=length(FiltLabels);
-GsOrder=6;
-% BP filter, trigger parameters
-fcutlow = 10;
-fcuthigh = 500;
-BPOrder=6;
-TrigLowThres=0.5;
-TrigHighThres=4;
-TrigThres=1;
-
-% saving the parameters
-
-P.Param.StimFreq=StimFreq;
-P.Param.GsOrder=GsOrder;
-P.Param.FiltNum=FiltNum;
-P.Param.FeatNum=FeatNum;
-%% Defining the parameters 
-% Experiment Parameters
-
+% Experiments indices 
 ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
 DataInd= S.(TestStruct).ExpPar.DataInd;
 TableInd=DataInd.Properties.VariableNames;
@@ -72,8 +48,12 @@ iPW=table2array(DataInd(:,"PW"));
 S.(AnaStruct).AnaPar.AnaLabels=["BPFilt_EMG"];
 S.(AnaStruct).AnaPar.AnaInd=table([],'VariableNames',S.(AnaStruct).AnaPar.AnaLabels);
 
+GsOrder=6;
 
-%%
+TrigLowThres=0.5;
+TrigHighThres=4;
+TrigThres=1;
+
 % creating the structs
 
 for iExp=1:length(ExpLabels)
@@ -89,22 +69,21 @@ end
 
 %% Design 10-500Hz 20th order butterworth for filtfilt
 
-fs=S.(TestStruct).ExpPar.fs;
 BPOrder=20;
 fcutlow = 10;
 fcuthigh = 500;
 
-S.(AnaStruct).ExpPar.BPFilter.BPOrder=BPOrder;
-S.(AnaStruct).ExpPar.BPFilter.fcutlow=fcutlow;
-S.(AnaStruct).ExpPar.BPFilter.fcuthigh=fcuthigh;
-%
+S.(AnaStruct).AnaPar.BPFilter.BPOrder=BPOrder;
+S.(AnaStruct).AnaPar.BPFilter.fcutlow=fcutlow;
+S.(AnaStruct).AnaPar.BPFilter.fcuthigh=fcuthigh;
+
 d1 = designfilt('bandpassiir','FilterOrder',BPOrder, ...
          'HalfPowerFrequency1',fcutlow,'HalfPowerFrequency2',fcuthigh, ...
          'SampleRate',fs,'DesignMethod',"butter");
 
 % d2=butter(BPOrder, [fcutlow fcuthigh]/(fs/2), 'bandpass');
 % fvtool(d1,'MagnitudeDisplay','magnitude')
-%%
+%
 AnaLabels=S.(AnaStruct).AnaPar.AnaLabels;
 AmpGain=990;
 for iExp=1:length(ExpLabels)
@@ -117,56 +96,50 @@ for iExp=1:length(ExpLabels)
 % 
         x=S.(TestStruct).(ExpLabel).(TrialLabel).data.(TableInd{iEMG})/AmpGain;
 %         
-        x_filtered = filtfilt(d1,x);
-        S.(AnaStruct).(ExpLabel).(TrialLabel).data=table(x_filtered,'VariableNames',AnaLabels(1));
+        BPFilt_EMG = filtfilt(d1,x);
+        S.(AnaStruct).(ExpLabel).(TrialLabel).data=table(BPFilt_EMG);
     end
 end
 
 
-%% Trigger and Blanking
+%% Trigger 
 
-P.ExpTrials.RepTableMat=S.ExpTrials.RepTableMat;
+% P.ExpTrials.RepTableMat=S.ExpTrials.RepTableMat;
+BlankTime=0.004;
+BlankLength=round(BlankTime*fs);
+AnaLabels=S.(TestStruct).ExpPar.ExpLabels
+ExpstoAna=AnaLabels([2,4,5]);
 
-for iExp=1:ExpNum
-    ExpLabel=P.Labels.ExpLabels{iExp};
+for iExp=1:length(ExpstoAna)
+    ExpLabel=ExpstoAna{iExp}
+ 
+    NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
     
-    TrialNum=P.(ExpLabel).TrialNum;
-    
-    for iTrial=1:TrialNum
+    for iTrial=1:NumofTrials
         TrialLabel=sprintf('Trial_%d',iTrial);
         
-        y=P.(ExpLabel).(TrialLabel).data(:,iBPFilter);
-        x=S.(ExpLabel).(TrialLabel).data(:,iTrig);
-        PW=S.(ExpLabel).(TrialLabel).data(:,iPW);
+        y=S.(AnaStruct).(ExpLabel).(TrialLabel).data.("BPFilt_EMG");
+        x=S.(TestStruct).(ExpLabel).(TrialLabel).data.("Trigger");
         
-        Time=S.(ExpLabel).(TrialLabel).data(:,iTime); 
-
-            % # Clean PW
-        PW(PW<0)=0;
-        PW(isnan(PW))=0;
-        
-            % # trigger
-        x(x>TrigThres)=1;
-        x(x<TrigThres)=0;
-        
+        Time=S.(TestStruct).(ExpLabel).(TrialLabel).data.("Time"); 
+        length(y)
             % # blanking
         RisingInd=diff(x)>0;
         FallingInd=diff(x)<0;
-        FramesInd=find(FallingInd>0);
-        TempInd=FramesInd;
-        
-        for iFall=1:length(FramesInd)-1
+        BegofFrames=find(FallingInd>0);
+        FallingInd(end+1)=0;
+        RisingInd(end+1)=0;
+
+        for iFall=1:length(BegofFrames)-1
             
-            y(FramesInd(iFall)+1:FramesInd(iFall)+BlankLength)=0;
-            
+            y(BegofFrames(iFall):BegofFrames(iFall)+BlankLength)=0;
         end
-        
-        P.(ExpLabel).(TrialLabel).data(:,iBlankEMG)=y;
-        P.(ExpLabel).(TrialLabel).data(:,iTrig)=x;
-        P.(ExpLabel).(TrialLabel).data(:,iPW)=PW;
-        P.(ExpLabel).(TrialLabel).FramesInd=FramesInd;
-        
-        P.(ExpLabel).(TrialLabel).data(:,iTime)=Time;  
+%         
+
+        S.(AnaStruct).(ExpLabel).(TrialLabel).Indices=table([FallingInd], [RisingInd]);
+        S.(AnaStruct).(ExpLabel).(TrialLabel).data.("BlankedEMG")=y;
+        S.(AnaStruct).(ExpLabel).(TrialLabel).data.("Time")=Time;
+
 
     end
 end
