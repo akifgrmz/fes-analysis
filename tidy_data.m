@@ -13,6 +13,7 @@ iFolder=1;
 FolderName=FolderNames(iFolder);
 FileName='expsave';     % File name
 ExpStruct=sprintf('%s_test',FolderName);
+AnaStruct=sprintf('%s_ana',FolderName);
 
 str=sprintf('%s/%s.mat',FolderName,FileName);
 temp=load (str);
@@ -28,13 +29,11 @@ S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
 S.(ExpStruct).ExpPar.freq_list=temp.handles.freq_list;
 S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
 
-DataLabels= {'EMG', 'Trigger Signal', 'Force (N)','Pulse Width','Time (s)','BP Filtered EMG',...
-    'Blanked EMG','Comb Filtered vEMG','Comb Filtered m-Waves','GS Filtered vEMG','GS Filtered m-Waves'};
-FeatLabels={'MAV','MedFreq','MeanFreq','Ssc','Zc'};
-FiltLabels={'Comb','GS','Unfilt','Blanking'};
-S.(ExpStruct).ExpPar.DataLabels=DataLabels;
-S.(ExpStruct).ExpPar.FeatLabels=FeatLabels;
-S.(ExpStruct).ExpPar.FiltLabels=FiltLabels;
+
+
+AmpGain=990;
+S.(ExpStruct).ExpPar.AmpGain=AmpGain;
+
 
 
 S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
@@ -52,6 +51,8 @@ DataInd={'EMG','Trigger','Force','PW','Time'};
 ExpLabels={'MVCTrials','RCCurveTrials','CustomTrials','OccTrials','FatigueTrials' };
 S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
 S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,'VariableNames',DataInd);
+
+
 
 
 % 

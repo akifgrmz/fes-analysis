@@ -3,8 +3,8 @@
 %% Data Inject
 clc
 clear all
-TestFolders=["jan7"];
-TestFiles=["jan7_test"];
+TestFolders=["jan7" "jan11"];
+TestFiles=["jan7_test","jan11_test"];
 StructstoLoad=["ExpPar","RCCurveTrials"]; 
 ExpName=["RCCurveTrials"];
 S = load_test(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2- substructures exp numbers
@@ -22,7 +22,6 @@ d1 = designfilt("lowpassiir",'FilterOrder',3, ...
 clc
 TauTime=.37;
 clear Tau F_mat IndTau
-
 
 for iTest=1:length(TestFiles)
     TestLabel=sprintf("%s",TestFiles{iTest});
@@ -140,7 +139,7 @@ for iTest=1:length(TestFiles)
         
             Taus(iTrial,7)= PostAvgForce;
             Taus(iTrial,6)= PreAvgForce;
-            Taus(iTrial,5)= iTrial;
+            Taus(iTrial,5)= RedoTrials(iTrial);
 %             Taus(iTrial,4)= F_filtered(IndTau);
             Taus(iTrial,3)= tau;
             Taus(iTrial,2)= IndTau;
@@ -192,8 +191,6 @@ for iTest= 1:length(TestFiles)
     Tau.(TestLabel).(ExpName).Tau_incorp=Tau_table;
 end
 
-
-
 Tau_stats=table([],[],[],[],'VariableNames',["PW","mean_Time Const","std_Time Const","Test"]);
 % Finding groups
 for iTest=1:length(TestFiles)
@@ -223,10 +220,10 @@ for iTest=1:length(TestFiles)
     end
     Tau_stats=[Tau_stats; PWPoints{iTest} MeanTau{iTest} StdTau{iTest}...
         table([TestLabel+strings(height(PWPoints{iTest}),1)],'VariableNames',"Test")];
-    
-
 end
+
 Tau_stats
+
 % Export Add to Original File
 
 % Export as a mat file, and table
@@ -257,8 +254,8 @@ end
 clear all
 % TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
 % TestFolder=["dec5","nov28_2","nov27","nov8"];
-TestFiles=["jan7_tau_test"];
-TestFolder=["jan7"];
+TestFiles=["jan11_tau_test"];
+TestFolder=["jan11"];
 ExpName=["RCCurveTrials"];
 K = load_test(TestFolder,TestFiles);
 
@@ -278,7 +275,7 @@ end
 PWPoints{1:length(TestFolder)}
 
 close all
-PlotPW=[ 140];
+PlotPW=[ 120];
 for iTest=1:length(TestFolder)
     TestLabel=sprintf('%s_test',TestFolder{iTest});
     
@@ -346,5 +343,4 @@ for iTest=1:length(TestFolder)
     plot([AvgRangePostOff(1) AvgRangePostOff(2)],[PostAvgForce(:,iTest) PostAvgForce(:,iTest)],'--','Color','k')
 end
 
-Tau{1:end}
 

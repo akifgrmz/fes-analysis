@@ -6,9 +6,9 @@
 clear all
 
 iTestPlot=1;  % pick a test to plot 
-iExp=2;    % pick an exp to plot 
-FolderNames={'jan7'};  %% Folders to be loaded 
-FileNames={'jan7_test'};  %% Files to be loaded 
+iExp=4;    % pick an exp to plot 
+FolderNames={'jan11'};  %% Folders to be loaded 
+FileNames={'jan11_test'};  %% Files to be loaded 
 
 M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);
