@@ -3,8 +3,8 @@
 %% Data Inject
 clc
 clear all
-TestFolders=["jan7" "jan11"];
-TestFiles=["jan7_test","jan11_test"];
+TestFolders=["jan7" "jan11" "jan12"];
+TestFiles=["jan7_test","jan11_test" "jan12_test"];
 StructstoLoad=["ExpPar","RCCurveTrials"]; 
 ExpName=["RCCurveTrials"];
 S = load_test(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2- substructures exp numbers
@@ -69,7 +69,7 @@ for iTest=1:length(TestFiles)
         Taus(iTrial,7)= PostAvgForce;
         Taus(iTrial,6)= PreAvgForce;
         Taus(iTrial,5)= iTrial;
-%         Taus(iTrial,4)= F_filtered(IndTau);
+        Taus(iTrial,4)= iTest;
 %         Taus(iTrial,4)= [TurnOffTime AvgRangePostOff];
 
         Taus(iTrial,3)= tau;
@@ -83,7 +83,7 @@ for iTest=1:length(TestFiles)
 
     end
     
-    TauVars={'PW','Tau Ind','Time Const' ,'FiltForceVal','TrialNum','PreAvgForce','PostAvgForce'};
+    TauVars={'PW','Tau Ind','Time Const' ,'TestNum','TrialNum','PreAvgForce','PostAvgForce'};
     Tau_table=array2table(Taus,'VariableNames',TauVars);
     Redo= false(height(Tau_table),1);
     T_redo = table(Redo,'VariableNames',"Redo");
@@ -140,7 +140,7 @@ for iTest=1:length(TestFiles)
             Taus(iTrial,7)= PostAvgForce;
             Taus(iTrial,6)= PreAvgForce;
             Taus(iTrial,5)= RedoTrials(iTrial);
-%             Taus(iTrial,4)= F_filtered(IndTau);
+            Taus(iTrial,4)= iTest;
             Taus(iTrial,3)= tau;
             Taus(iTrial,2)= IndTau;
             Taus(iTrial,1)= PWVal(iTrial);
@@ -222,6 +222,13 @@ for iTest=1:length(TestFiles)
         table([TestLabel+strings(height(PWPoints{iTest}),1)],'VariableNames',"Test")];
 end
 
+MTau = array2table(ones(1,length(TauVars)+1),'VariableNames',[TauVars "Redo"]);
+
+for iTest=1:length(TestFolders)
+    
+    MTau=[MTau; Tau_{iTest}];
+end
+MTau(1,:)=[]
 Tau_stats
 
 % Export Add to Original File
@@ -245,7 +252,7 @@ for iTest=1:length(TestFiles)
     DirLabelCSV=sprintf('%s/%s_taustats.csv',FoldLabel,FoldLabel);
     writetable( Tau_stats(Tau_stats.Test==FoldLabel,:), DirLabelCSV)
     %all the results in one file
-    writetable( Tau_stats,'taustats.csv')
+    writetable( MTau,'tau_estimates.csv')
 
     
 end
