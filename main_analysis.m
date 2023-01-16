@@ -4,21 +4,23 @@
 %% Run tidy_data if you have not yet done so 
 
 % clear all
-% FolderName="jan12";
+% FolderName="jan11";
 % S=tidy_data(FolderName);
 
 %% Data Inject 
-
 clc
 clear all
-TestFolders=["jan11"];
-TestFiles=["jan11_test"];
+TestFolders=[ "jan12"];
+
+for iTest=1:length(TestFolders)
+    TestFiles{iTest}=sprintf("%s_test",TestFolders{iTest});
+end
+
 StructstoLoad=["ExpPar"]; 
-TestStruct=TestFiles(1);
+TestStruct=TestFiles{1};
 AnaStruct=sprintf("%s_ana",TestFolders);
 S = load_test(TestFolders,TestFiles);
 fs=S.(TestStruct).ExpPar.fs;
-
 %% Defining the parameters 
 % Experiment Parameters
 
@@ -136,20 +138,27 @@ for iExp=1:length(ExpstoAna)
     end
 end
 
+FolderName=TestFolders{1};
+str=sprintf('%s/%s',FolderName,AnaStruct);
+save(str,'-struct','S',TestStruct,AnaStruct)
 
-%%Plotting after blanking
+%% Plotting after blanking
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
-Lbl='Occ';
+Lbl='RC';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
-PlotTrial=[15 15];
-PlotFrame=floor([ 600 604]);
+PlotTrial=[7 7 ];
+PlotFrame=floor([ 300 303]);
 ExpLabel=ExpTable{1};
 DataLabels=S.(AnaStruct).AnaPar.DataLabels;
+
 for iTrial=PlotTrial(1):PlotTrial(2)
     TrialLabel=sprintf('Trial_%d',iTrial);
     
     FrameLength=S.(AnaStruct).(ExpLabel).(TrialLabel).FrameLength;
-    Ind=[BlankLength+PlotFrame(1)*FrameLength BlankLength+(PlotFrame(2)+1)*FrameLength];
+     BegofFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
+%     Ind=[BlankLength+PlotFrame(1)*FrameLength BlankLength+(PlotFrame(2))*FrameLength];
+    Ind= [BegofFrames(PlotFrame(1)) BegofFrames(PlotFrame(2)+1)];
+    
     BPFilt_EMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('BPFilt_EMG');
     BlankEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('BlankedEMG');
     Trig=S.(TestStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('Trigger');
@@ -202,7 +211,6 @@ for iExp=1:length(ExpstoAna)
     end
 end
 
- % 
 ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
 ExpstoAna=ExpLabels([2,3,4,5]);
 BlankLength=S.(AnaStruct).AnaPar.BlankLength;
@@ -236,7 +244,7 @@ for iExp=1:length(ExpstoAna)
             t(:,iFrame)= Time(BegofFrames(iFrame+1)+1-FrameLength:BegofFrames(iFrame+1));
 
         end
-%         
+        
         S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames=y;
         S.(AnaStruct).(ExpLabel).(TrialLabel).EMGFrames=x;
         S.(AnaStruct).(ExpLabel).(TrialLabel).ForceFrames=f;
@@ -278,14 +286,15 @@ for iTrial=1:NumofTrials
 
 end
 
-%%Plotting the dropped frames 
+%% Plotting the dropped frames 
 
 Lbl='Occ';
 ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.('Occ'));
-iTrial=12;
+S.(TestStruct).(ExpLabel).TrialsPW
+iTrial=9;
 DataLabels=S.(AnaStruct).AnaPar.DataLabels;
 TrialLabel=sprintf('Trial_%d',iTrial);
-DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames
+DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
 DroppedEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedEMG;
 clear lgd
 
@@ -402,10 +411,11 @@ for iExp=1:length(ExpstoAna)
 end
 
 %% Plotting, Debugging 
+close all
 Lbl='RC';
 ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(Lbl));
-PlotTrial=[8 8];
-PlotTime=[6 6.5];
+PlotTrial=[ 12 12];
+PlotTime=[6.5 6.8];
 PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
 
 % PlotFrame=floor([ 300 305]); % first frame is skipped
@@ -476,7 +486,6 @@ for iTrial=PlotTrial(1):PlotTrial(2)
     ylabel(DataLabels{iEMG})
 
 end
-return
 
 %% EMG Features
 % (move force averaging to the top where BP is held)
