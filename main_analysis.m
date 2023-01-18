@@ -21,7 +21,7 @@ TestStruct=TestFiles{1};
 AnaStruct=sprintf("%s_ana",TestFolders);
 S = load_test(TestFolders,TestFiles);
 fs=S.(TestStruct).ExpPar.fs;
-%% Defining the parameters 
+%%Defining the parameters 
 % Experiment Parameters
 
 StimTime=0.007;
@@ -138,11 +138,9 @@ for iExp=1:length(ExpstoAna)
     end
 end
 
-FolderName=TestFolders{1};
-str=sprintf('%s/%s',FolderName,AnaStruct);
-save(str,'-struct','S',TestStruct,AnaStruct)
 
-%% Plotting after blanking
+
+%%Plotting after blanking
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='RC';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
@@ -183,7 +181,7 @@ end
 
 
 
-%% Frames Matrix for Force and EMG
+%%Frames Matrix for Force and EMG
 % (also remove blanked periods)
 % (Add unfilt as a filter and add e m-wave as zero matrix)
 % Identify Zero stim trials -> Done
@@ -328,6 +326,7 @@ for iExp=1:length(ExpstoAna)
     TrialsPW=S.(TestStruct).(string(S.(AnaStruct).AnaPar.ExpTable.('Occ'))).TrialsPW;
 
     for iTrial=1:NumofTrials
+        iTrial
         TrialLabel=sprintf('Trial_%d',iTrial);
         clear T Time TimeFrames x_frames
         BegofFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
@@ -335,9 +334,9 @@ for iExp=1:length(ExpstoAna)
         if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
             DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
             KeepInd=setdiff(1:FrameNum-1,DroppedFrames);
+            
             x_frames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames(:,KeepInd); % excluding dropped frames 
             [FrameLength, FrameNum]=size(x_frames);
-
             TimeFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankTmFrames(:,KeepInd);
             Time=reshape(TimeFrames,[1],FrameLength*FrameNum);
             S.(AnaStruct).(ExpLabel).(TrialLabel).FrameLength=FrameLength;
@@ -346,11 +345,13 @@ for iExp=1:length(ExpstoAna)
             x_frames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames;
             [FrameLength, FrameNum]=size(x_frames);
             
+            KeepInd=[];
             TimeFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).TmFrames;
             Time=reshape(TimeFrames,[1],FrameLength*FrameNum);
         end
         
-        
+
+        S.(AnaStruct).(ExpLabel).(TrialLabel).KeepInd=KeepInd;
         S.(AnaStruct).(ExpLabel).Time=table(Time','VariableName',"Time");
 
         % # Unfilt
@@ -361,11 +362,24 @@ for iExp=1:length(ExpstoAna)
         UnfiltvEMG=reshape(UnfiltvEMGFrames,1,FrameLength*FrameNum);
         UnfiltMWave=reshape(UnfiltMWaveFrames,1,FrameLength*FrameNum);
         T=[table(UnfiltvEMG','VariableName',"UnfiltvEMG") table(UnfiltMWave','VariableName',"UnfiltMWave")];
-
+        
         S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).MWaveFrames=UnfiltMWaveFrames;
         S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMGFrames=UnfiltvEMGFrames;
         AllLabel=sprintf("%s_all",FiltLabel);
         S.(AnaStruct).(ExpLabel).(FiltLabel).T=T;   
+        
+        
+        if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
+
+            BlankEMGFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames;
+            BlankEMGFrames(:,KeepInd)=UnfiltvEMGFrames;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMGwithDropped=BlankEMGFrames;
+            BlankEMGFrames(:,KeepInd)=UnfiltMWaveFrames;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).mWaveswithDropped=BlankEMGFrames;
+
+        
+        end
+        
         
         % # Comb Filter
         iFilt=2;
@@ -380,6 +394,15 @@ for iExp=1:length(ExpstoAna)
         T=[table(CombvEMG','VariableName',"CombvEMG") table(CombMWave','VariableName',"CombMWave")];
         AllLabel=sprintf("%s_all",FiltLabel);
         S.(AnaStruct).(ExpLabel).(FiltLabel).T=T;   
+        
+        if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
+
+            BlankEMGFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames;
+            BlankEMGFrames(:,KeepInd)=CombvEMGFrames;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMGwithDropped=BlankEMGFrames;
+            BlankEMGFrames(:,KeepInd)=CombMWaveFrames;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).mWaveswithDropped=BlankEMGFrames;
+        end
         % # GS Filter
         % This method is taking too long to calculate
         iFilt=3;
@@ -405,12 +428,20 @@ for iExp=1:length(ExpstoAna)
         S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMG=GSvEMG;
         S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).MWave=GSMWave;
         
+        if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
+
+            BlankEMGFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames;
+            BlankEMGFrames(:,KeepInd)=vEMGMat;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMGwithDropped=BlankEMGFrames;
+            BlankEMGFrames(:,KeepInd)=MWaveMat;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).mWaveswithDropped=BlankEMGFrames;
+        end
         % # Blanking filter comes here
                       
     end
 end
 
-%% Plotting, Debugging 
+%%Plotting, Debugging 
 close all
 Lbl='RC';
 ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(Lbl));
@@ -431,6 +462,7 @@ NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
 for iTrial=PlotTrial(1):PlotTrial(2)
     TrialLabel=sprintf('Trial_%d',iTrial);
     FrameLength=S.(AnaStruct).(ExpLabel).(TrialLabel).FrameLength;
+    
     for iFilt=1:length(FiltLabels)
         FiltLabel=FiltLabels{iFilt};
 
@@ -464,7 +496,7 @@ for iTrial=PlotTrial(1):PlotTrial(2)
     title(ttl);
     xlabel(DataLabels{iTime})
     ylabel(DataLabels{iEMG})
-% 
+%
     figure('Name',sprintf('%s Results',FiltLabels{3}),'NumberTitle','off')
     subplot(2,1,1)
     plot(Time,vEMG(:,1),'k','LineWidth',2)
@@ -487,7 +519,7 @@ for iTrial=PlotTrial(1):PlotTrial(2)
 
 end
 
-%% EMG Features
+%%EMG Features
 % (move force averaging to the top where BP is held)
 
 % MovAvgTime=0.5;
@@ -635,6 +667,9 @@ for iTrial=1:TrialNum
     end                 
 end
 
+FolderName=TestFolders{1};
+str=sprintf('%s/%s',FolderName,AnaStruct);
+save(str,'-struct','S',TestStruct,AnaStruct)
 
 %% plotting EMG features
 
@@ -904,6 +939,10 @@ for iFeat=1:1
         text(120,1.8*max(UnfiltRelatedFramesMean(1,:)),sprintf('%s & %s',gLabels{p_vals(3,1)},gLabels{p_vals(3,2)}))
     end
 end
+
+%% Normalizaton of the signals 
+
+
 
 %% Fatigue Analysis
 % Frequency Shift

@@ -9,17 +9,18 @@ end
 
 AnaStruct=sprintf("%s_ana",TestFolders);
 S = load_test(TestFolders,TestFiles);
-%%
-TestStruct=sprintf("%s_test",TestFolders)
+%% 
+TestStruct=sprintf("%s_test",TestFolders);
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='Occ';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
-PlotTrial=[7 7];
-PlotFrame=floor([ 487 489]);
+PlotTrial=[7 7 ];
+PlotFrame=floor([ 489 491]);
 ExpLabel=ExpTable{1};
 DataLabels=S.(AnaStruct).AnaPar.DataLabels;
 BlankLength=S.(AnaStruct).AnaPar.BlankLength;
 fs=S.(TestStruct).ExpPar.fs;
+FiltLabel="GS";
 for iTrial=PlotTrial(1):PlotTrial(2)
     TrialLabel=sprintf('Trial_%d',iTrial);
     
@@ -45,17 +46,29 @@ for iTrial=PlotTrial(1):PlotTrial(2)
     title(ttl);
     xlabel("Time (s)")
     ylabel("EMG")
-    ylim([1.5*min(BPFilt_EMG) 1.5*max(BPFilt_EMG)])
-    
+    ylim([1.2*min(BPFilt_EMG) 1.2*max(BPFilt_EMG)])
     Frames=PlotFrame(1):PlotFrame(2);
 
     for iFrame =1:length(Frames)
         x=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Time')(BegofFrames(Frames(iFrame)));
-        plot([ x x ],[-10 10],'--k','LineWidth',1);
+        plot([ x x ]+1/fs,[-10 10],'--k','LineWidth',1);
         plot([ x x ]+BlankLength/fs,[-10 10],'--k','LineWidth',1);
 
     end
+    
     grid on 
     subplot(2,1,2)
+    MWave=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).mWaveswithDropped(:,PlotFrame(1):PlotFrame(2));
+    vEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMGwithDropped(:,PlotFrame(1):PlotFrame(2));
+    plot(Time,[MWave(:,1); MWave(:,2); MWave(:,3)],'k','LineWidth',2)
+    hold on
+    plot(Time,[vEMG(:,1); vEMG(:,2); vEMG(:,3)],'r','LineWidth',2)
+    grid on
+    ttl=sprintf(" %s Estimated vEMG and MWaves",FiltLabel);
+    title(ttl);
+    xlabel("Time (s)")
+    ylabel("EMG")
+    ylim([1.2*min(BPFilt_EMG) 1.2*max(BPFilt_EMG)])
+    lgd=legend({'MWaves','vEMG'});
 
 end
