@@ -4,11 +4,11 @@
 %File loading section
 
 clear all
-
+close all
 iTestPlot=1;  % pick a test to plot 
-iExp=4;    % pick an exp to plot 
-FolderNames={'jan11'};  %% Folders to be loaded 
-FileNames={'jan11_test'};  %% Files to be loaded 
+iExp=2;    % pick an exp to plot 
+FolderNames={'jan17'};  %% Folders to be loaded 
+FileNames={'jan17_test'};  %% Files to be loaded 
 
 M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);
@@ -17,7 +17,7 @@ ExpLabels=M.(ExpStruct).ExpPar.ExpLabels;
 ExpLabel=ExpLabels{iExp};
 DtInd= M.(ExpStruct).ExpPar.DataInd;
 TimeRange=[4 22];  % in seconds
-PlotRange=[ 10 10 ]; 
+PlotRange=[ 15 21 ]; 
 
 iForce=table2array(DtInd(:,"Force"));
 iTrigger=table2array(DtInd(:,"Trigger"));
