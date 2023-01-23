@@ -1,6 +1,5 @@
 function S=tidy_data(FolderNames)
-
-%% This script is for tidying the data after an experiment
+%% This script is for tidying the data after a test with a participant
 % Enter a string of the folder name where raw data is located. raw file
 % name must be "expsave.mat"
 % This will reorganize the data for the following analyses 
@@ -9,6 +8,7 @@ function S=tidy_data(FolderNames)
 % FolderNames=["jan7"]; 
 % FolderNames=["nov8", "nov28_2","dec5"];  % Foldername to be loaded
 % FolderNames=["dec5","nov28_2","nov27","nov8","nov7"]; 
+
 iFolder=1;
 FolderName=FolderNames(iFolder);
 FileName='expsave';     % File name
@@ -47,8 +47,8 @@ S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
 % Labeling
 %
 
-DataInd={'EMG','Trigger','Force','PW','Time'};
-ExpLabels={'MVCTrials','RCCurveTrials','CustomTrials','OccTrials','FatigueTrials' };
+DataInd=["EMG","Trigger","Force","PW","Time"];
+ExpLabels=["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
 S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
 S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,'VariableNames',DataInd);
 
@@ -157,7 +157,7 @@ iTrigger=table2array(DtInd(:,"Trigger"));
 for iExp=1:length(ExpLabels)
     ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
     ExpLabel=ExpLabels{iExp};
-     NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
+    NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
     for iTrial=1:NumofTrials
         TrialLabel=sprintf('Trial_%d',iTrial);
         
@@ -180,19 +180,46 @@ for iExp=1:length(ExpLabels)
             T=array2table(dt,'VariableNames',DataInd);
         
         S.(ExpStruct).(ExpLabel).(TrialLabel).data=T;
+        
+        
     end
     
     RedoTrials=S.(ExpStruct).(ExpLabel).RedoTrials;
+    if ~isempty(RedoTrials)
+        for iTrial=1:length(RedoTrials)
+            TrialLabel=sprintf('RedoTrial_%d',RedoTrials(iTrial));
 
-    for iTrial=1:length(RedoTrials)
-        TrialLabel=sprintf('RedoTrial_%d',RedoTrials(iTrial));
-        
-        x=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW);
-        x(x<0)=0;
-        S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW)=x;
-    end
-   
+            x=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW);
+            y=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger);
+                % # PW
+            x(x<0)=0;
+            x(isnan(x))=0;
+
+            S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW)=x;
+                        % # trigger
+            y(y>TrigThres)=1;
+            y(y<TrigThres)=0;
+            S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger)=y;
+
+            dt=S.(ExpStruct).(ExpLabel).(TrialLabel).data;
+            [r,~]=size(dt);
+            T=array2table(dt,'VariableNames',DataInd);
+
+            S.(ExpStruct).(ExpLabel).(TrialLabel).data=T;
+        end
+    end 
 end
+
+%        for iRedo=1:NumofRedos
+% 
+%             RedoLabel=sprintf('RedoTrial_%d',RedoTrials(iRedo));
+%             
+%             dt=S.(ExpStruct).(ExpLabel).(RedoLabel).data;
+%             [r,~]=size(dt);
+%             T=array2table(dt,'VariableNames',DataInd);
+%         
+%             S.(ExpStruct).(ExpLabel).(RedoLabel).data=T;
+%        end
 
 
 %
