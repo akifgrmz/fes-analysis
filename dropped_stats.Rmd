@@ -1,0 +1,102 @@
+---
+title: "Dropped_Stats"
+output: html_document
+date: "2023-01-27"
+desc: This file is created for analysis of dropped frames versus vEMG for EMBC2023
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries}
+library(magrittr); library(here); library(janitor)
+library(readxl); library(tidyverse)
+library(knitr)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+library(NHANES) 
+```
+
+
+
+```{r}
+set.seed(431001)
+# use set.seed to ensure that we all get the same random sample # of 1,000 NHANES subjects in our nh_data collection
+nh_dat1 <- sample_n(NHANES, size = 1000) %>% select(ID, Gender, Age, Height)
+nh_dat2 <- nh_dat1 %>% filter(complete.cases(Age, Height))
+summary(nh_dat2)
+nh_dat2 <- nh_dat1 %>%
+rename(Sex = Gender) %>% filter(complete.cases(Age, Height))
+
+ ggplot(data = nh_dat1, aes(x = Age, y = Height, color = Gender)) + geom_point() +
+labs(title = "Height-Age Relationship in NHANES sample", y = "Height in cm.")
+```
+
+```{r read the file } 
+
+dt <- read_csv("dropped_stats.csv",show_col_types = FALSE)
+spec(dt)
+
+```
+
+This table is created using MATLAB making sure that there is no NAN, missing or infinite sample of any variable
+```{r Modifying  the data types}
+dt<-dt%>%mutate(Filt_Type = as.factor(Filt_Type),
+                   Repeat = as.factor(Repeat),
+                     Feat = as.factor(Feat),
+                     Test = as.factor(Test),
+                     Frame = as.integer(Frame))
+dt
+```
+
+
+```{r plotting using facets}
+
+plot<-filter(dt ) %>% select( c(Frame_Val, Filt_Type, Dropped,Frame,Test,MVC_Voli) )  
+
+ggplot(data = plot, aes(x = Frame, y = 1000*Frame_Val, color = Filt_Type)) + 
+geom_point() + geom_smooth(method = "loess") +facet_wrap(Test ~ MVC_Voli)+
+labs(title = "EMG MAV Values", y = "MAV (mV)")
+   
+
+```
+
+
+```{r plotting}
+
+plot1<-filter(dt,Filt_Type=='Dropped', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Dropped,Frame) )  
+
+plot2<-filter(dt,Filt_Type=='Unfilt', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Frame) )  
+
+plot3<-filter(dt,Filt_Type=='Comb', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Frame) )  
+
+plot4<-filter(dt,Filt_Type=='GS', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Frame) )  
+dim(plot1)
+
+ggplot()+
+  geom_point(data=plot1, aes(Frame, Frame_Val),color='blue') + 
+  geom_point(data=plot2, aes(Frame, Frame_Val),color='black')+
+    geom_point(data=plot3, aes(Frame, Frame_Val),color='red')+
+    geom_point(data=plot4, aes(Frame, Frame_Val),color='green')
+
+
+  labs(title = "Dropped Frames",
+  subtitle = "Dropped Frames MVA values")
+  
+```
+
+
+```{r}
+ggplot(plot1, aes(x=factor(Dropped, level=dp), y=Frame_Val)) +
+  geom_point(size=2, shape=23)
+```
+
+
