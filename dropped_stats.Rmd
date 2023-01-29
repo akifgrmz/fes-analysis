@@ -22,7 +22,6 @@ library(patchwork)
 library(vcd)
 library(dplyr)
 library(ggplot2)
-library(NHANES) 
 ```
 
 
@@ -69,34 +68,45 @@ labs(title = "EMG MAV Values", y = "MAV (mV)")
 
 ```
 
+```{r Normality Checks 1- by violing plots}
+MVCVoli10<- filter(plot, MVC_Voli=='10%')
+test_jan7<- filter(plot, Test=='jan12',MVC_Voli=='30%')
 
-```{r plotting}
+ggplot(test_jan7, aes(x = Filt_Type, y = Frame_Val, fill = Filt_Type)) + geom_violin() +
+scale_fill_viridis_d() + geom_boxplot(width = 0.3, fill = "white") +
+guides(fill = FALSE) +
+labs(title = "Boxplot of Temperature Drop in Sepsis Patients",
+x = "", y = "Drop in Temperature (degrees C)") + coord_flip() +
+theme_bw()
 
-plot1<-filter(dt,Filt_Type=='Dropped', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Dropped,Frame) )  
-
-plot2<-filter(dt,Filt_Type=='Unfilt', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Frame) )  
-
-plot3<-filter(dt,Filt_Type=='Comb', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Frame) )  
-
-plot4<-filter(dt,Filt_Type=='GS', MVC_Stim == '10%' , MVC_Voli == '10%' , Test == 'jan7') %>% select( c(Frame_Val, Filt_Type, Frame) )  
-dim(plot1)
-
-ggplot()+
-  geom_point(data=plot1, aes(Frame, Frame_Val),color='blue') + 
-  geom_point(data=plot2, aes(Frame, Frame_Val),color='black')+
-    geom_point(data=plot3, aes(Frame, Frame_Val),color='red')+
-    geom_point(data=plot4, aes(Frame, Frame_Val),color='green')
-
-
-  labs(title = "Dropped Frames",
-  subtitle = "Dropped Frames MVA values")
-  
 ```
 
+```{r Nomality Checks 2-Histogram}
 
-```{r}
-ggplot(plot1, aes(x=factor(Dropped, level=dp), y=Frame_Val)) +
-  geom_point(size=2, shape=23)
+ggplot(test_jan7, aes(x = Frame_Val, fill = Filt_Type, color = Filt_Type)) + geom_histogram(bins = 20) +
+scale_fill_viridis_d() +
+scale_color_viridis_d(direction = -1) +
+guides(fill = FALSE, color = FALSE) +
+labs(title = "Histograms of Temperature Drop in Sepsis Patients",
+x = "Drop in Temperature (degrees Celsius") + theme_bw() +
+facet_wrap(~ Filt_Type)
+
 ```
 
+```{r Normality Checks 4- Density Ridges}
+
+ggplot(test_jan7, aes(x = Frame_Val, y = Filt_Type, fill = Filt_Type)) + ggridges::geom_density_ridges(scale = 0.9) +
+guides(fill = FALSE) +
+labs(title = "Temperature Drop in Sepsis Patients",
+x = "Drop in Temperature (degrees Celsius)", y = "") + ggridges::theme_ridges()
+
+```
+
+```{r Normality Checks 3-QQ Plots}
+
+ggplot(test_jan7, aes(sample = Frame_Val)) + geom_qq() + geom_qq_line(col = "red") + theme_bw() +
+facet_wrap(~ Filt_Type) +
+labs(y = "Temperature Drop Values (in degrees C)")
+
+```
 

@@ -17,15 +17,18 @@ PlotRange1=[ 5.4 10];
 PlotRange2=[ 10 15.2]; 
 VoliMVCLevels=[10 20 30 40 ];
 StimMVCLevels=[ 0 10 20 30];
+
 stim_freq=S.(TestStruct).ExpPar.FreqList(1);
 PlotRangeFrames1=PlotRange1*stim_freq;  
 PlotRangeFrames2=PlotRange2*stim_freq;
 boolean DroppedFrameInd;
 TrialColor={'r', 'b', 'k'};
 exp_lbl='Occ';
-VarNames=["Dropped" "Frame"  "Filt_Type" "Repeat"  "Trial" "MVC_Voli" "MVC_Stim" "Feat" "Test" ];
+VarNames=["Dropped" "Frame"  "Filt_Type" "Repeat"  "Trial"...
+    "MVC_Voli" "MVC_Stim" "Feat" "Test" ];
+NormVoliMVC=20;
 g=strings(1,length(VarNames))+NaN;
-x=[];
+x=ones(0,2);
 x_frame=[];
 
 for iFeat=1:1
@@ -36,7 +39,8 @@ for iFeat=1:1
         ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
         FeatLabel=S.(AnaStruct).AnaPar.FeatLabels{iFeat};
         RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
-
+        Target=mean(S.(AnaStruct).(ExpLabel).TargetFrames)';
+        
         for iVoli=1:length(VoliMVCLevels)
             for iStim=1:length(StimMVCLevels)
                 sMVC=StimMVCLevels(iStim);
@@ -46,7 +50,6 @@ for iFeat=1:1
                 for iRep=1:length(IndTrials)
                     TrialLabel=sprintf('Trial_%d',IndTrials(iRep));
                     DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
-                    TargetFrames=mean(S.(AnaStruct).(ExpLabel).TargetFrames);
                     FiltLabels=S.(AnaStruct).AnaPar.FiltLabels;
 
                     if isempty(DroppedFrames)
@@ -78,9 +81,15 @@ for iFeat=1:1
                             FeatwithDropped=place_vals(DroppedFramesFeat,DroppedFrames,Feat);
                             RelatedFrames=FeatwithDropped(PlotInd);
                             dp=[];
-                            if DroppedFlag(iDropped), RelatedFrames(end+1)=DroppedFramesFeat(iRep,iDropped); dp=DroppedInd; end
+                            x_target=Target(PlotInd);
+
+                            if DroppedFlag(iDropped)
+                                RelatedFrames(end+1)=DroppedFramesFeat(iRep,iDropped); 
+                                dp=DroppedInd; 
+                                x_target(end+1)=Target(DroppedInd);
+                            end
                            
-                            x_frame=RelatedFrames';
+                            x_frame=RelatedFrames;
                             lg=length(x_frame);
                             g_filt=strings(1,lg);
                             g_voli=strings(1,lg);
@@ -105,7 +114,7 @@ for iFeat=1:1
                             if DroppedFlag(iDropped), g_filt(end)="Dropped"; DroppedFlag(iDropped)=false; end
 
                             g=[ g; g_dropped' g_frame' g_filt' g_rep' g_trial' g_voli' g_stim' g_feat' g_test' ];
-                            x=[x x_frame];
+                            x=[x ;x_frame x_target];
                         end
                     end
                 end
@@ -113,17 +122,12 @@ for iFeat=1:1
         end
     end
 end
-Dropped_stats=array2table([x' g(2:end,:) ],'VariableNames',["Frame_Val" VarNames]);
+
+
+Dropped_stats=array2table([x g(2:end,:) ],'VariableNames',["Frame_Val" "Target" VarNames]);
 S.(AnaStruct).(ExpLabel).Dropped_stats=Dropped_stats;
 % DirLabelCSV=sprintf('%s/%s_dropped.csv',TestFolders{iTest},TestFolders{iTest});
 writetable( Dropped_stats, 'dropped_stats.csv')
-
-%%
-
-
-[p.(FiltLabel)(iVoli,iStim),t,stats]= anova1(y_frame,g_frame,'off');
-results.(FiltLabel){iVoli,iStim}=multcompare(stats,'Display','off');
-results.p.(FiltLabel)(iVoli,iStim)= results.(FiltLabel){iVoli,iStim}(3,6);
 
 
 
