@@ -404,7 +404,7 @@ end
 % (Remove blanked periods before filtering, Do unfiltered Frames)
 % (update to recreate the vector forms of the signals)
 
-gs_order=3;
+gs_order=6;
 
 for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
@@ -1193,7 +1193,7 @@ ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
 RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
 VoliLevels=[10 20 30 40];
 StimLevels=[ 0 10 20 30];
-MeanTime=[10 15];
+MeanTime=[11 15];
 % Calculating the means at time [10 15]
 for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
@@ -1232,8 +1232,25 @@ for iTest=1:length(TestFolders)
         'VariableNames',["Rep1" "Rep2" "Rep3"]) MAV_Mean_Reps(:,'sMVC') MAV_Mean_Reps(:,'vMVC')];
 end
 
+sMVC=00;
+for iTest=1:length(TestFolders)
+    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
 
+    sMVCzero=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('sMVC');
+    MAVMean=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('MAV_Mean');
+    vMVCVal=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('vMVC');
 
+    Ind=(sMVCzero==sMVC);
+    figure(1)
+    plot(vMVCVal(Ind),MAVMean(Ind),'DisplayName',TestFolders(iTest))
+    legend
+    MAVMean(Ind)
+    hold on
+end
+xlabel('% Voli. MVC')
+ylabel('Avg MAV')
+title(sprintf('Avg MAV of 3 repeated trials when stim=%d%% MVC',sMVC))
+grid
 %% Fatigue Analysis
 % Frequency Shift
 ExpLabel='FatigueTrials';

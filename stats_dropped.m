@@ -4,7 +4,7 @@ clear all
 TestFolders=["jan7" "jan11" "jan12" ];
 
 for iTest=1:length(TestFolders)
-    TestFiles{iTest}=sprintf("%s_ana",TestFolders{iTest});
+    TestFiles(iTest)=sprintf("%s_ana",TestFolders(iTest));
 end
 
 S = load_test(TestFolders,TestFiles);
@@ -28,19 +28,44 @@ VarNames=["Dropped" "Frame"  "Filt_Type" "Repeat"  "Trial"...
     "MVC_Voli" "MVC_Stim" "Feat" "Test" ];
 NormVoliMVC=20;
 g=strings(1,length(VarNames))+NaN;
-x=ones(0,2);
+x=ones(0,3);
 x_frame=[];
 
+% Normalization coeffs for the occ trials
+sMVC=0;
+vMVC=30;
+MeanRange=[11 14];
+MeanRangeInd=MeanRange*stim_freq;
+for iTest=1:length(TestFolders)
+    AnaStruct=sprintf("%s_ana",TestFolders(iTest));
+    TestStruct=sprintf("%s_test",TestFolders(iTest));
+    ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(exp_lbl);
+    RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
+
+    IndTrials=find_trialnum(vMVC,sMVC,RepTableMat) ;
+    
+    for iRep=1:length(IndTrials)
+        RepLabel=sprintf("Trial_%d",IndTrials(iRep));
+        
+        MAV(:,iRep)=mean(S.(AnaStruct).(ExpLabel).(RepLabel).Unfilt.Feats.('MAV_vEMG')(MeanRangeInd(1):MeanRangeInd(2)));
+        Voli_NormCoeff(:,iTest)=mean(mean(MAV));
+        S.(AnaStruct).(ExpLabel).Voli_NormCoeff=Voli_NormCoeff(:,iTest);
+    end 
+end
+
+
+
+%
 for iFeat=1:1
     for iTest=1:length(TestFolders)
         TestStruct=sprintf("%s_test",TestFolders{iTest});
         AnaStruct=sprintf("%s_ana",TestFolders{iTest});
 
-        ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
         FeatLabel=S.(AnaStruct).AnaPar.FeatLabels{iFeat};
         RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
         Target=mean(S.(AnaStruct).(ExpLabel).TargetFrames)';
-        
+        Voli_NormCoeff(:,iTest)=S.(AnaStruct).(ExpLabel).Voli_NormCoeff;
+
         for iVoli=1:length(VoliMVCLevels)
             for iStim=1:length(StimMVCLevels)
                 sMVC=StimMVCLevels(iStim);
@@ -82,7 +107,7 @@ for iFeat=1:1
                             RelatedFrames=FeatwithDropped(PlotInd);
                             dp=[];
                             x_target=Target(PlotInd);
-
+                            
                             if DroppedFlag(iDropped)
                                 RelatedFrames(end+1)=DroppedFramesFeat(iRep,iDropped); 
                                 dp=DroppedInd; 
@@ -90,6 +115,8 @@ for iFeat=1:1
                             end
                            
                             x_frame=RelatedFrames;
+                            x_norm=x_frame/Voli_NormCoeff(:,iTest);
+
                             lg=length(x_frame);
                             g_filt=strings(1,lg);
                             g_voli=strings(1,lg);
@@ -114,7 +141,7 @@ for iFeat=1:1
                             if DroppedFlag(iDropped), g_filt(end)="Dropped"; DroppedFlag(iDropped)=false; end
 
                             g=[ g; g_dropped' g_frame' g_filt' g_rep' g_trial' g_voli' g_stim' g_feat' g_test' ];
-                            x=[x ;x_frame x_target];
+                            x=[x ;x_frame x_norm x_target];
                         end
                     end
                 end
@@ -124,11 +151,12 @@ for iFeat=1:1
 end
 
 
-Dropped_stats=array2table([x g(2:end,:) ],'VariableNames',["Frame_Val" "Target" VarNames]);
+Dropped_stats=array2table([x g(2:end,:) ],'VariableNames',["Frame_Val" "Norm_Val" "Target" VarNames]);
 S.(AnaStruct).(ExpLabel).Dropped_stats=Dropped_stats;
 % DirLabelCSV=sprintf('%s/%s_dropped.csv',TestFolders{iTest},TestFolders{iTest});
 writetable( Dropped_stats, 'dropped_stats.csv')
 
+% save_test(TestFolders,S)
 
 
 

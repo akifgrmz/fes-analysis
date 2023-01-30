@@ -25,21 +25,7 @@ library(ggplot2)
 ```
 
 
-
-```{r}
-set.seed(431001)
-# use set.seed to ensure that we all get the same random sample # of 1,000 NHANES subjects in our nh_data collection
-nh_dat1 <- sample_n(NHANES, size = 1000) %>% select(ID, Gender, Age, Height)
-nh_dat2 <- nh_dat1 %>% filter(complete.cases(Age, Height))
-summary(nh_dat2)
-nh_dat2 <- nh_dat1 %>%
-rename(Sex = Gender) %>% filter(complete.cases(Age, Height))
-
- ggplot(data = nh_dat1, aes(x = Age, y = Height, color = Gender)) + geom_point() +
-labs(title = "Height-Age Relationship in NHANES sample", y = "Height in cm.")
-```
-
-```{r read the file } 
+```{r Data Inject } 
 
 dt <- read_csv("dropped_stats.csv",show_col_types = FALSE)
 spec(dt)
@@ -47,6 +33,7 @@ spec(dt)
 ```
 
 This table is created using MATLAB making sure that there is no NAN, missing or infinite sample of any variable
+
 ```{r Modifying  the data types}
 dt<-dt%>%mutate(Filt_Type = as.factor(Filt_Type),
                    Repeat = as.factor(Repeat),
@@ -57,56 +44,154 @@ dt
 ```
 
 
-```{r plotting using facets}
+```{r Quick Look}
 
-plot<-filter(dt ) %>% select( c(Frame_Val, Filt_Type, Dropped,Frame,Test,MVC_Voli) )  
-
-ggplot(data = plot, aes(x = Frame, y = 1000*Frame_Val, color = Filt_Type)) + 
-geom_point() + geom_smooth(method = "loess") +facet_wrap(Test ~ MVC_Voli)+
-labs(title = "EMG MAV Values", y = "MAV (mV)")
-   
+ ggplot(dt, aes(x = "", y = Norm_Val)) + geom_violin() + geom_boxplot(width = 0.4) + coord_flip() + labs(x = "")
 
 ```
 
-```{r Normality Checks 1- by violing plots}
-MVCVoli10<- filter(plot, MVC_Voli=='10%')
-test_jan7<- filter(plot, Test=='jan12',MVC_Voli=='30%')
+The distribution is not perfectly normal, but it should be ok to use "ANOVA".
 
-ggplot(test_jan7, aes(x = Filt_Type, y = Frame_Val, fill = Filt_Type)) + geom_violin() +
+```{r plotting using facets}
+
+plot<-filter(dt) %>% select( c(Norm_Val, Target, Filt_Type, Dropped,Frame,Test,MVC_Voli,MVC_Stim) )  
+
+ggplot(data = plot, aes(x = Frame, y = Norm_Val, color = Filt_Type)) + 
+geom_point(size = 0.8, alpha = 0.5) +
+geom_smooth(method = "loess", se = FALSE, size = 1.5) +facet_wrap(~ MVC_Voli )+
+labs(title = "Normalized EMG MAV Values", y = "Norm. MAV")
+   
+```
+
+
+```{r Normality Checks of Groups 1- by violing plots}
+MVCVoli10<- filter(plot, MVC_Voli=='10%')
+test_jan7<- filter(plot,MVC_Voli=='10%')
+
+ggplot(test_jan7, aes(x = Filt_Type, y = Norm_Val, fill = Filt_Type)) + geom_violin() +
 scale_fill_viridis_d() + geom_boxplot(width = 0.3, fill = "white") +
 guides(fill = FALSE) +
-labs(title = "Boxplot of Temperature Drop in Sepsis Patients",
-x = "", y = "Drop in Temperature (degrees C)") + coord_flip() +
+labs(title = "Box and Violing Plots of the Filtered, Unfiltered and Dropped MAV Values (Normalized)",
+x = "", y = "Normalized MAV ") + coord_flip() +
 theme_bw()
 
 ```
 
+These subgroups are not perfectly normal either.
+
 ```{r Nomality Checks 2-Histogram}
 
-ggplot(test_jan7, aes(x = Frame_Val, fill = Filt_Type, color = Filt_Type)) + geom_histogram(bins = 20) +
+ggplot(test_jan7, aes(x = Norm_Val, fill = Filt_Type, color = Filt_Type)) + geom_histogram(bins = 50) +
 scale_fill_viridis_d() +
 scale_color_viridis_d(direction = -1) +
 guides(fill = FALSE, color = FALSE) +
-labs(title = "Histograms of Temperature Drop in Sepsis Patients",
-x = "Drop in Temperature (degrees Celsius") + theme_bw() +
+labs(title = "Histograms of Filtered, Unfiltered and Dropped MAV Values (Normalized)",
+x = "Normalized MAV") + theme_bw() +
 facet_wrap(~ Filt_Type)
-
-```
-
-```{r Normality Checks 4- Density Ridges}
-
-ggplot(test_jan7, aes(x = Frame_Val, y = Filt_Type, fill = Filt_Type)) + ggridges::geom_density_ridges(scale = 0.9) +
-guides(fill = FALSE) +
-labs(title = "Temperature Drop in Sepsis Patients",
-x = "Drop in Temperature (degrees Celsius)", y = "") + ggridges::theme_ridges()
 
 ```
 
 ```{r Normality Checks 3-QQ Plots}
 
-ggplot(test_jan7, aes(sample = Frame_Val)) + geom_qq() + geom_qq_line(col = "red") + theme_bw() +
+ggplot(test_jan7, aes(sample = Norm_Val)) + geom_qq() + geom_qq_line(col = "red") + theme_bw() +
 facet_wrap(~ Filt_Type) +
-labs(y = "Temperature Drop Values (in degrees C)")
+labs(y = " Normalized MAV Values")
 
 ```
 
+Q-Q Plots also show some imperfections.
+
+
+
+# Can we detect the differences in mean using a linear fitting model?
+```{r }
+filt_variables<- filter(test_jan7, Filt_Type==c('Dropped', 'Comb' ,'GS'))
+model_one <- lm(Norm_Val ~ Filt_Type, data = filt_variables) 
+
+tidy(model_one, conf.int = 0.90) %>% select(term, estimate, std.error,
+conf.low, conf.high, p.value) %>% kable(dig = 2)
+
+glance(model_one) %>% select(r.squared) %>% kable(digits = 3)
+
+```
+
+All filter types are significant with r-squared being 0.004
+
+```{r}
+
+ filt_variables %>%group_by(Filt_Type) %>%
+summarise(count = n(), mean(Norm_Val), median(Norm_Val)) %>% knitr::kable(digits = 2)
+
+
+```
+
+```{r Anova Model}
+
+tidy(anova(model_one)) %>% kable(dig = 3)
+
+
+```
+
+```{r f statistic }
+pf(2481, df1 = 2, df2 = 7557, lower.tail = FALSE)
+```
+```{r balanced design }
+
+oneway.test(Norm_Val ~ Filt_Type, data = filt_variables)
+
+```
+
+
+```{r Kruskal Wallis}
+
+kruskal.test(Norm_Val ~ Filt_Type, data = filt_variables)
+
+```
+
+
+```{r Quick look at the numerical summaries}
+
+ mosaic::favstats( Norm_Val~ Filt_Type, data = filt_variables)%>% knitr::kable(digits = 2)
+
+```
+
+1- Looks like we are dealing with the an unbalanced design with Dropped category (n=1080) having 1/10 of the others.
+2- We can also make equal variances for the filter groups (Dropped, Comb and GS).
+
+```{r Multicompare: Bonferroni a:0.05}
+pairwise.t.test(filt_variables$Norm_Val, filt_variables$Filt_Type, p.adjust.method = "bonferroni")
+```
+
+```{r Tukey HSD}
+
+tukey_one <- tidy(TukeyHSD(aov(model_one), ordered = TRUE, conf.level = 0.9))
+tukey_one %>% rename(null = null.value) %>% kable(dig = 3)
+TukeyHSD(aov(Norm_Val ~ Filt_Type, data = filt_variables), conf.level = 0.90)
+
+```
+
+
+```{r}
+ggplot(tukey_one, aes(x = reorder(contrast, -estimate), y = estimate)) +
+geom_pointrange(aes(ymin = conf.low, ymax = conf.high)) + geom_hline(yintercept = 0, col = "red",
+linetype = "dashed") + geom_label(aes(label = round_half_up(estimate,2))) + coord_flip() +
+labs(x = "Contrast between Education Groups",
+   y = "Estimated Effect",
+   title = "Estimated Effects, with Tukey HSD 90% Confidence",
+   subtitle = "Comparing Trump16 Voteby Education Group")
+```
+
+
+
+```{r }
+wilx<-filter(test_jan7, Filt_Type==c('Dropped' ,'GS'))
+
+w1 <- tidy(wilcox.test(Norm_Val ~ Filt_Type, data = wilx, conf.int = TRUE, conf.level = 0.90))
+w1
+```
+
+
+```{r }
+boot4 <- dm431_cc %$% bootdif(ldl, statin, conf.level = 0.90)
+boot4    
+```
