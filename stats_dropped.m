@@ -96,7 +96,7 @@ for iFeat=1:1
 
                         for iDropped=1:length(DroppedFrames(DroppedFrameInd))
                             DroppedLabel=sprintf('Dropped_%d',iDropped);
-                            DropLabel=sprintf('Drop_%d',iDropped);
+                            DropLabel=sprintf('%d',iDropped);
 
                             DroppedInd=DroppedFrames(iDropped);
                             PlotInd=[-MarginFromDropped+DroppedInd:DroppedInd-1 DroppedInd+1:DroppedInd+MarginFromDropped];

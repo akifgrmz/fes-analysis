@@ -3,7 +3,7 @@ title: "Dropped_Stats"
 output: html_document
 date: "2023-01-27"
 desc: This file is created for analysis of dropped frames versus vEMG for EMBC2023
-
+# theme: darkly
 ---
 
 ```{r setup, include=FALSE}
@@ -13,7 +13,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r including libraries}
 library(magrittr); library(here); library(janitor)
 library(readxl); library(tidyverse)
-library(knitr)
 library(rmdformats)
 library(Epi)
 library(vcd)
@@ -28,20 +27,59 @@ library(ggplot2)
 ```{r Data Inject } 
 
 dt <- read_csv("dropped_stats.csv",show_col_types = FALSE)
-spec(dt)
+summary(dt)
+dt
 
-```
-
-This table is created using MATLAB making sure that there is no NAN, missing or infinite sample of any variable
-
-```{r Modifying  the data types}
 dt<-dt%>%mutate(Filt_Type = as.factor(Filt_Type),
                    Repeat = as.factor(Repeat),
                      Feat = as.factor(Feat),
                      Test = as.factor(Test),
-                     Frame = as.integer(Frame))
-dt
+                     MVC_Voli = as.factor(MVC_Voli),
+                     MVC_Stim = as.factor(MVC_Stim),
+                     Frame = as.integer(Frame),
+                     Dropped = as.integer(Dropped))
 ```
+# Mean percent difference of filters based on norm. values:
+
+$\sum_{i=1}^{I=10} \frac{1}{I}\frac{MAV_{D,i}-MAV_{F,i}}{MAV_{D,i}}\times100$
+
+```{r}
+
+
+rmse <- function(x, reference) {
+  sqrt(mean((x - reference)^2))
+}
+
+percent_diff <- function( mav_f, reference) {
+  i_max <- length(mav_f)
+  sum((mav_d - mav_f) / mav_d) * 100 / i_max
+}
+
+dt_means <- aggregate(dt$Norm_Val, by = list(Trial = dt$Trial, Test = dt$Test, Filt_Type = dt$Filt_Type, Repeat = dt$Repeat, MVC_Voli = dt$MVC_Voli, MVC_Stim = dt$MVC_Stim,Dropped = dt$Dropped), mean)
+dt_means <- dt_means %>% rename(Filt_Mean_Val = x)
+
+ref_dt <-dt_means %>% filter(Filt_Type=='Dropped')
+
+agg_results <- aggregate(dt$Filt_Mean_Val, by = list(Trial = dt$Trial, Test = dt$Test, Filt_Type = dt$Filt_Type, Repeat = dt$Repeat, MVC_Voli = dt$MVC_Voli, MVC_Stim = dt$MVC_Stim,Dropped = dt$Dropped), mean)
+```
+
+```{r}
+
+rmse <- function(x, reference) {
+  sqrt(mean((x - reference)^2))
+}
+
+percent_diff <- function( mav_f, mav_d) {
+mav_f/mav_d
+}
+
+
+ref_dt <-dt_means %>% filter(Filt_Type=='Dropped')
+
+agg_results <- dt_means%>% mutate(rms= percent_diff(dt_means$Filt_Mean_Val, ref_dt$Filt_Mean_Val))
+
+```
+This table is created using MATLAB making sure that there is no NAN, missing or infinite sample of any variable
 
 
 ```{r Quick Look}
@@ -54,10 +92,33 @@ The distribution is not perfectly normal, but it should be ok to use "ANOVA".
 
 ```{r plotting using facets}
 
-plot<-filter(dt) %>% select( c(Norm_Val, Target, Filt_Type, Dropped,Frame,Test,MVC_Voli,MVC_Stim) )  
+plot<-filter(dt, Filt_Type !='Unfilt' )%>% select( c(Frame_Val,Norm_Val, Target, Filt_Type, Dropped,Frame,Test,MVC_Voli,MVC_Stim) )  
+
+drop_1<- filter(plot, Dropped=='1')
+model_1 <- lm(Norm_Val ~ Filt_Type, data = drop_1) 
+drop_2<- filter(plot, Dropped=='2')
+model_2 <- lm(Norm_Val ~ Filt_Type, data = drop_2) 
+drop_3<- filter(plot, Dropped=='3')
+model_3 <- lm(Norm_Val ~ Filt_Type, data = drop_3) 
+drop_4<- filter(plot, Dropped=='4')
+model_4 <- lm(Norm_Val ~ Filt_Type, data = drop_4) 
+drop_5<- filter(plot, Dropped=='5')
+model_5 <- lm(Norm_Val ~ Filt_Type, data = drop_5) 
+drop_6<- filter(plot, Dropped=='6')
+model_6 <- lm(Norm_Val ~ Filt_Type, data = drop_6) 
+drop_7<- filter(plot, Dropped=='7')
+model_7 <- lm(Norm_Val ~ Filt_Type, data = drop_7) 
+drop_8<- filter(plot, Dropped=='8')
+model_8 <- lm(Norm_Val ~ Filt_Type, data = drop_8) 
+drop_9<- filter(plot, Dropped=='9')
+model_9 <- lm(Norm_Val ~ Filt_Type, data = drop_9) 
+drop_10<- filter(plot, Dropped=='10')
+model_10 <- lm(Norm_Val ~ Filt_Type, data = drop_10) 
+
+mosaic::favstats( Norm_Val~ Filt_Type, MVC_Voli, data = plot)%>% knitr::kable(digits = 2)
 
 ggplot(data = plot, aes(x = Frame, y = Norm_Val, color = Filt_Type)) + 
-geom_point(size = 0.8, alpha = 0.5) +
+geom_point(size = 1, alpha = 0.6) +
 geom_smooth(method = "loess", se = FALSE, size = 1.5) +facet_wrap(~ MVC_Voli )+
 labs(title = "Normalized EMG MAV Values", y = "Norm. MAV")
    
@@ -66,7 +127,7 @@ labs(title = "Normalized EMG MAV Values", y = "Norm. MAV")
 
 ```{r Normality Checks of Groups 1- by violing plots}
 MVCVoli10<- filter(plot, MVC_Voli=='10%')
-test_jan7<- filter(plot,MVC_Voli=='10%')
+test_jan7<- filter(plot,MVC_Voli=='10%',Dropped=='1')
 
 ggplot(test_jan7, aes(x = Filt_Type, y = Norm_Val, fill = Filt_Type)) + geom_violin() +
 scale_fill_viridis_d() + geom_boxplot(width = 0.3, fill = "white") +
@@ -103,8 +164,12 @@ Q-Q Plots also show some imperfections.
 
 
 
+```{r}
+
+```
 # Can we detect the differences in mean using a linear fitting model?
 ```{r }
+
 filt_variables<- filter(test_jan7, Filt_Type==c('Dropped', 'Comb' ,'GS'))
 model_one <- lm(Norm_Val ~ Filt_Type, data = filt_variables) 
 
@@ -119,9 +184,8 @@ All filter types are significant with r-squared being 0.004
 
 ```{r}
 
- filt_variables %>%group_by(Filt_Type) %>%
-summarise(count = n(), mean(Norm_Val), median(Norm_Val)) %>% knitr::kable(digits = 2)
-
+DropNum<-drop_1 %>%filter( Filt_Type =='Dropped' )%>%group_by(Dropped) %>% summarise(count = n(), mean(Norm_Val), median(Norm_Val))
+DropNum
 
 ```
 
@@ -135,12 +199,12 @@ tidy(anova(model_one)) %>% kable(dig = 3)
 ```{r f statistic }
 pf(2481, df1 = 2, df2 = 7557, lower.tail = FALSE)
 ```
+
 ```{r balanced design }
 
 oneway.test(Norm_Val ~ Filt_Type, data = filt_variables)
 
 ```
-
 
 ```{r Kruskal Wallis}
 
