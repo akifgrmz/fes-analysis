@@ -26,14 +26,13 @@ S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
 S.(ExpStruct).ExpPar.sample_t=temp.handles.sample_t;
 S.(ExpStruct).ExpPar.fs=1/temp.handles.sample_t;
 S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
-S.(ExpStruct).ExpPar.freq_list=temp.handles.freq_list;
 S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
+S.(ExpStruct).ExpPar.TrialsFreq=temp.handles.ExpTrials.TrialsFreq;
+S.(ExpStruct).ExpPar.stim_freq=temp.handles.freq_list(temp.handles.ExpTrials.TrialsFreq(1));
 
 
-
-AmpGain=990;
+AmpGain=990;  % is this correct Gain ???
 S.(ExpStruct).ExpPar.AmpGain=AmpGain;
-
 
 
 S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;

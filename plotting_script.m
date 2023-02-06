@@ -1,7 +1,7 @@
 %% Plotting for EMBC 
 clc
 clear all
-TestFolders=[ "jan12"];
+TestFolders=[ "jan7"];
 
 for iTest=1:length(TestFolders)
     TestFiles{iTest}=sprintf("%s_ana",TestFolders{iTest});
@@ -10,12 +10,13 @@ end
 AnaStruct=sprintf("%s_ana",TestFolders);
 S = load_test(TestFolders,TestFiles);
 %% 
+close all
 TestStruct=sprintf("%s_test",TestFolders);
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='Occ';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
-PlotTrial=[7 7 ];
-PlotFrame=floor([ 489 491]);
+PlotTrial=[15 19];
+PlotFrame=floor([ 486 490]);
 ExpLabel=ExpTable{1};
 DataLabels=S.(AnaStruct).AnaPar.DataLabels;
 BlankLength=S.(AnaStruct).AnaPar.BlankLength;
@@ -60,9 +61,9 @@ for iTrial=PlotTrial(1):PlotTrial(2)
     subplot(2,1,2)
     MWave=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).mWaveswithDropped(:,PlotFrame(1):PlotFrame(2));
     vEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMGwithDropped(:,PlotFrame(1):PlotFrame(2));
-    plot(Time,[MWave(:,1); MWave(:,2); MWave(:,3)],'k','LineWidth',2)
+    plot(Time,reshape(MWave,1,[]),'k','LineWidth',2)
     hold on
-    plot(Time,[vEMG(:,1); vEMG(:,2); vEMG(:,3)],'r','LineWidth',2)
+    plot(Time,reshape(vEMG,1,[]),'r','LineWidth',2)
     grid on
     ttl=sprintf(" %s Estimated vEMG and MWaves",FiltLabel);
     title(ttl);
@@ -78,7 +79,7 @@ TestStruct=sprintf("%s_test",TestFolders);
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='Occ';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
-PlotTrial=[9 9 ];
+PlotTrial=[ 7 7];
 PlotFrame=floor([ 487 489]);
 ExpLabel=ExpTable{1};
 DataLabels=S.(AnaStruct).AnaPar.DataLabels;
@@ -160,7 +161,9 @@ for iTest=1:1
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
     
     NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
-
+    PWofTrials=S.(TestStruct).(ExpLabel).PWTrials;
+    PWPoints=S.(TestStruct).(ExpLabel).PWPoints;
+    PWProfile=S.(TestStruct).(ExpLabel).PWProfile;
     PlotFrame=[PlotTime(1)*stim_freq PlotTime(2)*stim_freq];
     PlotInd=[PlotFrame(1):PlotFrame(2)];
     FiltLabel="Unfilt";

@@ -37,51 +37,60 @@ dt<-dt%>%mutate(Filt_Type = as.factor(Filt_Type),
                      MVC_Voli = as.factor(MVC_Voli),
                      MVC_Stim = as.factor(MVC_Stim),
                      Frame = as.integer(Frame),
-                     Dropped = as.integer(Dropped))
+                     Dropped = as.factor(Dropped))
 ```
 # Mean percent difference of filters based on norm. values:
 
 $\sum_{i=1}^{I=10} \frac{1}{I}\frac{MAV_{D,i}-MAV_{F,i}}{MAV_{D,i}}\times100$
 
 ```{r}
+#result_df <- aggregate(dt_means$Filt_Mean_Val, by = list(Filt_Type = dt_means$Filt_Type, MVC_Voli = dt_means$MVC_Voli, MVC_Stim = dt_means$MVC_Stim), 
+#                         Filt_Type <- as.character(unique(dt_means$Filt_Type[dt_means$Filt_Mean_Val %in% x]))
+ #                        reference_value <- ref_dt$Filt_Mean_Val%>% group_by(Filt_Type)
+#                         rmse(x, reference = reference_value)
+#})
 
-
-rmse <- function(x, reference) {
-  sqrt(mean((x - reference)^2))
-}
-
-percent_diff <- function( mav_f, reference) {
-  i_max <- length(mav_f)
-  sum((mav_d - mav_f) / mav_d) * 100 / i_max
-}
-
-dt_means <- aggregate(dt$Norm_Val, by = list(Trial = dt$Trial, Test = dt$Test, Filt_Type = dt$Filt_Type, Repeat = dt$Repeat, MVC_Voli = dt$MVC_Voli, MVC_Stim = dt$MVC_Stim,Dropped = dt$Dropped), mean)
-dt_means <- dt_means %>% rename(Filt_Mean_Val = x)
-
-ref_dt <-dt_means %>% filter(Filt_Type=='Dropped')
-
-agg_results <- aggregate(dt$Filt_Mean_Val, by = list(Trial = dt$Trial, Test = dt$Test, Filt_Type = dt$Filt_Type, Repeat = dt$Repeat, MVC_Voli = dt$MVC_Voli, MVC_Stim = dt$MVC_Stim,Dropped = dt$Dropped), mean)
 ```
 
+This table is created using MATLAB making sure that there is no NAN, missing or infinite sample of any variable
+
 ```{r}
+
 
 rmse <- function(x, reference) {
   sqrt(mean((x - reference)^2))
 }
 
 percent_diff <- function( mav_f, mav_d) {
-mav_f/mav_d
+  mean(mav_f-mav_d ) / mav_d * 100
 }
 
+dt_means <- aggregate(dt$Norm_Val, by = list(Trial = dt$Trial, Test = dt$Test, Filt_Type = dt$Filt_Type, MVC_Voli = dt$MVC_Voli, MVC_Stim = dt$MVC_Stim,Dropped = dt$Dropped), mean)
+dt_means <- dt_means %>% rename(Filt_Mean_Val = x)
 
 ref_dt <-dt_means %>% filter(Filt_Type=='Dropped')
 
-agg_results <- dt_means%>% mutate(rms= percent_diff(dt_means$Filt_Mean_Val, ref_dt$Filt_Mean_Val))
+dt_means<- dt_means%>%group_by(Filt_Type ) %>% mutate(percent_diff = percent_diff(Filt_Mean_Val,mav_d=filter(dt_means,Filt_Type=='Dropped') $ Filt_Mean_Val))%>%
+  group_by(Filt_Type )%>% mutate(rmse = rmse(Filt_Mean_Val,reference=filter(dt_means,Filt_Type=='Dropped') $ Filt_Mean_Val))
+dt_means
 
 ```
-This table is created using MATLAB making sure that there is no NAN, missing or infinite sample of any variable
+```{r boxplots}
+
+dt_mn <- aggregate(dt_means$Filt_Mean_Val, by = list( Test = dt_means$Test, Filt_Type = dt_means$Filt_Type, MVC_Voli = dt_means$MVC_Voli, MVC_Stim =
+                                                        dt_means$MVC_Stim,Dropped = dt_means$Dropped), mean)
+dt_mn
+ggplot(filter(dt_means,Filt_Type!='Dropped'),aes(x = Test, y = percent_diff, fill = Filt_Type)) + 
+  geom_bar(stat = "identity", position=position_dodge()) +
+  facet_wrap(Dropped~MVC_Voli)+
+  #geom_errorbar(aes(ymin=mean(percent_diff)-sd(percent_diff), ymax=mean(percent_diff)+sd(percent_diff)), width=.2,position=position_dodge(.9)) +
+  labs(x = "Filter Types",
+       y = "Mean Percent Difference",
+       title = "Mean Percent Difference from Dropped MAV")+
+  theme_bw()
 
 
+```
 ```{r Quick Look}
 
  ggplot(dt, aes(x = "", y = Norm_Val)) + geom_violin() + geom_boxplot(width = 0.4) + coord_flip() + labs(x = "")
@@ -90,40 +99,50 @@ This table is created using MATLAB making sure that there is no NAN, missing or 
 
 The distribution is not perfectly normal, but it should be ok to use "ANOVA".
 
-```{r plotting using facets}
+```{r plotting with boxplots}
 
-plot<-filter(dt, Filt_Type !='Unfilt' )%>% select( c(Frame_Val,Norm_Val, Target, Filt_Type, Dropped,Frame,Test,MVC_Voli,MVC_Stim) )  
+plot<-filter(dt)%>% select( c(Frame_Val,Norm_Val, Target, Filt_Type, Dropped,Frame,Test,MVC_Voli,MVC_Stim) )  
 
-drop_1<- filter(plot, Dropped=='1')
-model_1 <- lm(Norm_Val ~ Filt_Type, data = drop_1) 
-drop_2<- filter(plot, Dropped=='2')
-model_2 <- lm(Norm_Val ~ Filt_Type, data = drop_2) 
-drop_3<- filter(plot, Dropped=='3')
-model_3 <- lm(Norm_Val ~ Filt_Type, data = drop_3) 
-drop_4<- filter(plot, Dropped=='4')
-model_4 <- lm(Norm_Val ~ Filt_Type, data = drop_4) 
-drop_5<- filter(plot, Dropped=='5')
-model_5 <- lm(Norm_Val ~ Filt_Type, data = drop_5) 
-drop_6<- filter(plot, Dropped=='6')
-model_6 <- lm(Norm_Val ~ Filt_Type, data = drop_6) 
-drop_7<- filter(plot, Dropped=='7')
-model_7 <- lm(Norm_Val ~ Filt_Type, data = drop_7) 
-drop_8<- filter(plot, Dropped=='8')
-model_8 <- lm(Norm_Val ~ Filt_Type, data = drop_8) 
-drop_9<- filter(plot, Dropped=='9')
-model_9 <- lm(Norm_Val ~ Filt_Type, data = drop_9) 
-drop_10<- filter(plot, Dropped=='10')
-model_10 <- lm(Norm_Val ~ Filt_Type, data = drop_10) 
 
 mosaic::favstats( Norm_Val~ Filt_Type, MVC_Voli, data = plot)%>% knitr::kable(digits = 2)
 
-ggplot(data = plot, aes(x = Frame, y = Norm_Val, color = Filt_Type)) + 
-geom_point(size = 1, alpha = 0.6) +
-geom_smooth(method = "loess", se = FALSE, size = 1.5) +facet_wrap(~ MVC_Voli )+
+ggplot(data = plot, aes(x = Dropped , y = Norm_Val, color = Filt_Type)) + 
+geom_boxplot() +
+  scale_fill_viridis_d() +
+  facet_wrap(Test~ MVC_Voli )+
 labs(title = "Normalized EMG MAV Values", y = "Norm. MAV")
    
 ```
 
+```{r plotting a test with boxplots }
+
+plot<-filter(dt,Test=='jan12')%>% select( c(Frame_Val,Norm_Val, Target, Filt_Type, Dropped,Frame,Test,MVC_Voli,MVC_Stim) )  
+
+mosaic::favstats( Norm_Val ~ Filt_Type, MVC_Voli, data = plot)%>% knitr::kable(digits = 2)
+
+ggplot(data = plot, aes(x = Dropped , y = Norm_Val, color = Filt_Type)) + 
+geom_boxplot() +
+scale_fill_viridis_d() +
+geom_smooth(method = "loess", se = FALSE, size = 1.5) +
+facet_wrap(MVC_Stim~ MVC_Voli )+
+labs(title = "Normalized EMG MAV Values", y = "Norm. MAV")
+   
+```
+
+```{r plotting geom points }
+
+plot<-filter(dt)%>% select( c(Frame_Val,Norm_Val, Target, Filt_Type, Dropped,Frame,Test,MVC_Voli,MVC_Stim) )  
+
+mosaic::favstats( Norm_Val~ Filt_Type, MVC_Voli, data = plot)%>% knitr::kable(digits = 2)
+
+ggplot(data = plot, aes(x = Frame , y = Norm_Val, color = Filt_Type)) + 
+geom_point(size = 0.8, alpha = 0.6) +
+scale_fill_viridis_d() +
+geom_smooth(method = "loess", se = FALSE, size = 1.5) +
+facet_wrap(Test~ MVC_Voli )+
+labs(title = "Normalized EMG MAV Values", y = "Norm. MAV")
+   
+```
 
 ```{r Normality Checks of Groups 1- by violing plots}
 MVCVoli10<- filter(plot, MVC_Voli=='10%')

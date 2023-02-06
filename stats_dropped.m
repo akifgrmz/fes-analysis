@@ -34,7 +34,7 @@ x_frame=[];
 % Normalization coeffs for the occ trials
 sMVC=0;
 vMVC=30;
-MeanRange=[11 14];
+MeanRange=[11 12];
 MeanRangeInd=MeanRange*stim_freq;
 for iTest=1:length(TestFolders)
     AnaStruct=sprintf("%s_ana",TestFolders(iTest));
@@ -53,9 +53,6 @@ for iTest=1:length(TestFolders)
     end 
 end
 
-
-
-%
 for iFeat=1:1
     for iTest=1:length(TestFolders)
         TestStruct=sprintf("%s_test",TestFolders{iTest});

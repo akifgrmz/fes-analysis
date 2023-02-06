@@ -4,7 +4,7 @@ function M=load_test(FolderNames,FileName,StructNames)
 % 1-enter an array of strings whose entries are folder names
 % 2-enter an array of strings whose entries are file names
 % 3-enter the name of the field when loading only spesific fields
-
+    
     if nargin ==2
         for iFile=1:length(FolderNames)
             ExpStruct=sprintf('%s',char(FileName{iFile}));
@@ -16,7 +16,7 @@ function M=load_test(FolderNames,FileName,StructNames)
             end
         end
 
-    elseif nargin >2
+    elseif nargin ==3
         
         for iFile=1:length(FolderNames)
             ExpStruct=sprintf('%s',char(FileName{iFile}));
@@ -29,8 +29,22 @@ function M=load_test(FolderNames,FileName,StructNames)
             end
         end
 
-    elseif nargin < 2
+    elseif nargin == 1
 
         error('Enter a cell of strings that has at least length on 1 ')
+    
+    elseif nargin == 0
+        FolderNames=["jan7" "jan11" "jan12" ];
+        
+        for iFile=1:length(FolderNames)
+            FileName=sprintf('%s_ana',char(FolderNames{iFile}));
+            str=sprintf('%s/%s',char(FolderNames{iFile}),FileName);
+            S=load (str);
+            FldNames = fieldnames(S);
+            for iField=1:length(FldNames)
+                M.(FldNames{iField})=S.(FldNames{iField});
+            end
+        end
+         assignin('base','TestFolders',FolderNames)
     end
 end
