@@ -1,16 +1,16 @@
 function S=tidy_data(FolderNames)
 %% This script is for tidying the data after a test with a participant
-% Enter a string of the folder name where raw data is located. raw file
+% Enter a string or char of the folder name where raw data is located. raw file
 % name must be "expsave.mat"
-% This will reorganize the data for the following analyses 
-% Only one file at a time 
+% This will reorganize the data for further analyses 
+% Only one file at a time whose name is expsave.mat
 
 % FolderNames=["jan7"]; 
 % FolderNames=["nov8", "nov28_2","dec5"];  % Foldername to be loaded
 % FolderNames=["dec5","nov28_2","nov27","nov8","nov7"]; 
 
-iFolder=1;
-FolderName=FolderNames(iFolder);
+FolderName=string(FolderNames);
+
 FileName='expsave';     % File name
 ExpStruct=sprintf('%s_test',FolderName);
 AnaStruct=sprintf('%s_ana',FolderName);
@@ -31,8 +31,6 @@ S.(ExpStruct).ExpPar.TrialsFreq=temp.handles.ExpTrials.TrialsFreq;
 S.(ExpStruct).ExpPar.stim_freq=temp.handles.freq_list(temp.handles.ExpTrials.TrialsFreq(1));
 
 
-AmpGain=990;  % is this correct Gain ???
-S.(ExpStruct).ExpPar.AmpGain=AmpGain;
 
 
 S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
@@ -50,9 +48,6 @@ DataInd=["EMG","Trigger","Force","PW","Time"];
 ExpLabels=["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
 S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
 S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,'VariableNames',DataInd);
-
-
-
 
 % 
 % Num of Trials might not be needed anymore
@@ -81,6 +76,81 @@ for iExp=1:length(ExpLabels)
     
 end
 
+%
+% Here, check if the variable exist and add if does not
+% Usually experiments before feb27 need this part 
+%
+
+
+% StimRange for Exps
+
+
+AmpGain=990;  % AmpGain for nondefined
+% S.(ExpStruct).ExpPar.AmpGain=AmpGain;
+num_of_dropped=1;
+
+% 1- AmpGain
+dropped=0;
+
+if ~isfield(S.(ExpStruct).ExpPar, 'AmpGain')
+    S.(ExpStruct).ExpPar.AmpGain=AmpGain;
+end
+
+% 2- dropped, num_of_dropped, of frames
+dropped=0;
+if ~isfield(S.(ExpStruct).RCCurveTrials, 'num_of_dropped')
+    
+    S.(ExpStruct).RCCurveTrials.num_of_dropped=num_of_dropped;
+    S.(ExpStruct).RCCurveTrials.dropped=dropped;
+
+end
+
+dropped=0;
+if ~isfield(S.(ExpStruct).CustomTrials, 'num_of_dropped')
+    
+    S.(ExpStruct).CustomTrials.num_of_dropped=num_of_dropped;
+    S.(ExpStruct).CustomTrials.dropped=dropped;
+
+end
+
+dropped=1;
+if ~isfield(S.(ExpStruct).OccTrials, 'num_of_dropped')
+    
+    S.(ExpStruct).OccTrials.stim_freq=num_of_dropped;
+    S.(ExpStruct).OccTrials.dropped=dropped;
+
+end
+
+% 3- stim_freq, FreqList
+
+stim_freq=35;
+if ~isfield(S.(ExpStruct).ExpPar, 'stim_freq')
+    
+    S.(ExpStruct).ExpPar.stim_freq=stim_freq;
+
+end
+
+FreqList=[ 35; 20; 50];
+if ~isfield(S.(ExpStruct).ExpPar, 'FreqList')
+    
+    S.(ExpStruct).ExpPar.FreqList=FreqList;
+
+end
+
+
+if ~isfield(S.(ExpStruct).ExpPar, 'FreqList')
+    
+    S.(ExpStruct).ExpPar.FreqList=FreqList;
+
+end
+
+    
+
+% Stim Range for trials : might change for future trials
+
+S.(ExpStruct).OccTrials.StimRange=[5 15];
+S.(ExpStruct).RCCurveTrials.StimRange=[5 10];
+S.(ExpStruct).FatigueTrials.StimRange=[5 35];
 
 
 %
@@ -97,8 +167,8 @@ mrg=[1.8 2 1];
 sample_t=S.(ExpStruct).ExpPar.sample_t;
 fs=1/sample_t;
 TurnOffInd=4;
-S.(ExpStruct).RCCurveTrials.StimProfile=10;
-S.(ExpStruct).OccTrials.StimProfile=15;
+S.(ExpStruct).RCCurveTrials.StimProfile=10; % Stim turn off time 
+S.(ExpStruct).OccTrials.StimProfile=15; % Stim turn off time 
 S.(ExpStruct).FatigueTrials.StimProfile=35;
 Lbl=S.(ExpStruct).ExpPar.ExpLabels([2,4,5]);
 
@@ -120,7 +190,6 @@ for iExp=1:length(Lbl)
         else
             S.(ExpStruct).(ExpLabel).(TrialLabel).data(end+1:lgt,:)=0;
         end
-
     end 
     
     for iTrial=1:length(RedoTrials)

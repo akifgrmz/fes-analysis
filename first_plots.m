@@ -1,30 +1,27 @@
-%% first_plotting
-
 %% First plotting program
 %File loading section
-
 clear all
 close all
 iTestPlot=1;  % pick a test to plot 
-iExp=2;    % pick an exp to plot 
-FolderNames={'jan17'};  %% Folders to be loaded 
-FileNames={'jan17_test'};  %% Files to be loaded 
+iExp=4;    % pick an exp to plot 
+FolderNames={'feb27'};  %% Folders to be loaded 
+FileNames={'feb27_test'};  %% Files to be loaded 
 
 M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);
 ExpStruct=Fields{iTestPlot};
 ExpLabels=M.(ExpStruct).ExpPar.ExpLabels;
 ExpLabel=ExpLabels{iExp};
-DtInd= M.(ExpStruct).ExpPar.DataInd;
+DataInd= M.(ExpStruct).ExpPar.DataInd;
 TimeRange=[4 22];  % in seconds
-PlotRange=[ 15 21 ]; 
+PlotRange=[ 35 35 ]; 
 
-iForce=table2array(DtInd(:,"Force"));
-iTrigger=table2array(DtInd(:,"Trigger"));
-iEMG=table2array(DtInd(:,"EMG"));
-iTime=table2array(DtInd(:,"Time"));
-iPW=table2array(DtInd(:,"PW"));
-TableInd=DtInd.Properties.VariableNames;
+iForce=table2array(DataInd(:,"Force"));
+iTrigger=table2array(DataInd(:,"Trigger"));
+iEMG=table2array(DataInd(:,"EMG"));
+iTime=table2array(DataInd(:,"Time"));
+iPW=table2array(DataInd(:,"PW"));
+TableInd=DataInd.Properties.VariableNames;
 
 for iTrial=PlotRange(1):PlotRange(2)
     TrialLabel=sprintf('Trial_%d',iTrial);
@@ -61,8 +58,8 @@ for iTrial=PlotRange(1):PlotRange(2)
 %     ylabel(DataLabels{iEMG})
 
 end
-M.(ExpStruct).OccTrials.RepTableMat
-
+OccTable=M.(ExpStruct).OccTrials.RepTableMat;
+OccTable=[[1:length(OccTable)]' OccTable]
 %% Checking the recruitment curves
 % NOT READY
 iTestPlot=2;  % pick a test to plot 
@@ -94,7 +91,7 @@ for iRedo=1:length(RedoTrials)
     y(iRedo)=M.(ExpStruct).(ExpLabels{iTestPlot}).(RedoLabel).AvgForce;
 end
 
-%     gompertz
+%  gompertz
 
 
 

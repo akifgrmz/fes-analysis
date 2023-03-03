@@ -1,6 +1,5 @@
 function IndTrials=find_trialnum(vMVC,sMVC,RepTableMat)
-% This function will find the occ trial numbers for a pair of given voli and stim MVC
-% values
+% This function will find the occ trial numbers for a pair of given voli and stim MVC percent values
 % vMVC: voli MVClevels such as 10, 20 etc
 % sMVC: stim MVClevels such as 10, 20 etc
 % RepTableMat: Occlusion experiment table found in Occ trials field

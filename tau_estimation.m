@@ -10,11 +10,19 @@ ExpName=["RCCurveTrials"];
 S = load_test(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2- substructures exp numbers
 
 %% Filter Design
-fs=S.(TestFiles{1}).ExpPar.fs;
-d1 = designfilt("lowpassiir",'FilterOrder',3, ...
-    'HalfPowerFrequency',0.01,'DesignMethod',"butter"); %,'SampleRate',fs
-
+% fs=S.(TestFiles{1}).ExpPar.fs;
+% d1 = designfilt("lowpassiir",'FilterOrder',3, ...
+%     'HalfPowerFrequency',0.01,'DesignMethod',"butter"); %,'SampleRate',fs
+% 
 % fvtool(d1)
+    LPPass = 30;
+    LPStop = 100;
+    Ap = .1;
+
+    d1 = designfilt('lowpassfir','PassbandFrequency',LPPass,...
+      'StopbandFrequency',LPStop,'PassbandRipple',Ap,...
+      'DesignMethod', 'kaiserwin','SampleRate',fs);
+    
 %% Main code 
 % This code will execute the estimation of the time constant 
 % Redo Trials must be incorporated 
