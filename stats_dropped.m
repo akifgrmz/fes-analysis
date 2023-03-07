@@ -1,4 +1,5 @@
-%% Stats with dropped frames
+%%This file converts the OccTrials data to tidyformat for R. 0 stim trials are not incorporated
+
 clc
 clear all
 TestFolders=["jan7" "jan11" "jan12" ];
@@ -62,6 +63,9 @@ for iFeat=1:1
         RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
         Target=mean(S.(AnaStruct).(ExpLabel).TargetFrames)';
         Voli_NormCoeff(:,iTest)=S.(AnaStruct).(ExpLabel).Voli_NormCoeff;
+        
+%         TrialLabel=sprintf('Trial_%d',IndTrials(1));
+%         DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
 
         for iVoli=1:length(VoliMVCLevels)
             for iStim=1:length(StimMVCLevels)
@@ -71,30 +75,26 @@ for iFeat=1:1
 
                 for iRep=1:length(IndTrials)
                     TrialLabel=sprintf('Trial_%d',IndTrials(iRep));
-                    DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
                     FiltLabels=S.(AnaStruct).AnaPar.FiltLabels;
-                    DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
-
-                    DroppedFrameInd1=PlotRangeFrames1(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames1(2);
-                    DroppedFrameInd2=PlotRangeFrames2(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames2(2);
-                    DroppedFrameInd=DroppedFrameInd1+DroppedFrameInd2;
-                    DroppedFrameInd=logical(DroppedFrameInd);
-                    DroppedFramesFeat=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel)(DroppedFrameInd);
-
-                    if isempty(DroppedFrames)
+                    
+                    if sMVC==0
+                        
                         FiltLabels=["Unfilt"];
-                        DroppedFramesFeat=[];
-                        DroppedFrames=
-                    else
+                        DroppedFeatInd=DroppedFrames;
                     end
-
+                    
                     DroppedFlag=true(length(DroppedFrames),1);
                     for iFilt=1:length(FiltLabels)
                         FiltLabel=FiltLabels{iFilt};
                         vEMGLabel=sprintf('%s_vEMG',FeatLabel);
+                        DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
 
-                        Feat=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.(vEMGLabel);
-                        FeatwithDropped=place_vals(DroppedFramesFeat,DroppedFrames,Feat);
+                        DroppedFrameInd1=PlotRangeFrames1(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames1(2);
+                        DroppedFrameInd2=PlotRangeFrames2(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames2(2);
+                        DroppedFrameInd=DroppedFrameInd1+DroppedFrameInd2;
+                        DroppedFrameInd=logical(DroppedFrameInd);
+
+                        DroppedFramesFeat=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel)(DroppedFeatInd);
 
                         for iDropped=1:length(DroppedFrames(DroppedFrameInd))
                             DroppedLabel=sprintf('Dropped_%d',iDropped);
@@ -102,8 +102,16 @@ for iFeat=1:1
 
                             DroppedInd=DroppedFrames(iDropped);
                             PlotInd=[-MarginFromDropped+DroppedInd:DroppedInd-1 DroppedInd+1:DroppedInd+MarginFromDropped];
-%                             OnesInd=ones(length(PlotInd),1);
+                            OnesInd=ones(length(PlotInd),1);
+                            Feat=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.(vEMGLabel);
 
+                            if sMVC==0
+                                FeatwithDropped=Feat;
+                            else
+                                FeatwithDropped=place_vals(DroppedFramesFeat,DroppedFrames,Feat);
+
+                            end
+                    
                             RelatedFrames=FeatwithDropped(PlotInd);
                             dp=[];
                             x_target=Target(PlotInd);
