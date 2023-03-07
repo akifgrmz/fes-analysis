@@ -19,7 +19,6 @@ str=sprintf('%s/%s.mat',FolderName,FileName);
 temp=load (str);
 S.(ExpStruct).ExpPar.Amp=temp.handles.Amp;
 S.(ExpStruct).ExpPar.MaxPW=temp.handles.MaxPW;
-S.(ExpStruct).ExpPar.PW=temp.handles.PW;
 S.(ExpStruct).ExpPar.FreqList=temp.handles.freq_list;
 S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
 S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
@@ -90,7 +89,6 @@ AmpGain=990;  % AmpGain for nondefined
 num_of_dropped=1;
 
 % 1- AmpGain
-dropped=0;
 
 if ~isfield(S.(ExpStruct).ExpPar, 'AmpGain')
     S.(ExpStruct).ExpPar.AmpGain=AmpGain;
@@ -116,7 +114,7 @@ end
 dropped=1;
 if ~isfield(S.(ExpStruct).OccTrials, 'num_of_dropped')
     
-    S.(ExpStruct).OccTrials.stim_freq=num_of_dropped;
+    S.(ExpStruct).OccTrials.num_of_dropped=num_of_dropped;
     S.(ExpStruct).OccTrials.dropped=dropped;
 
 end
@@ -144,6 +142,13 @@ if ~isfield(S.(ExpStruct).ExpPar, 'FreqList')
 
 end
 
+% change TrialsPW field name
+if isfield(S.(ExpStruct).RCCurveTrials, 'PWTrials')
+    
+    TrialsPW=S.(ExpStruct).RCCurveTrials.PWTrials;
+    S.(ExpStruct).RCCurveTrials.TrialsPW=TrialsPW;
+
+end
     
 
 % Stim Range for trials : might change for future trials

@@ -362,15 +362,15 @@ end
 
 
 %% Extracting Dropped Frames 
-
+clc
 ExpTable=S.(AnaStruct).AnaPar.ExpTable;
 VarNames=string(ExpTable.Properties.VariableNames);
-VarNames=VarNames(2:4) ;% excluding MVC and Fatigue Trials
+VarNames=VarNames(2:2) ;% excluding MVC and Fatigue Trials
 
 for iExp=1:length(VarNames)
     VarName=VarNames(iExp);
     ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(VarName); 
-
+    ExpLabel
     for iTest=1:length(TestFolders)
         TestStruct=sprintf("%s_test",TestFolders{iTest});
         AnaStruct=sprintf("%s_ana",TestFolders{iTest});
@@ -380,13 +380,13 @@ for iExp=1:length(VarNames)
         else
 
             NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
-            TargetProfile=S.(TestStruct).(ExpLabel).TargetProfile2;
+            StimRange=S.(TestStruct).(ExpLabel).StimRange;
             stim_freq=S.(TestStruct).ExpPar.FreqList(1);
             TrialsPW=S.(TestStruct).(ExpLabel).TrialsPW;
 
             for iTrial=1:NumofTrials
                 TrialLabel=sprintf('Trial_%d',iTrial);
-                FrameRange=[(stim_freq+1)*TargetProfile(1,2),stim_freq*TargetProfile(1,4)];
+                FrameRange=[(stim_freq+1)*StimRange(1),stim_freq*StimRange(2)];
                 PW=S.(TestStruct).(ExpLabel).(TrialLabel).data.('PW');
 
                 BegofFrames= S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
@@ -410,44 +410,52 @@ for iExp=1:length(VarNames)
 end
 
 %% Plotting the dropped frames 
-
-iTrial=10;
+close all
+iTrial=4;
 TrialLabel=sprintf('Trial_%d',iTrial);
-ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.('Occ'));
+ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.('RC'));
 
 for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
-    
-   DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;   
-    if isempty(DroppedFrames)
-        figure(iTrial)
-        subplot(length(TestFolders),1,iTest)
-        text(0.3,0.5,'No Dropped Frames for This Trial')
-        ttl=sprintf('Dropped Frames at Trial %d of %s, Test: %s',iTrial,ExpLabel,TestFolders{iTest});
-        title(ttl);
-        
-        continue 
-    end
-    
-    S.(TestStruct).(ExpLabel).TrialsPW
-    DataLabels=S.(AnaStruct).AnaPar.DataLabels;
-  
-    DroppedEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedEMG;
-    clear lgd
+    if ~S.(TestStruct).(ExpLabel).dropped 
+                    figure(iTrial)
+            subplot(length(TestFolders),1,iTest)
+            text(0.3,0.5,'No Dropped Frames for This Trial')
+            ttl=sprintf('Dropped Frames at Trial %d of %s, Test: %s',iTrial,ExpLabel,TestFolders{iTest});
+            title(ttl);
+        continue;
+    else
+       DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;   
+        if isempty(DroppedFrames)
+            figure(iTrial)
+            subplot(length(TestFolders),1,iTest)
+            text(0.3,0.5,'No Dropped Frames for This Trial')
+            ttl=sprintf('Dropped Frames at Trial %d of %s, Test: %s',iTrial,ExpLabel,TestFolders{iTest});
+            title(ttl);
 
-    for iFrame=1:length(DroppedFrames)
-        figure(iTrial)
-        subplot(length(TestFolders),1,iTest)
-        plot(DroppedEMG(:,iFrame),'LineWidth',2)
-        hold on
-        lgd(iFrame)=sprintf("Frame %d",DroppedFrames(iFrame));
-        legend(lgd,'Location','NorthWest');
-        ttl=sprintf('Dropped Frames at Trial %d of %s, Test: %s',iTrial,ExpLabel,TestFolders{iTest});
-        title(ttl);
-        xlabel('Samples')
-        ylabel('BP Filtered EMG')
+            continue 
+        end
 
+        S.(TestStruct).(ExpLabel).TrialsPW
+        DataLabels=S.(AnaStruct).AnaPar.DataLabels;
+
+        DroppedEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedEMG(1:end-3,:);
+        clear lgd
+
+        for iFrame=1:length(DroppedFrames)
+            figure(iTrial)
+            subplot(length(TestFolders),1,iTest)
+            plot(DroppedEMG(:,iFrame),'LineWidth',2)
+            hold on
+            lgd(iFrame)=sprintf("Frame %d",DroppedFrames(iFrame));
+            legend(lgd,'Location','NorthWest');
+            ttl=sprintf('Dropped Frames at Trial %d of %s, Test: %s',iTrial,ExpLabel,TestFolders{iTest});
+            title(ttl);
+            xlabel('Samples')
+            ylabel('BP Filtered EMG')
+
+        end
     end
 end
 
