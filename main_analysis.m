@@ -361,16 +361,15 @@ for iTest=1:length(TestFolders)
 end
 
 
-%% Extracting Dropped Frames 
+%%Extracting Dropped Frames 
 clc
 ExpTable=S.(AnaStruct).AnaPar.ExpTable;
 VarNames=string(ExpTable.Properties.VariableNames);
-VarNames=VarNames(2:2) ;% excluding MVC and Fatigue Trials
+VarNames=VarNames(2:4) ;% excluding MVC and Fatigue Trials
 
 for iExp=1:length(VarNames)
     VarName=VarNames(iExp);
     ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(VarName); 
-    ExpLabel
     for iTest=1:length(TestFolders)
         TestStruct=sprintf("%s_test",TestFolders{iTest});
         AnaStruct=sprintf("%s_ana",TestFolders{iTest});
@@ -470,21 +469,26 @@ for iTest=1:length(TestFolders)
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
     
     ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
-    ExpstoAna=ExpLabels([2,3,4,5]);
+    ExpstoAna=ExpLabels([2,3,4]);
     FiltLabels=S.(AnaStruct).AnaPar.FiltLabels;
 
     for iExp=1:length(ExpstoAna)
-        ExpLabel=ExpstoAna{iExp};
+        ExpLabel=ExpstoAna(iExp);
         NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
-        TrialsPW=S.(TestStruct).(string(S.(AnaStruct).AnaPar.ExpTable.('Occ'))).TrialsPW;
 
+        if isfield(S.(TestStruct).(ExpLabel), 'TrialsPW')
+            
+            TrialsPW=S.(TestStruct).(ExpLabel).TrialsPW;
+            dropped=S.(TestStruct).(ExpLabel).dropped;
+            
+        end
         for iTrial=1:NumofTrials
             TrialLabel=sprintf('Trial_%d',iTrial);
             clear T Time TimeFrames x_frames
             BegofFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
             FrameNum=length(BegofFrames);
             
-            if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
+            if dropped==1 && TrialsPW(iTrial) ~= 0
                 DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
                 KeepInd=setdiff(1:FrameNum-1,DroppedFrames);
 
@@ -522,7 +526,7 @@ for iTest=1:length(TestFolders)
             S.(AnaStruct).(ExpLabel).(FiltLabel).T=T;   
 
 
-            if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
+            if dropped==1 && TrialsPW(iTrial) ~= 0
 
                 BlankEMGFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames;
                 BlankEMGFrames(:,KeepInd)=UnfiltvEMGFrames;
@@ -545,7 +549,7 @@ for iTest=1:length(TestFolders)
             AllLabel=sprintf("%s_all",FiltLabel);
             S.(AnaStruct).(ExpLabel).(FiltLabel).T=T;   
 
-            if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
+            if dropped==1 && TrialsPW(iTrial) ~= 0
 
                 BlankEMGFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames;
                 BlankEMGFrames(:,KeepInd)=CombvEMGFrames;
@@ -579,7 +583,7 @@ for iTest=1:length(TestFolders)
             S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMG=GSvEMG;
             S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).MWave=GSMWave;
 
-            if string(ExpLabel)==string(S.(AnaStruct).AnaPar.ExpTable.('Occ')) && TrialsPW(iTrial) ~= 0
+            if dropped==1 && TrialsPW(iTrial) ~= 0
 
                 BlankEMGFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames;
                 BlankEMGFrames(:,KeepInd)=vEMGMat;
@@ -597,7 +601,7 @@ end
 
 %% Plotting, Debugging 
 close all
-Lbl='Occ';
+Lbl='RC';
 PlotTrial=[ 11 11];
 PlotTime=[ 14 15];
 % PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
@@ -803,57 +807,65 @@ for iTest=1:length(TestFolders)
     end
 end
 
-%%DroppedFrames Features
+%% DroppedFrames Features
 
-Lbl='Occ';
-ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(Lbl));
+ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
+ExpstoAna=ExpLabels([2,3,4]);
 
-
-for iTest=1:length(TestFolders)
-    TestStruct=sprintf("%s_test",TestFolders{iTest});
-    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+for iExp =1:length(ExpstoAna)
     
-    TrialNum=S.(TestStruct).(ExpLabel).NumofTrials;
-    BlankLength=S.(AnaStruct).AnaPar.BlankLength;
+    ExpLabel=ExpstoAna(iExp);
 
-    for iTrial=1:TrialNum
-        TrialLabel=sprintf('Trial_%d',iTrial);
+    for iTest=1:length(TestFolders)
+        TestStruct=sprintf("%s_test",TestFolders{iTest});
+        AnaStruct=sprintf("%s_ana",TestFolders{iTest});
 
-        for iFilt=1:length(S.(AnaStruct).AnaPar.FiltLabels)
-            FiltLabel=S.(AnaStruct).AnaPar.FiltLabels{iFilt};
+        TrialNum=S.(TestStruct).(ExpLabel).NumofTrials;
+        BlankLength=S.(AnaStruct).AnaPar.BlankLength;
 
-            DroppedEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedEMG;
-            [~,FrameNum]=size(DroppedEMG);
+        for iTrial=1:TrialNum
+            TrialLabel=sprintf('Trial_%d',iTrial);
 
-            MAV_vEMG=mean(abs(DroppedEMG)); 
+            if isfield(S.(TestStruct).(ExpLabel), 'TrialsPW')
 
-            MedFreq_vEMG=zeros(1,FrameNum);
-            MeanFreq_vEMG=zeros(1,FrameNum);
-            Ssc=zeros(1,FrameNum);
-            Zc=zeros(1,FrameNum);
+                TrialsPW=S.(TestStruct).(ExpLabel).TrialsPW;
+                dropped=S.(TestStruct).(ExpLabel).dropped;
+
+                if dropped==1 && TrialsPW(iTrial) ~= 0
+
+                    DroppedEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedEMG;
+                    [~,FrameNum]=size(DroppedEMG);
+
+                    MAV_vEMG=mean(abs(DroppedEMG)); 
+
+                    MedFreq_vEMG=zeros(1,FrameNum);
+                    MeanFreq_vEMG=zeros(1,FrameNum);
+                    Ssc=zeros(1,FrameNum);
+                    Zc=zeros(1,FrameNum);
 
 
-            for iFrame=1:FrameNum
+                    for iFrame=1:FrameNum
 
-                [MedFreq_vEMG(iFrame), MeanFreq_vEMG(iFrame)]=MedMeanFreq(DroppedEMG(:,iFrame),fs);
-                Ssc(iFrame)=NumSsc(DroppedEMG(:,iFrame));
-                Zc(iFrame)=NumZc(DroppedEMG(:,iFrame));
+                        [MedFreq_vEMG(iFrame), MeanFreq_vEMG(iFrame)]=MedMeanFreq(DroppedEMG(:,iFrame),fs);
+                        Ssc(iFrame)=NumSsc(DroppedEMG(:,iFrame));
+                        Zc(iFrame)=NumZc(DroppedEMG(:,iFrame));
 
+                    end
+
+                    MAV_vEMG(isnan(MAV_vEMG))=0;
+                    MedFreq_vEMG(isnan(MedFreq_vEMG))=0;
+                    MeanFreq_vEMG(isnan(MeanFreq_vEMG))=0;
+                    Ssc(isnan(Ssc))=0;
+                    Zc(isnan(Zc))=0;
+
+                   S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat=...
+                       table(MAV_vEMG',MedFreq_vEMG',MeanFreq_vEMG',Ssc',Zc',...
+                       'VariableNames',["MAV_vEMG" "MedFreq_vEMG" "MeanFreq_vEMG" "Ssc" "Zc"]);
+                end
             end
-
-            MAV_vEMG(isnan(MAV_vEMG))=0;
-            MedFreq_vEMG(isnan(MedFreq_vEMG))=0;
-            MeanFreq_vEMG(isnan(MeanFreq_vEMG))=0;
-            Ssc(isnan(Ssc))=0;
-            Zc(isnan(Zc))=0;
-
-           S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat=...
-               table(MAV_vEMG',MedFreq_vEMG',MeanFreq_vEMG',Ssc',Zc',...
-               'VariableNames',["MAV_vEMG" "MedFreq_vEMG" "MeanFreq_vEMG" "Ssc" "Zc"]);
-        end                 
+        end
     end
 end
-
 
 %% plotting EMG features
 clear vEMGFeat
@@ -945,7 +957,7 @@ end
 exp_lbl='Occ';
 ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
 fs=S.(TestStruct).ExpPar.fs;
-stim_freq=S.(TestStruct).ExpPar.freq_list(1);
+stim_freq=S.(TestStruct).ExpPar.stim_freq;
 st=1/fs;
 tg=S.(TestStruct).(ExpLabel).TargetProfile2;
 % Target=[ linspace(0,0,ceil(5*fs)+1) linspace(0,1,ceil(5*fs)) linspace(1,1,ceil(5*fs))];

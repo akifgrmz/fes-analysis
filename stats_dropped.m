@@ -2,7 +2,7 @@
 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" ];
+TestFolders=["jan7" "jan11" "jan12" "feb27"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders(iTest));
@@ -64,8 +64,8 @@ for iFeat=1:1
         Target=mean(S.(AnaStruct).(ExpLabel).TargetFrames)';
         Voli_NormCoeff(:,iTest)=S.(AnaStruct).(ExpLabel).Voli_NormCoeff;
         
-%         TrialLabel=sprintf('Trial_%d',IndTrials(1));
-%         DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
+        TrialLabel=sprintf('Trial_%d',IndTrials(1));
+        DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
 
         for iVoli=1:length(VoliMVCLevels)
             for iStim=1:length(StimMVCLevels)
