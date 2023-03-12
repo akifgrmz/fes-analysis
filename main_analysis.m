@@ -4,19 +4,20 @@
 %% Run tidy_data if you have not yet done so 
 % 
 %
-clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27"];
 
+clear all
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7"];
 for iTest=1:length(TestFolders)
     tidy_data(TestFolders(iTest));
 end
+
 %
 %
 %% Data Inject 
 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" ];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" ];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
@@ -24,6 +25,7 @@ end
 
 S = load_test(TestFolders,TestFiles);
 clear iTest
+
 %% Defining Initial Parameters
 
 for iTest=1:length(TestFolders)
@@ -361,7 +363,7 @@ for iTest=1:length(TestFolders)
 end
 
 
-%%Extracting Dropped Frames 
+%% Extracting Dropped Frames 
 clc
 ExpTable=S.(AnaStruct).AnaPar.ExpTable;
 VarNames=string(ExpTable.Properties.VariableNames);
@@ -475,13 +477,14 @@ for iTest=1:length(TestFolders)
     for iExp=1:length(ExpstoAna)
         ExpLabel=ExpstoAna(iExp);
         NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
+        dropped=S.(TestStruct).(ExpLabel).dropped;
 
         if isfield(S.(TestStruct).(ExpLabel), 'TrialsPW')
             
             TrialsPW=S.(TestStruct).(ExpLabel).TrialsPW;
-            dropped=S.(TestStruct).(ExpLabel).dropped;
             
         end
+        
         for iTrial=1:NumofTrials
             TrialLabel=sprintf('Trial_%d',iTrial);
             clear T Time TimeFrames x_frames
@@ -714,16 +717,16 @@ N = filtord(lpFilt)
 %
 clear FiltFramesInd
 fs=S.(TestStruct).ExpPar.fs;
-ExptoAnaInd=[2,4,5];
-FiltFramesInd{ExptoAnaInd(1)}=floor([5.5*stim_freq: 10*stim_freq]);
-FiltFramesInd{ExptoAnaInd(2)}=floor([5.5*stim_freq: 15*stim_freq]);
-FiltFramesInd{ExptoAnaInd(3)}=floor([5.5*stim_freq: 35*stim_freq]);
+ExpstoAna=ExpLabels([2,4]);
+
+% FiltFramesInd{ExptoAnaInd(1)}=floor([5.5*stim_freq: 10*stim_freq]);
+% FiltFramesInd{ExptoAnaInd(2)}=floor([5.5*stim_freq: 15*stim_freq]);
 
 for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
     
-    ExptoAna=S.(TestStruct).ExpPar.ExpLabels([2,4,5]);
+    ExptoAna=S.(TestStruct).ExpPar.ExpLabels([2,4]);
     for iExp=1:length(ExptoAna)
         ExpLabel=ExptoAna{iExp};
         
@@ -807,7 +810,7 @@ for iTest=1:length(TestFolders)
     end
 end
 
-%% DroppedFrames Features
+%%DroppedFrames Features
 
 ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
 ExpstoAna=ExpLabels([2,3,4]);
@@ -831,7 +834,7 @@ for iExp =1:length(ExpstoAna)
                 TrialsPW=S.(TestStruct).(ExpLabel).TrialsPW;
                 dropped=S.(TestStruct).(ExpLabel).dropped;
 
-                if dropped==1 && TrialsPW(iTrial) ~= 0
+                if dropped==1 %&& TrialsPW(iTrial) ~= 0
 
                     DroppedEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedEMG;
                     [~,FrameNum]=size(DroppedEMG);
@@ -862,6 +865,68 @@ for iExp =1:length(ExpstoAna)
                        table(MAV_vEMG',MedFreq_vEMG',MeanFreq_vEMG',Ssc',Zc',...
                        'VariableNames',["MAV_vEMG" "MedFreq_vEMG" "MeanFreq_vEMG" "Ssc" "Zc"]);
                 end
+            end
+        end
+    end
+end
+
+
+%%Target profile normalization
+exp_lbl='Occ';
+ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
+fs=S.(TestStruct).ExpPar.fs;
+stim_freq=S.(TestStruct).ExpPar.stim_freq;
+st=1/fs;
+tg=S.(TestStruct).(ExpLabel).TargetProfile2;
+% Target=[ linspace(0,0,ceil(5*fs)+1) linspace(0,1,ceil(5*fs)) linspace(1,1,ceil(5*fs))];
+% Ind= 1:length(Target);
+TargetFrames=S.(AnaStruct).(ExpLabel).TargetFrames;
+FiltLabel="Unfilt";
+
+for iTest=1:length(TestFolders)
+    TestStruct=sprintf("%s_test",TestFolders{iTest});
+    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+    
+    TrialNum=S.(TestStruct).(ExpLabel).NumofTrials;
+    BlankLength=S.(AnaStruct).AnaPar.BlankLength;
+    for iTrial=1:TrialNum
+        TrialLabel=sprintf('Trial_%d',iTrial);
+
+        BegofFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
+        FrameNum=length(BegofFrames);
+        
+        
+        for iFilt=1:length(S.(AnaStruct).AnaPar.FiltLabels)
+            FiltLabel=S.(AnaStruct).AnaPar.FiltLabels{iFilt};
+            
+            DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
+            KeepInd=setdiff(1:FrameNum-1,DroppedFrames);
+            TargetFrames=S.(AnaStruct).(ExpLabel).TargetFrames(:,KeepInd);  % excluding dropped frames 
+
+            Target=mean(TargetFrames);
+
+            MAV_vEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('MAV_vEMG');
+            MAV_MWaves=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('MAV_MWaves');
+
+            Norm_MAV_vEMG=MAV_vEMG./Target';
+            Norm_MAV_vEMG(isinf(Norm_MAV_vEMG))=0;
+            Norm_MAV_vEMG(isnan(Norm_MAV_vEMG))=0;
+            
+            Norm_MAV_MWaves=MAV_MWaves./Target';
+            Norm_MAV_MWaves(isinf(Norm_MAV_MWaves))=0;
+            Norm_MAV_MWaves(isnan(Norm_MAV_MWaves))=0;
+            
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('Norm_MAV_MWaves')=Norm_MAV_MWaves;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('Norm_MAV_vEMG')=Norm_MAV_vEMG;
+
+            if ~isempty(DroppedFrames)
+                MAV_vEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.('MAV_vEMG');
+                TargetFrames=S.(AnaStruct).(ExpLabel).TargetFrames(:,DroppedFrames); 
+                Target=mean(TargetFrames);
+
+                Norm_MAV_vEMG=MAV_vEMG./Target';
+                S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.('Norm_MAV_vEMG')=Norm_MAV_vEMG;
+
             end
         end
     end
@@ -953,66 +1018,7 @@ end
 
 
 
-%% Target profile normalization
-exp_lbl='Occ';
-ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
-fs=S.(TestStruct).ExpPar.fs;
-stim_freq=S.(TestStruct).ExpPar.stim_freq;
-st=1/fs;
-tg=S.(TestStruct).(ExpLabel).TargetProfile2;
-% Target=[ linspace(0,0,ceil(5*fs)+1) linspace(0,1,ceil(5*fs)) linspace(1,1,ceil(5*fs))];
-% Ind= 1:length(Target);
-TargetFrames=S.(AnaStruct).(ExpLabel).TargetFrames;
-FiltLabel="Unfilt";
 
-for iTest=1:length(TestFolders)
-    TestStruct=sprintf("%s_test",TestFolders{iTest});
-    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
-    
-    TrialNum=S.(TestStruct).(ExpLabel).NumofTrials;
-    BlankLength=S.(AnaStruct).AnaPar.BlankLength;
-    for iTrial=1:TrialNum
-        TrialLabel=sprintf('Trial_%d',iTrial);
-
-        BegofFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
-        FrameNum=length(BegofFrames);
-        
-        
-        for iFilt=1:length(S.(AnaStruct).AnaPar.FiltLabels)
-            FiltLabel=S.(AnaStruct).AnaPar.FiltLabels{iFilt};
-            
-            DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
-            KeepInd=setdiff(1:FrameNum-1,DroppedFrames);
-            TargetFrames=S.(AnaStruct).(ExpLabel).TargetFrames(:,KeepInd);  % excluding dropped frames 
-
-            Target=mean(TargetFrames);
-
-            MAV_vEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('MAV_vEMG');
-            MAV_MWaves=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('MAV_MWaves');
-
-            Norm_MAV_vEMG=MAV_vEMG./Target';
-            Norm_MAV_vEMG(isinf(Norm_MAV_vEMG))=0;
-            Norm_MAV_vEMG(isnan(Norm_MAV_vEMG))=0;
-            
-            Norm_MAV_MWaves=MAV_MWaves./Target';
-            Norm_MAV_MWaves(isinf(Norm_MAV_MWaves))=0;
-            Norm_MAV_MWaves(isnan(Norm_MAV_MWaves))=0;
-            
-            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('Norm_MAV_MWaves')=Norm_MAV_MWaves;
-            S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('Norm_MAV_vEMG')=Norm_MAV_vEMG;
-
-            if ~isempty(DroppedFrames)
-                MAV_vEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.('MAV_vEMG');
-                TargetFrames=S.(AnaStruct).(ExpLabel).TargetFrames(:,DroppedFrames); 
-                Target=mean(TargetFrames);
-
-                Norm_MAV_vEMG=MAV_vEMG./Target';
-                S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.('Norm_MAV_vEMG')=Norm_MAV_vEMG;
-
-            end
-        end
-    end
-end
 %% Plot Dropped vs Filtered
 clear IndTrials vMVC sMVC IndS IndV DroppedFramesIndexFixed DroppedFrames UnfiltFeat FiltMAV vEMGFeat DroppedFeat DroppedFramesIndexFixed DroppedFrameInd x
 close all 

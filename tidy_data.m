@@ -77,7 +77,7 @@ end
 
 %
 % Here, check if the variable exist and add if does not
-% Usually experiments before feb27 need this part 
+%  experiments before feb27 need this part 
 %
 
 
@@ -149,7 +149,7 @@ if isfield(S.(ExpStruct).RCCurveTrials, 'PWTrials')
     S.(ExpStruct).RCCurveTrials.TrialsPW=TrialsPW;
 
 end
-    
+   
 
 % Stim Range for trials : might change for future trials
 
