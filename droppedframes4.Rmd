@@ -1,0 +1,95 @@
+---
+title: "Dropped_Stats"
+output: html_document
+date: "2023-01-27"
+desc: This file is created for analysis of dropped frames versus vEMG for EMBC2023
+# theme: darkly
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries}
+library(magrittr); library(here); library(janitor)
+library(readxl); library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r Data Inject } 
+
+df <- read_csv("dropped_stats2.csv",show_col_types = FALSE)
+summary(df)
+df
+
+df<-df%>%mutate(Filt_Type = as.factor(Filt_Type),
+                   Repeat = as.factor(Repeat),
+                     Feat = as.factor(Feat),
+                     Test = as.factor(Test),
+                     MVC_Voli = as.factor(MVC_Voli),
+                     MVC_Stim = as.factor(MVC_Stim),
+                     Frame = as.integer(Frame),
+                     Drp_Order = as.factor(Drp_Order))
+```
+# Mean percent difference of filters based on norm. values:
+
+$\sum_{i=1}^{I=10} \frac{1}{I}\frac{MAV_{D,i}-MAV_{F,i}}{MAV_{D,i}}\times100$
+
+```{r}
+#result_df <- aggregate(dt_means$Filt_Mean_Val, by = list(Filt_Type = dt_means$Filt_Type, MVC_Voli = dt_means$MVC_Voli, MVC_Stim = dt_means$MVC_Stim), 
+#                         Filt_Type <- as.character(unique(dt_means$Filt_Type[dt_means$Filt_Mean_Val %in% x]))
+ #                        reference_value <- ref_dt$Filt_Mean_Val%>% group_by(Filt_Type)
+#                         rmse(x, reference = reference_value)
+#})
+
+```
+
+```{r}
+
+rmse <- function(x, reference) {
+  sqrt(mean((x - reference)^2))
+}
+
+percent_diff <- function( mav_f, mav_d) {
+  mean(mav_f-mav_d ) / mav_d * 100
+}
+
+dt_means <- aggregate(dt$Norm_Val, by = list(Trial = dt$Trial, Test = dt$Test, Filt_Type = dt$Filt_Type, MVC_Voli = dt$MVC_Voli, MVC_Stim = dt$MVC_Stim,Dropped = dt$Dropped), mean)
+dt_means <- dt_means %>% rename(Filt_Mean_Val = x)
+
+ref_dt <-dt_means %>% filter(Filt_Type=='Dropped')
+
+dt_means<- dt_means%>%group_by(Filt_Type ) %>% mutate(percent_diff = percent_diff(Filt_Mean_Val,mav_d=filter(dt_means,Filt_Type=='Dropped') $ Filt_Mean_Val))%>%
+  group_by(Filt_Type )%>% mutate(rmse = rmse(Filt_Mean_Val,reference=filter(dt_means,Filt_Type=='Dropped') $ Filt_Mean_Val))
+dt_means
+
+```
+
+
+```{r boxplots}
+plot_df<-filter(df,Test==c('mar7'),!is.na(Drp_Order),)
+ggplot(plot_df ,aes(x = Frame, y = Frame_Val, color = Drp_Order)) +
+  geom_point(stat = "identity", position=position_dodge()) +
+    geom_smooth(method = "loess")+
+  facet_wrap(~MVC_Voli)+
+  labs(x = "Frames",
+       y = "Norm MAV",
+       title = "Mean Percent Difference from Dropped MAV")+
+  theme_bw()
+```
+
+```{r Quick Look}
+
+ ggplot(dt, aes(x = "", y = Norm_Val)) + geom_violin() + geom_boxplot(width = 0.4) + coord_flip() + labs(x = "")
+
+```
+
+

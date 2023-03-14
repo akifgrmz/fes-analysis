@@ -1,3 +1,5 @@
+%% stats_dropped2
+
 %% Stats with dropped frames
 clc
 clear all
