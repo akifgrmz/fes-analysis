@@ -56,7 +56,6 @@ This table is created using MATLAB making sure that there is no NAN, missing or 
 
 ```{r}
 
-
 rmse <- function(x, reference) {
   sqrt(mean((x - reference)^2))
 }
