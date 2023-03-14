@@ -16,7 +16,7 @@ end
 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" ];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
@@ -365,7 +365,7 @@ end
 clc
 ExpTable=S.(AnaStruct).AnaPar.ExpTable;
 VarNames=string(ExpTable.Properties.VariableNames);
-VarNames=VarNames(2:2) ;% excluding MVC and Fatigue Trials
+VarNames=VarNames(2:3) ;% excluding MVC and Fatigue Trials
 
 for iExp=1:length(VarNames)
     VarName=VarNames(iExp);
