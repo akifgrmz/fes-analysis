@@ -75,15 +75,20 @@ dt_means
 
 
 ```{r boxplots}
+pdf("figures/4dropped.pdf")
+
 plot_df<-filter(df,Test==c('mar7'),!is.na(Drp_Order),)
-ggplot(plot_df ,aes(x = Frame, y = Frame_Val, color = Drp_Order)) +
+ggplot(plot_df ,aes(x = Frame, y = Norm_Val, color = Drp_Order)) +
   geom_point(stat = "identity", position=position_dodge()) +
     geom_smooth(method = "loess")+
   facet_wrap(~MVC_Voli)+
   labs(x = "Frames",
        y = "Norm MAV",
-       title = "Mean Percent Difference from Dropped MAV")+
+       title = "Droping 4 Consecutive Frames",
+       subtitle = " Faceted by % volitional levels ")+
   theme_bw()
+
+dev.off()
 ```
 
 ```{r Quick Look}
