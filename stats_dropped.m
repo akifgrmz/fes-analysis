@@ -16,7 +16,7 @@ TestStruct=sprintf("%s_test",TestFolders{iTest});
 PlotRange1=[ 5.4 10]; 
 PlotRange2=[ 10 15.2]; 
 VoliMVCLevels=[10 20 30 40 ];
-StimMVCLevels=[ 0];
+StimMVCLevels=[ 0 10 20 30];
 
 stim_freq=S.(TestStruct).ExpPar.FreqList(1);
 PlotRangeFrames1=PlotRange1*stim_freq;  
@@ -34,7 +34,7 @@ x_frame=[];
 % Normalization coeffs for the occ trials
 sMVC=0;
 vMVC=30;
-MeanRange=[11 12];
+MeanRange=[11 14];
 MeanRangeInd=MeanRange*stim_freq;
 for iTest=1:length(TestFolders)
     AnaStruct=sprintf("%s_ana",TestFolders(iTest));
@@ -53,6 +53,9 @@ for iTest=1:length(TestFolders)
     end 
 end
 
+
+
+%
 for iFeat=1:1
     for iTest=1:length(TestFolders)
         TestStruct=sprintf("%s_test",TestFolders{iTest});
@@ -73,43 +76,40 @@ for iFeat=1:1
                     TrialLabel=sprintf('Trial_%d',IndTrials(iRep));
                     DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
                     FiltLabels=S.(AnaStruct).AnaPar.FiltLabels;
-                    DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
-
-                    DroppedFrameInd1=PlotRangeFrames1(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames1(2);
-                    DroppedFrameInd2=PlotRangeFrames2(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames2(2);
-                    DroppedFrameInd=DroppedFrameInd1+DroppedFrameInd2;
-                    DroppedFrameInd=logical(DroppedFrameInd);
-                    DroppedFramesFeat=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel)(DroppedFrameInd);
 
                     if isempty(DroppedFrames)
-                        FiltLabels=["Unfilt"];
-                        DroppedFramesFeat=[];
-                        DroppedFrames=
-                    else
+                        continue
                     end
-
                     DroppedFlag=true(length(DroppedFrames),1);
-                    for iFilt=1:length(FiltLabels)
-                        FiltLabel=FiltLabels{iFilt};
+                    for iFilt=1:length(S.(AnaStruct).AnaPar.FiltLabels)
+                        FiltLabel=S.(AnaStruct).AnaPar.FiltLabels{iFilt};
                         vEMGLabel=sprintf('%s_vEMG',FeatLabel);
+                        DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
 
-                        Feat=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.(vEMGLabel);
-                        FeatwithDropped=place_vals(DroppedFramesFeat,DroppedFrames,Feat);
+                        DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
+                        DroppedFrameInd1=PlotRangeFrames1(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames1(2);
+                        DroppedFrameInd2=PlotRangeFrames2(1)<= DroppedFrames & DroppedFrames<=PlotRangeFrames2(2);
+                        DroppedFrameInd=DroppedFrameInd1+DroppedFrameInd2;
+                        DroppedFrameInd=logical(DroppedFrameInd);
+
+                        DroppedFramesFeat(iRep,:)=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel)(DroppedFrameInd);
 
                         for iDropped=1:length(DroppedFrames(DroppedFrameInd))
                             DroppedLabel=sprintf('Dropped_%d',iDropped);
-                            DropLabel=sprintf('%d',iDropped);
+                            DropLabel=sprintf('Drop_%d',iDropped);
 
                             DroppedInd=DroppedFrames(iDropped);
                             PlotInd=[-MarginFromDropped+DroppedInd:DroppedInd-1 DroppedInd+1:DroppedInd+MarginFromDropped];
-%                             OnesInd=ones(length(PlotInd),1);
+                            OnesInd=ones(length(PlotInd),1);
 
+                            Feat=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.(vEMGLabel);
+                            FeatwithDropped=place_vals(DroppedFramesFeat,DroppedFrames,Feat);
                             RelatedFrames=FeatwithDropped(PlotInd);
                             dp=[];
                             x_target=Target(PlotInd);
                             
                             if DroppedFlag(iDropped)
-                                RelatedFrames(end+1)=DroppedFramesFeat(iDropped); 
+                                RelatedFrames(end+1)=DroppedFramesFeat(iRep,iDropped); 
                                 dp=DroppedInd; 
                                 x_target(end+1)=Target(DroppedInd);
                             end
