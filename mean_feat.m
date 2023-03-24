@@ -1,6 +1,13 @@
 %% Mean MAV of RC Trials 
+clc
+clear all
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16"];
 
-S = load_test;
+for iTest=1:length(TestFolders)
+    TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
+end
+
+S = load_test(TestFolders,TestFiles);
 %%
 clear MAV_Mean
 exp_lbl='RC';
@@ -10,7 +17,7 @@ for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
     ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(exp_lbl);
-    stim_freq=S.(TestStruct).ExpPar.FreqList(1);
+    stim_freq=S.(TestStruct).ExpPar.stim_freq;
 
     MeanFrame=[MeanTime(1)*stim_freq MeanTime(2)*stim_freq];
     MeanRangeInd=[MeanFrame(1): MeanFrame(2)];
@@ -35,16 +42,16 @@ for iTest=1:length(TestFolders)
     MAV_Mean(:,iTest)=mean(MAV_Vals)';
 end
 
-MAV_Mean_Table=array2table(MAV_Mean,'VariableNames',[TestFolders(1),TestFolders(2),TestFolders(3)]);
+MAV_Mean_Table=array2table(MAV_Mean,'VariableNames',TestFolders);
 
 MAV_Coefs=MAV_Mean./MAV_Mean(end,:);
 
-array2table(MAV_Coefs,'VariableNames',[TestFolders(1),TestFolders(2),TestFolders(3)])
+array2table(MAV_Coefs,'VariableNames',TestFolders)
 figure
 plot(linspace(10,30,7),MAV_Coefs)
-legend([TestFolders(1),TestFolders(2),TestFolders(3)])
-xlabel('MVC')
-ylabel('Norm MAV')
+legend(TestFolders)
+xlabel('Stim only MVC on RC Trials ')
+ylabel('Norm MAV (M-Waves)')
 
 % MAV_Mean=array2table(MAV_Mean,'VariableNames',[sprintf('PW_%d',),TestFolders(2),TestFolders(3)]);
 % Normalized MAV values indicated that the normalizing the EMG signals
@@ -126,8 +133,6 @@ for iTest=1:length(TestFolders)
     legend
     hold on
     plot(vMVCVal_Reps(Ind_Reps),MAVMean_Reps(Ind_Reps),'LineWidth',2,'Color',colorcode(iTest,:),'DisplayName',TestFolders(iTest))
-
-
 end
 
 xlabel('% Voli. MVC')
@@ -135,3 +140,4 @@ ylabel('Avg MAV')
 title(sprintf('Avg MAV (constant region) with Stim=%d%% MVC',sMVC))
 grid
 xlim([0 50])
+

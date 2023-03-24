@@ -34,7 +34,6 @@ function M=load_test(FolderNames,FileName,StructNames)
         error('Enter a cell of strings that has at least length on 1 ')
     
     elseif nargin == 0
-        FolderNames=["jan7" "jan11" "jan12" ];
         
         for iFile=1:length(FolderNames)
             FileName=sprintf('%s_ana',char(FolderNames{iFile}));

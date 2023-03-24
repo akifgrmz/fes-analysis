@@ -73,28 +73,36 @@ dt_means
 
 ```
 
+```{r plots}
+tests <- c("mar7" ,"mar16")
+TestString<-""
+for (iTest in 1:length(tests)) 
+{
+  TestString<-sprintf("%s, %s",TestString, tests[iTest])
+}
 
-```{r boxplots}
-pdf("figures/4dropped.pdf")
+TestString<-sprintf("Tests: %s",TestString)
 
-plot_df<-filter(df,Test==c('mar7'),!is.na(Drp_Order),)
-ggplot(plot_df ,aes(x = Frame, y = Norm_Val, color = Drp_Order)) +
-  geom_point(stat = "identity", position=position_dodge()) +
-    geom_smooth(method = "loess")+
-  facet_wrap(~MVC_Voli)+
-  labs(x = "Frames",
+#pdf("figures/4dropped2.pdf")
+
+plot_df<-filter(df,Test==tests,!is.na(Drp_Order))
+
+ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Drp_Order)) +
+    geom_point() +
+    geom_line(data= filter(df,Test==tests,Repeat=="Rep_1",MVC_Stim!="Stim_0%",Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*3, color = "Target (a.u.)")) +
+    geom_smooth(method = "loess", se=F)+
+    facet_wrap(MVC_Stim~MVC_Voli)+
+    labs(x = "Frames",
        y = "Norm MAV",
        title = "Droping 4 Consecutive Frames",
-       subtitle = " Faceted by % volitional levels ")+
-  theme_bw()
+       subtitle = TestString)
 
-dev.off()
+#dev.off()
 ```
 
 ```{r Quick Look}
 
- ggplot(dt, aes(x = "", y = Norm_Val)) + geom_violin() + geom_boxplot(width = 0.4) + coord_flip() + labs(x = "")
+ggplot(df, aes(x = "", y = Norm_Val)) + geom_violin() + geom_boxplot(width = 0.4) + coord_flip() + labs(x = "")
 
 ```
-
 

@@ -3,7 +3,7 @@
 %% Stats with dropped frames
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7"];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders(iTest));
@@ -110,8 +110,8 @@ for iFeat=1:1
 
 
                         g_filt(:)=string(FiltLabel);
-                        g_voli(:)=sprintf("%d%%",(VoliMVCLevels(iVoli)));
-                        g_stim(:)=sprintf("%d%%",(StimMVCLevels(iStim)));
+                        g_voli(:)=sprintf("Voli_%d%%",(VoliMVCLevels(iVoli)));
+                        g_stim(:)=sprintf("Stim_%d%%",(StimMVCLevels(iStim)));
                         g_test(:)=string(TestFolders(iTest));
                         g_feattype(:)=string(FeatLabel);
                         g_rep(:)=sprintf("Rep_%d",iRep);
@@ -147,8 +147,8 @@ for iFeat=1:1
                     g_droppedorder=strings(1,lg_dropped);
 
                     g_droppedfilt(:)="Dropped";
-                    g_droppedvoli(:)=sprintf("%d%%",(VoliMVCLevels(iVoli)));
-                    g_droppedstim(:)=sprintf("%d%%",(StimMVCLevels(iStim)));
+                    g_droppedvoli(:)=sprintf("Voli_%d%%",(VoliMVCLevels(iVoli)));
+                    g_droppedstim(:)=sprintf("Stim_%d%%",(StimMVCLevels(iStim)));
                     g_droppedtest(:)=string(TestFolders(iTest));
                     g_droppedfeattype(:)=string(FeatLabel);
                     g_droppedrep(:)=sprintf("Rep_%d",iRep);

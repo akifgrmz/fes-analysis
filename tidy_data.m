@@ -30,14 +30,17 @@ S.(ExpStruct).ExpPar.TrialsFreq=temp.handles.ExpTrials.TrialsFreq;
 S.(ExpStruct).ExpPar.stim_freq=temp.handles.freq_list(temp.handles.ExpTrials.TrialsFreq(1));
 
 
-
-
 S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
 S.(ExpStruct).FatigueTrials=temp.handles.FatigueTrials;
 S.(ExpStruct).CustomTrials=temp.handles.CustomTrials;
 S.(ExpStruct).OccTrials=temp.handles.ExpTrials;
 S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
 
+
+
+if isfield(temp.handles, 'AmpGain')
+    S.(ExpStruct).ExpPar.AmpGain=str2double(temp.handles.AmpGain);
+end
 
 %
 % Labeling
@@ -84,7 +87,7 @@ end
 % StimRange for Exps
 
 
-AmpGain=990;  % AmpGain for nondefined
+AmpGain=990;  % if AmpGain for nondefined
 % S.(ExpStruct).ExpPar.AmpGain=AmpGain;
 num_of_dropped=1;
 

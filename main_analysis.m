@@ -5,11 +5,11 @@
 % 
 %
 
-clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7"];
-for iTest=1:length(TestFolders)
-    tidy_data(TestFolders(iTest));
-end
+% clear all
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16"];
+% for iTest=1:length(TestFolders)
+%     tidy_data(TestFolders(iTest));
+% end
 
 %
 %
@@ -17,7 +17,7 @@ end
 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" ];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
@@ -363,7 +363,7 @@ for iTest=1:length(TestFolders)
 end
 
 
-%% Extracting Dropped Frames 
+%%Extracting Dropped Frames 
 clc
 ExpTable=S.(AnaStruct).AnaPar.ExpTable;
 VarNames=string(ExpTable.Properties.VariableNames);

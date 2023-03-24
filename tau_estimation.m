@@ -1,61 +1,74 @@
 %% Time constant estimation of RCCurve Trials
 % Identify tau (time constant) for a given RCCurve trial
 %% Data Inject
-clc
-clear all
-TestFolders=["jan7" "jan11" "jan12"];
-TestFiles=["jan7_test","jan11_test" "jan12_test"];
-StructstoLoad=["ExpPar","RCCurveTrials"]; 
-ExpName=["RCCurveTrials"];
-S = load_test(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2- substructures exp numbers
+% clc
+% clear all
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" ];
+% 
+% for iTest=1:length(TestFolders)
+%     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
+% end
+% 
+% StructstoLoad=["ExpPar","RCCurveTrials"]; 
+% S = load_test(TestFolders,TestFiles,StructstoLoad); % 1- folder name (string), 2- substructures exp numbers
 
 %% Filter Design
-% fs=S.(TestFiles{1}).ExpPar.fs;
 % d1 = designfilt("lowpassiir",'FilterOrder',3, ...
 %     'HalfPowerFrequency',0.01,'DesignMethod',"butter"); %,'SampleRate',fs
 % 
 % fvtool(d1)
-    LPPass = 30;
-    LPStop = 100;
-    Ap = .1;
 
-    d1 = designfilt('lowpassfir','PassbandFrequency',LPPass,...
-      'StopbandFrequency',LPStop,'PassbandRipple',Ap,...
-      'DesignMethod', 'kaiserwin','SampleRate',fs);
+LPPass = 30;
+LPStop = 100;
+Ap = .1;
+ExpLabel=["RCCurveTrials"];
+
+for iTest=1:length(TestFolders)
+    TestLabel=sprintf('%s_test',TestFolders(iTest));
     
+    fs=S.(TestLabel).ExpPar.fs;  
+
+d1 = designfilt('lowpassfir','PassbandFrequency',LPPass,...
+  'StopbandFrequency',LPStop,'PassbandRipple',Ap,...
+  'DesignMethod', 'kaiserwin','SampleRate',fs);
+    Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign=d1;
+
+end
 %% Main code 
 % This code will execute the estimation of the time constant 
 % Redo Trials must be incorporated 
 
 clc
 TauTime=.37;
-clear Tau F_mat IndTau
+clear F_mat IndTau
+ExpLabel=["RCCurveTrials"];
 
-for iTest=1:length(TestFiles)
-    TestLabel=sprintf("%s",TestFiles{iTest});
+for iTest=1:length(TestFiles) 
+    TestLabel=sprintf("%s",TestFiles(iTest));
     TestStruct=TestLabel;
-    NumofTrials=S.(TestLabel).(ExpName).NumofTrials;
+    NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
     
-    DataInd= S.(TestStruct).ExpPar.DataInd;
-    DataVars=DataInd.Properties.VariableNames;
+    DataInd= S.(TestLabel).ExpPar.DataInd;
+    DataVars=string(DataInd.Properties.VariableNames);
     iForce=(S.(TestLabel).ExpPar.DataInd.("Force"));
     iTime=(S.(TestLabel).ExpPar.DataInd.("Time"));
     
-    PWVal=S.(TestLabel).(ExpName).PWTrials;
-    TurnOffTime=S.(TestLabel).(ExpName).PWProfile(1,4);
+    PWVal=S.(TestLabel).(ExpLabel).PWTrials;
+    TurnOffTime=S.(TestLabel).(ExpLabel).StimProfile;
     AvgRangePostOff=[TurnOffTime+.5 TurnOffTime+.8];
     AvgRangePreOff=[TurnOffTime-1.5 TurnOffTime];    
-    fs=S.(TestFiles{iTest}).ExpPar.fs_calc;
+    fs=S.(TestFiles{iTest}).ExpPar.fs;
 
     for iTrial=1:NumofTrials
         TrialLabel=sprintf("Trial_%d",iTrial);
 
-        F=S.(TestLabel).(ExpName).(TrialLabel).data.(DataVars{iForce});
-        T=S.(TestLabel).(ExpName).(TrialLabel).data.(DataVars{iTime});
+        F=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Force');
+        T=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Time');
          %% 
          %There is no need for this 
          %%
-        F_filtered = filtfilt(d1,F);
+        FiltDesign=Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign;
+        F_filtered = filtfilt(FiltDesign,F);
         
         Ind= T> AvgRangePreOff(1) & T<AvgRangePreOff(2);
         PreAvgForce= mean(F_filtered(Ind));
@@ -96,16 +109,15 @@ for iTest=1:length(TestFiles)
     Redo= false(height(Tau_table),1);
     T_redo = table(Redo,'VariableNames',"Redo");
     Tau_table= [Tau_table T_redo];
-    Tau.(TestLabel).(ExpName).TimeCons.TurnOffTime=TurnOffTime;
-    Tau.(TestLabel).(ExpName).TimeCons.AvgRangePostOff=AvgRangePostOff;
-    Tau.(TestLabel).(ExpName).TimeCons.AvgRangePreOff=AvgRangePreOff;
-    Tau.(TestLabel).(ExpName).TimeCons.FiltDesign=d1;
-    Tau.(TestLabel).(ExpName).TimeCons.Taus=Taus;
-    Tau.(TestLabel).(ExpName).TimeCons.Tau_table=Tau_table;
+    Tau.(TestLabel).(ExpLabel).TimeCons.TurnOffTime=TurnOffTime;
+    Tau.(TestLabel).(ExpLabel).TimeCons.AvgRangePostOff=AvgRangePostOff;
+    Tau.(TestLabel).(ExpLabel).TimeCons.AvgRangePreOff=AvgRangePreOff;
+    Tau.(TestLabel).(ExpLabel).TimeCons.Taus=Taus;
+    Tau.(TestLabel).(ExpLabel).TimeCons.Tau_table=Tau_table;
     
     F_table=array2table(F_mat,'VariableNames',VarNames);
     clear F_mat
-    Tau.(TestLabel).(ExpName).TimeCons.F_filtered=F_table;
+    Tau.(TestLabel).(ExpLabel).TimeCons.F_filtered=F_table;
 
     %%
     % Similar algo for the redo trials
@@ -113,18 +125,19 @@ for iTest=1:length(TestFiles)
     
     clear F_mat VarNames Taus IndTau
 
-    RedoTrials=S.(TestLabel).(ExpName).RedoTrials;
-    S.(TestLabel).(ExpName).TimeConsRedo.RedoTrials=RedoTrials;
-    PWVal=S.(TestLabel).(ExpName).PWTrials;
+    RedoTrials=S.(TestLabel).(ExpLabel).RedoTrials;
+    S.(TestLabel).(ExpLabel).TimeConsRedo.RedoTrials=RedoTrials;
+    PWVal=S.(TestLabel).(ExpLabel).PWTrials
 
     if ~isempty(RedoTrials)
         for iTrial=1:length(RedoTrials)
             TrialLabel=sprintf('RedoTrial_%d',RedoTrials(iTrial));
 
-            F=S.(TestLabel).(ExpName).(TrialLabel).data(:,iForce);
-            T=S.(TestLabel).(ExpName).(TrialLabel).data(:,iTime);
+            F=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Force');
+            T=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Time');
             
-            F_filtered = filtfilt(d1,F);
+            FiltDesign=Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign;
+            F_filtered = filtfilt(FiltDesign,F);
             Ind= T> AvgRangePreOff(1) & T<AvgRangePreOff(2);
             PreAvgForce= mean(F_filtered(Ind));
             Ind= T> AvgRangePostOff(1) & T<AvgRangePostOff(2);
@@ -162,23 +175,22 @@ for iTest=1:length(TestFiles)
         Redo= true(height(Tau_table_redo),1);
         T_redo = table(Redo,'VariableNames',"Redo");
         Tau_table_redo= [Tau_table_redo T_redo];
-        Tau.(TestLabel).(ExpName).TimeConsRedo.TurnOffTime=TurnOffTime;
-        Tau.(TestLabel).(ExpName).TimeConsRedo.AvgRangePostOff=AvgRangePostOff;
-        Tau.(TestLabel).(ExpName).TimeConsRedo.AvgRangePreOff=AvgRangePreOff;
-        Tau.(TestLabel).(ExpName).TimeConsRedo.FiltDesign=d1;
-        Tau.(TestLabel).(ExpName).TimeConsRedo.Taus=Taus;
-        Tau.(TestLabel).(ExpName).TimeConsRedo.Tau_table=Tau_table_redo;
+        Tau.(TestLabel).(ExpLabel).TimeConsRedo.TurnOffTime=TurnOffTime;
+        Tau.(TestLabel).(ExpLabel).TimeConsRedo.AvgRangePostOff=AvgRangePostOff;
+        Tau.(TestLabel).(ExpLabel).TimeConsRedo.AvgRangePreOff=AvgRangePreOff;
+        Tau.(TestLabel).(ExpLabel).TimeConsRedo.Taus=Taus;
+        Tau.(TestLabel).(ExpLabel).TimeConsRedo.Tau_table=Tau_table_redo;
 
         F_table_redo=array2table(F_mat,'VariableNames',VarNames);
         clear F_mat
 
-        Tau.(TestLabel).(ExpName).TimeConsRedo.F_filtered=F_table_redo;
+        Tau.(TestLabel).(ExpLabel).TimeConsRedo.F_filtered=F_table_redo;
         F_table=[F_table F_table_redo];
         Tau_table=[Tau_table; Tau_table_redo];        
 
     end
-    Tau.(TestLabel).(ExpName).Tau_table=Tau_table;
-    Tau.(TestLabel).(ExpName).F_table=F_table;
+    Tau.(TestLabel).(ExpLabel).Tau_table=Tau_table;
+    Tau.(TestLabel).(ExpLabel).F_table=F_table;
 
 end
 
@@ -191,19 +203,19 @@ clear MeanTau StdTau
 for iTest= 1:length(TestFiles)
     TestLabel= sprintf("%s_test",TestFolders{iTest});
     
-    Tau_table=Tau.(TestLabel).(ExpName).Tau_table;
+    Tau_table=Tau.(TestLabel).(ExpLabel).Tau_table;
     RedoInd=table2array(Tau_table(:,"Redo"));
     Redo_table=Tau_table(RedoInd,"TrialNum");
     Tau_table(table2array(Redo_table),:)=Tau_table(table2array(Tau_table(:,"Redo")),:);
     Tau_table(RedoInd,:)=[];
-    Tau.(TestLabel).(ExpName).Tau_incorp=Tau_table;
+    Tau.(TestLabel).(ExpLabel).Tau_incorp=Tau_table;
 end
 
 Tau_stats=table([],[],[],[],'VariableNames',["PW","mean_Time Const","std_Time Const","Test"]);
 % Finding groups
 for iTest=1:length(TestFiles)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
-    Tau_{iTest}=Tau.(TestLabel).(ExpName).Tau_incorp;
+    Tau_{iTest}=Tau.(TestLabel).(ExpLabel).Tau_incorp;
     [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau_{iTest}(:,1));
 %     PWPoints{iTest} = renamevars(PWPoints{iTest},["PW"],[sprintf('%s PW',TestFolders{iTest})]);
     PWPoints{iTest}
@@ -254,7 +266,7 @@ for iTest=1:length(TestFiles)
     %%
     %Tau table ".csv" save
     DirLabelCSV=sprintf('%s/%s_test%s.csv',FoldLabel,FoldLabel,FileNameExtension);
-    writetable( Tau.(ChrTest).(ExpName).Tau_incorp, DirLabelCSV)
+    writetable( Tau.(ChrTest).(ExpLabel).Tau_incorp, DirLabelCSV)
     %%
     %Tau stats ".csv" save
     DirLabelCSV=sprintf('%s/%s_taustats.csv',FoldLabel,FoldLabel);
@@ -269,14 +281,14 @@ end
 clear all
 % TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
 % TestFolder=["dec5","nov28_2","nov27","nov8"];
-TestFiles=["jan11_tau_test"];
-TestFolder=["jan11"];
-ExpName=["RCCurveTrials"];
+TestFiles=["jan7_tau_test" "jan11_tau_test" "jan12_tau_test"  "feb27_tau_test" "mar7_tau_test"];
+TestFolder=["jan7" "jan11" "jan12" "feb27" "mar7"];
+ExpLabel=["RCCurveTrials"];
 K = load_test(TestFolder,TestFiles);
 
 for iTest=1:length(TestFiles)
     TestLabel=sprintf("%s_test",TestFolder{iTest});
-    Tau{iTest}=K.(TestLabel).(ExpName).Tau_table;
+    Tau{iTest}=K.(TestLabel).(ExpLabel).Tau_table;
     [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau{iTest}(:,1));
     PWPoints{iTest} = renamevars(PWPoints{iTest},["PW"],[sprintf('%s PW',TestFolder{iTest})]);
     PWPoints{iTest}
@@ -286,27 +298,28 @@ for iTest=1:length(TestFiles)
     Tau_table{iTest}= readtable(DirLabelCSV);
 
 end
-%% Plotting
-PWPoints{1:length(TestFolder)}
 
+%% Plotting
+clc
+PWPoints{1:length(TestFolder)}
 close all
-PlotPW=[ 120];
+PlotPW= [100 110 70 100 80];
 for iTest=1:length(TestFolder)
     TestLabel=sprintf('%s_test',TestFolder{iTest});
-    
-    Ind(iTest)=find( table2array(PWPoints{iTest})==PlotPW(iTest));
 
-    if isempty( Ind(iTest))
+    Ind{iTest}=find(table2array(PWPoints{iTest})==PlotPW(iTest));
+
+    if isempty( Ind{iTest})
        disp('PW value was not found') 
        return
     end
 
-    PWInd{iTest}=ID_PW{iTest} == Ind(iTest);
+    PWInd{iTest}=ID_PW{iTest} == Ind{iTest};
     Tau{iTest}(PWInd{iTest},:);
     TrialNums{iTest}=Tau{iTest}(:,'TrialNum');
 
     PWInd_F=logical([1 PWInd{iTest}']');
-    F_PW=K.(TestLabel).(ExpName).F_table(:,PWInd_F);
+    F_PW=K.(TestLabel).(ExpLabel).F_table(:,PWInd_F);
     
     %%
     %Plotting here
@@ -330,32 +343,32 @@ for iTest=1:length(TestFolder)
     lgd_str{3}= sprintf ("Trial %d",TrialVals(3));
     lgd_str{4}= sprintf ("Norm PW");
 
-    legend(lgd_str,'Location','NorthWest','AutoUpdate','off')
+    legend(lgd_str,'Location','NorthEast','AutoUpdate','off')
     xlim([5 11.9])
     grid on
     
 
     %% 
     %annotations and mark important points
-    %%
-    a = get(gca,'Children');
-    y1data = get(a, 'YData');
-    y1min=min( [min(y1data{1}) min(y1data{2}) min(y1data{3}) ]);
-    y1max=max( [max(y1data{1}) max(y1data{2}) max(y1data{3}) ]);
-    TauInd(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'Tau Ind'));
-    FiltForceVal(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'FiltForceVal'));
-    
-    PreAvgForce(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'PreAvgForce'));
-    PostAvgForce(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'PostAvgForce'));
-    AvgRangePreOff=K.(TestLabel).(ExpName).TimeCons.AvgRangePreOff;
-    AvgRangePostOff=K.(TestLabel).(ExpName).TimeCons.AvgRangePostOff;
-    TurnOffTime=K.(TestLabel).(ExpName).TimeCons.TurnOffTime;
-    
-    plot([table2array(F_PW(TauInd(:,iTest),1)) table2array(F_PW(TauInd(:,iTest),1))]',...
-        [0 FiltForceVal(1,iTest);0 FiltForceVal(2,iTest); 0 FiltForceVal(3,iTest)]','--','Color','k')
-    plot([TurnOffTime TurnOffTime]',[0 y1max]','--','Color','k')
-    plot([AvgRangePreOff(1) AvgRangePreOff(2)],[PreAvgForce(:,iTest) PreAvgForce(:,iTest)],'--','Color','k')
-    plot([AvgRangePostOff(1) AvgRangePostOff(2)],[PostAvgForce(:,iTest) PostAvgForce(:,iTest)],'--','Color','k')
+%     %%
+%     a = get(gca,'Children');
+%     y1data = get(a, 'YData');
+%     y1min=min( [min(y1data{1}) min(y1data{2}) min(y1data{3}) ]);
+%     y1max=max( [max(y1data{1}) max(y1data{2}) max(y1data{3}) ]);
+% %     TauInd(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'Tau Ind'));
+% %     FiltForceVal(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'FiltForceVal'));
+%     
+%     PreAvgForce(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'PreAvgForce'));
+%     PostAvgForce(:,iTest)=table2array(Tau{iTest}(PWInd{iTest},'PostAvgForce'));
+%     AvgRangePreOff=K.(TestLabel).(ExpName).TimeCons.AvgRangePreOff;
+%     AvgRangePostOff=K.(TestLabel).(ExpName).TimeCons.AvgRangePostOff;
+%     TurnOffTime=K.(TestLabel).(ExpName).TimeCons.TurnOffTime;
+%     
+% %     plot([table2array(F_PW(TauInd(:,iTest),1)) table2array(F_PW(TauInd(:,iTest),1))]',...
+% %         [0 FiltForceVal(1,iTest);0 FiltForceVal(2,iTest); 0 FiltForceVal(3,iTest)]','--','Color','k')
+%     plot([TurnOffTime TurnOffTime]',[0 y1max]','--','Color','k')
+%     plot([AvgRangePreOff(1) AvgRangePreOff(2)],[PreAvgForce(:,iTest) PreAvgForce(:,iTest)],'--','Color','k')
+%     plot([AvgRangePostOff(1) AvgRangePostOff(2)],[PostAvgForce(:,iTest) PostAvgForce(:,iTest)],'--','Color','k')
 end
 
 
