@@ -54,11 +54,9 @@ xlabel('Stim only MVC on RC Trials ')
 ylabel('Norm MAV (M-Waves)')
 
 % MAV_Mean=array2table(MAV_Mean,'VariableNames',[sprintf('PW_%d',),TestFolders(2),TestFolders(3)]);
-% Normalized MAV values indicated that the normalizing the EMG signals
-% among participants are hard to model. 
-% But the sample is 3; the third one might an outlier.
 
-%% Mean MAV of Occ Trials 
+
+%Mean MAV of Occ Trials 
 clc
 exp_lbl='Occ';
 VoliLevels=[10 20 30 40];

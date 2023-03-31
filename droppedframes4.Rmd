@@ -10,7 +10,7 @@ desc: This file is created for analysis of dropped frames versus vEMG for EMBC20
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r including libraries}
+```{r including libraries, display =FALSE}
 library(magrittr); library(here); library(janitor)
 library(readxl); library(tidyverse)
 library(rmdformats)
@@ -27,8 +27,13 @@ library(ggplot2)
 ```{r Data Inject } 
 
 df <- read_csv("dropped_stats2.csv",show_col_types = FALSE)
+df<-df %>% mutate(Drp_Order = replace_na(Drp_Order, 0))
+
 summary(df)
 df
+```
+
+```{r data frame modifications }
 
 df<-df%>%mutate(Filt_Type = as.factor(Filt_Type),
                    Repeat = as.factor(Repeat),
@@ -38,10 +43,225 @@ df<-df%>%mutate(Filt_Type = as.factor(Filt_Type),
                      MVC_Stim = as.factor(MVC_Stim),
                      Frame = as.integer(Frame),
                      Drp_Order = as.factor(Drp_Order))
+
+df<-df%>%mutate(Drp_Order=recode(Drp_Order,
+                                '1' = '1st_Dropped',
+                                '2' = '2nd_Dropped',
+                                '3' = '3rd_Dropped',
+                                '4' = '4th_Dropped',
+                                '0' = 'NonDropped'))
+
+
+summary(df)
 ```
+
 # Mean percent difference of filters based on norm. values:
 
 $\sum_{i=1}^{I=10} \frac{1}{I}\frac{MAV_{D,i}-MAV_{F,i}}{MAV_{D,i}}\times100$
+
+
+
+```{r Plotting the dropped-frames }
+
+tests <- c("mar7","mar16")
+filt='GS'
+reps=c('Rep_1','Rep_2','Rep_3')
+
+TestString<-""
+for (iTest in 1:length(tests)) 
+{
+  TestString<-sprintf("%s, %s",TestString, tests[iTest])
+}
+
+RepString<-""
+for (iTest in 1:length(reps)) 
+{
+  RepString<-sprintf("%s, %s",RepString, reps[iTest])
+}
+
+SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
+pdf("figures/4dropped3.pdf")
+
+plot_df<-filter(df, Test==tests & Repeat==reps & Filt_Type== filt | Filt_Type=='Dropped')
+
+ggplot(plot_df, aes(x = Frame, y = Frame_Val, color = Drp_Order)) +
+    geom_point() +
+    geom_line(data= filter(df,Test==tests & Repeat=="Rep_1"& Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
+    geom_segment(aes(x = 350, y = 1, xend = 525, yend = 1, linetype='dashed', color='Avg. 0-Stim Level'))+
+    geom_segment(aes(x = 525, y = 0.01, xend = 525, yend = 4,  linetype='dashed',color='Stim Turn Off'))+
+    geom_smooth(method = "loess", se=F)+
+    #facet_wrap(MVC_Stim~MVC_Voli)+
+    labs(x = "Frames",
+       y = "Normalized MAV",
+       title = "Droping 4 Consecutive Frames",
+       subtitle = SubTitleString)+
+    ylim(0,0.0003)
+
+dev.off()
+#geom_vline(xintercept = 525, linetype="dashed", color = "blue", size=0.5,color ='stim off')+
+#plot_df<-filter(df,Test==tests & Filt_Type== 'Unfilt' | Filt_Type=='Dropped')
+
+```
+
+
+```{r deviding the dropped frames in two way cat.  }
+tests <- c("mar7", "mar16")
+filt='GS'
+reps=c('Rep_1','Rep_2','Rep_3')
+
+df<-df%>%mutate(Divide_Cat=recode(Drp_Order,
+                                '1st_Dropped' = '1st_Half',
+                                '2nd_Dropped' = '1st_Half',
+                                '3rd_Dropped' = '2nd_Half',
+                                '4th_Dropped' = '2nd_Half'))
+
+TestString<-""
+for (iTest in 1:length(tests)) 
+{
+  TestString<-sprintf("%s, %s",TestString, tests[iTest])
+}
+
+RepString<-""
+for (iTest in 1:length(reps)) 
+{
+  RepString<-sprintf("%s, %s",RepString, reps[iTest])
+}
+
+SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
+
+plot_df<-filter(df, Test==tests & Repeat==reps& Filt_Type== filt | Filt_Type=='Dropped')
+
+ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Divide_Cat)) +
+    geom_point() +
+    geom_line(data= filter(df,Test==tests & Repeat=="Rep_1"& Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
+    geom_segment(aes(x = 350, y = 1, xend = 525, yend = 1, linetype='dashed', color='Avg. 0-Stim Level'))+
+    geom_segment(aes(x = 525, y = 0.01, xend = 525, yend = 4,  linetype='dashed',color='Stim Turn Off'))+
+    geom_smooth(method = "loess", se=F)+
+    facet_wrap(MVC_Stim~MVC_Voli)+
+    labs(x = "Frames",
+       y = "Normalized MAV",
+       title = "Droping 4 Consecutive Frames",
+       subtitle = SubTitleString)+
+    ylim(0,7)
+
+#dev.off()
+```
+
+
+```{r plotting with boxplots}
+
+tests <- c("mar16","mar7")
+filt='GS'
+reps=c('Rep_1','Rep_2','Rep_3')
+
+TestString<-""
+for (iTest in 1:length(tests)) 
+{
+  TestString<-sprintf("%s, %s",TestString, tests[iTest])
+}
+
+RepString<-""
+for (iTest in 1:length(reps)) 
+{
+  RepString<-sprintf("%s, %s",RepString, reps[iTest])
+}
+
+median_cl_boot <- function(x, conf = 0.95) {
+    lconf <- (1 - conf)/2
+    uconf <- 1 - lconf
+    require(boot)
+    bmedian <- function(x, ind) median(x[ind])
+    bt <- boot(x, bmedian, 1000)
+    bb <- boot.ci(bt, type = "perc")
+    data.frame(y = median(x), ymin = quantile(bt$t, lconf), ymax = quantile(bt$t, 
+        uconf))
+}
+
+SubTitleString<-sprintf("Tests: %s | Repeats: %s |  Filter for NonDropped: %s | 350<=Frames<=525" ,TestString,RepString,filt)
+
+plot_df<-filter(df, Test==tests & Repeat==reps & Frame <= 525 &  Frame >= 350 & Filt_Type==filt | Filt_Type=='Dropped' )
+
+ggplot(data = plot_df, aes(x = Drp_Order , y = Norm_Val, color = Drp_Order)) + 
+  geom_boxplot(notch = TRUE) +
+  #geom_segment(aes(x = "NonDropped", y = 1, xend = "4th_Dropped", yend = 1,  color='Avg. 0-Stim Level'))+
+  #geom_smooth(method = "loess", se=F)+
+  facet_wrap(MVC_Stim~MVC_Voli)+
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar") + 
+  stat_summary(fun.y = mean, geom = "point")+
+  #stat_summary(fun.data = median_cl_boot, geom = "errorbar", 
+  #colour = "red") + stat_summary(fun.y = median, geom = "point", colour = "red")
+  labs(x = "Frames",
+       y = "Normalized MAV",
+       title = "Comparing Dropped Frames using BoxPlots",
+       subtitle = SubTitleString)+
+  ylim(0,4)
+```
+
+```{r plotting with boxplots}
+
+tests <- c("mar16","mar7")
+filt='GS'
+reps=c('Rep_1','Rep_2','Rep_3')
+
+TestString<-""
+for (iTest in 1:length(tests)) 
+{
+  TestString<-sprintf("%s, %s",TestString, tests[iTest])
+}
+
+RepString<-""
+for (iTest in 1:length(reps)) 
+{
+  RepString<-sprintf("%s, %s",RepString, reps[iTest])
+}
+
+median_cl_boot <- function(x, conf = 0.95) {
+    lconf <- (1 - conf)/2
+    uconf <- 1 - lconf
+    require(boot)
+    bmedian <- function(x, ind) median(x[ind])
+    bt <- boot(x, bmedian, 1000)
+    bb <- boot.ci(bt, type = "perc")
+    data.frame(y = median(x), ymin = quantile(bt$t, lconf), ymax = quantile(bt$t, 
+        uconf))
+}
+
+SubTitleString<-sprintf("Tests: %s | Repeats: %s |  Filter for NonDropped: %s | 350<=Frames<=525" ,TestString,RepString,filt)
+
+plot_df<-filter(df, Test==tests & Repeat==reps & Frame <= 525 &  Frame >= 350 & Filt_Type==filt | Filt_Type=='Dropped' )
+
+ggplot(data = plot_df, aes(x = Divide_Cat , y = Norm_Val, color = Divide_Cat)) + 
+  geom_boxplot(notch = TRUE) +
+  #geom_segment(aes(x = "NonDropped", y = 1, xend = "2nd_Half", yend = 1,  color='Avg. 0-Stim Level'))+
+  #geom_smooth(method = "loess", se=F)+
+  facet_wrap(~MVC_Voli)+
+  stat_summary(fun.data = mean_cl_boot, geom = "errorbar") + 
+  stat_summary(fun.y = mean, geom = "point")+
+  #stat_summary(fun.data = median_cl_boot, geom = "errorbar", 
+  #colour = "red") + stat_summary(fun.y = median, geom = "point", colour = "red")
+  labs(x = "Frames",
+       y = "Normalized MAV",
+       title = "Comparing Dropped Frames using BoxPlots",
+       subtitle = SubTitleString)+
+  ylim(0,4)
+```
+
+
+```{r Stats: Linear Model }
+
+filt_variables<- filter(test_jan7, Filt_Type==c('Dropped', 'Comb' ,'GS'))
+model_one <- lm(Norm_Val ~ Filt_Type, data = filt_variables) 
+
+tidy(model_one, conf.int = 0.90) %>% select(term, estimate, std.error,
+conf.low, conf.high, p.value) %>% kable(dig = 2)
+
+glance(model_one) %>% select(r.squared) %>% kable(digits = 3)
+
+model_one <- lm(Norm_Val ~ Filt_Type, data = filt_variables) 
+
+```
+
+
 
 ```{r}
 #result_df <- aggregate(dt_means$Filt_Mean_Val, by = list(Filt_Type = dt_means$Filt_Type, MVC_Voli = dt_means$MVC_Voli, MVC_Stim = dt_means$MVC_Stim), 
@@ -71,33 +291,6 @@ dt_means<- dt_means%>%group_by(Filt_Type ) %>% mutate(percent_diff = percent_dif
   group_by(Filt_Type )%>% mutate(rmse = rmse(Filt_Mean_Val,reference=filter(dt_means,Filt_Type=='Dropped') $ Filt_Mean_Val))
 dt_means
 
-```
-
-```{r plots}
-tests <- c("mar7" ,"mar16")
-TestString<-""
-for (iTest in 1:length(tests)) 
-{
-  TestString<-sprintf("%s, %s",TestString, tests[iTest])
-}
-
-TestString<-sprintf("Tests: %s",TestString)
-
-#pdf("figures/4dropped2.pdf")
-
-plot_df<-filter(df,Test==tests,!is.na(Drp_Order))
-
-ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Drp_Order)) +
-    geom_point() +
-    geom_line(data= filter(df,Test==tests,Repeat=="Rep_1",MVC_Stim!="Stim_0%",Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*3, color = "Target (a.u.)")) +
-    geom_smooth(method = "loess", se=F)+
-    facet_wrap(MVC_Stim~MVC_Voli)+
-    labs(x = "Frames",
-       y = "Norm MAV",
-       title = "Droping 4 Consecutive Frames",
-       subtitle = TestString)
-
-#dev.off()
 ```
 
 ```{r Quick Look}

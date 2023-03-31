@@ -19,8 +19,7 @@ TestStruct=sprintf("%s_test",TestFolders{iTest});
 VoliMVCLevels=[10 20 30 40 ];
 StimMVCLevels=[ 0 10 20 30];
 stim_freq=S.(TestStruct).ExpPar.stim_freq;
-TimeRange=[5 15];
-FrameRange=TimeRange*stim_freq;  
+
 boolean DroppedFrameInd;
 TrialColor={'r', 'b', 'k'};
 exp_lbl='Occ';
@@ -36,12 +35,14 @@ x_dropped=ones(0,4);
 x_feat=[];
 
 % Normalization coeffs for the occ trials
+
 sMVC=0;
 vMVC=30;
 MeanRange=[11 14];
 MeanRangeInd=MeanRange*stim_freq;
+S.(TestStruct).(ExpLabel).RepTableMat;
+
 for iTest=1:length(TestFolders)
-    AnaStruct=sprintf("%s_ana",TestFolders(iTest));
     TestStruct=sprintf("%s_test",TestFolders(iTest));
     ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(exp_lbl);
     RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
@@ -58,8 +59,34 @@ for iTest=1:length(TestFolders)
     end 
 end
 
+%%
+clc
+MarginFromDropped=5;  % frames
+TestStruct=sprintf("%s_test",TestFolders{iTest});
+
+VoliMVCLevels=[10 20 30 40 ];
+StimMVCLevels=[ 0 10 20 30];
+stim_freq=S.(TestStruct).ExpPar.stim_freq;
+
+boolean DroppedFrameInd;
+TrialColor={'r', 'b', 'k'};
+exp_lbl='Occ';
+VarNames=["Frame_Val" "Norm_Val" "Target" "Frame" "Filt_Type" "MVC_Voli"...
+    "MVC_Stim"  "Test"  "Feat" "Repeat" "Trial" "Drp_Order"];
+
+NormVoliMVC=20;
+g=strings(1,length(VarNames)-4)+NaN;
+x=ones(0,4);
+
+g_dropped=strings(1,length(VarNames)-4)+NaN;
+x_dropped=ones(0,4);
+x_feat=[];
+
+AnaStruct=sprintf("%s_ana",TestFolders(1));
 
 FeatLabels=string(S.(AnaStruct).AnaPar.FeatLabels);
+ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(exp_lbl);
+sMVCNormLevel=0; % %MVC value for normalization coefficient
 for iFeat=1:1
     FeatLabel=FeatLabels(iFeat);
     
@@ -68,9 +95,14 @@ for iFeat=1:1
         AnaStruct=sprintf("%s_ana",TestFolders{iTest});
 
         RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
-        Voli_NormCoeff(:,iTest)=S.(AnaStruct).(ExpLabel).Voli_NormCoeff;
 
         for iVoli=1:length(VoliMVCLevels)
+            sMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('sMVC');
+            vMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('vMVC');
+
+            Voli_NormCoeff=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('MAV_Mean')...
+                (sMVC_Vec==0 & vMVC_Vec==VoliMVCLevels(iVoli));
+
             for iStim=1:length(StimMVCLevels)
                 sMVC=StimMVCLevels(iStim);
                 vMVC=VoliMVCLevels(iVoli);
@@ -95,7 +127,7 @@ for iFeat=1:1
 
                         x_feat=Feat;
                         x_target= Target(setdiff([1:length(Feat)+length(DroppedFeat)]',DroppedFrameNum));   
-                        x_norm=x_feat/Voli_NormCoeff(:,iTest);
+                        x_norm=x_feat/Voli_NormCoeff;
                         x_framenum=FrameNum';
 
                         lg=length(x_feat);
@@ -132,7 +164,7 @@ for iFeat=1:1
 
                     x_droppedfeat=DroppedFeat;
                     x_droppedtarget=Target(DroppedFrameNum);
-                    x_droppednorm=x_droppedfeat/Voli_NormCoeff(:,iTest);
+                    x_droppednorm=x_droppedfeat/Voli_NormCoeff;
                     x_droppedframenum=DroppedFrameNum;
 
                     lg_dropped=length(x_droppedfeat);
