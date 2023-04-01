@@ -10,7 +10,7 @@ desc: This file is created for analysis of dropped frames versus vEMG for EMBC20
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r including libraries, display =FALSE}
+```{r including libraries, display = FALSE}
 library(magrittr); library(here); library(janitor)
 library(readxl); library(tidyverse)
 library(rmdformats)
@@ -29,20 +29,22 @@ library(ggplot2)
 df <- read_csv("dropped_stats2.csv",show_col_types = FALSE)
 df<-df %>% mutate(Drp_Order = replace_na(Drp_Order, 0))
 
+df<-df%>%mutate(Filt_Type = as.factor(Filt_Type),
+                Repeat = as.factor(Repeat),
+                Feat = as.factor(Feat),
+                Test = as.factor(Test),
+                MVC_Voli = as.factor(MVC_Voli),
+                MVC_Stim = as.factor(MVC_Stim),
+                Frame = as.integer(Frame),
+                Drp_Order = as.factor(Drp_Order),
+                Trial = as.factor(Trial))
 summary(df)
 df
 ```
 
 ```{r data frame modifications }
 
-df<-df%>%mutate(Filt_Type = as.factor(Filt_Type),
-                   Repeat = as.factor(Repeat),
-                     Feat = as.factor(Feat),
-                     Test = as.factor(Test),
-                     MVC_Voli = as.factor(MVC_Voli),
-                     MVC_Stim = as.factor(MVC_Stim),
-                     Frame = as.integer(Frame),
-                     Drp_Order = as.factor(Drp_Order))
+
 
 df<-df%>%mutate(Drp_Order=recode(Drp_Order,
                                 '1' = '1st_Dropped',
@@ -50,7 +52,6 @@ df<-df%>%mutate(Drp_Order=recode(Drp_Order,
                                 '3' = '3rd_Dropped',
                                 '4' = '4th_Dropped',
                                 '0' = 'NonDropped'))
-
 
 summary(df)
 ```
@@ -63,9 +64,9 @@ $\sum_{i=1}^{I=10} \frac{1}{I}\frac{MAV_{D,i}-MAV_{F,i}}{MAV_{D,i}}\times100$
 
 ```{r Plotting the dropped-frames }
 
-tests <- c("mar7","mar16")
-filt='GS'
-reps=c('Rep_1','Rep_2','Rep_3')
+tests <- c('mar16','')
+filt<-c('GS','Comb', 'Unfilt')
+reps<-c('Rep_1','Rep_2','Rep_3')
 
 TestString<-""
 for (iTest in 1:length(tests)) 
@@ -80,26 +81,35 @@ for (iTest in 1:length(reps))
 }
 
 SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
-pdf("figures/4dropped3.pdf")
 
-plot_df<-filter(df, Test==tests & Repeat==reps & Filt_Type== filt | Filt_Type=='Dropped')
+plot_df<-filter(df, Test==tests & Frame<=525 & Repeat==reps & Filt_Type==filt |Filt_Type=='Dropped' )
 
-ggplot(plot_df, aes(x = Frame, y = Frame_Val, color = Drp_Order)) +
-    geom_point() +
-    geom_line(data= filter(df,Test==tests & Repeat=="Rep_1"& Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
+summary(plot_df)
+
+#pdf("figures/4dropped3.pdf")
+
+plt<-ggplot(plot_df, aes(x = Frame, y = Frame_Val, color = Test)) +
+    geom_point() + #size = 1.2, alpha = 0.6
+    geom_line(data= filter(df,Test==tests & Repeat=="Rep_1" & Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
     geom_segment(aes(x = 350, y = 1, xend = 525, yend = 1, linetype='dashed', color='Avg. 0-Stim Level'))+
-    geom_segment(aes(x = 525, y = 0.01, xend = 525, yend = 4,  linetype='dashed',color='Stim Turn Off'))+
+    geom_segment(aes(x = 525, y = 0.01, xend = 525, yend = 4, color='Stim Turn Off'))+
     geom_smooth(method = "loess", se=F)+
-    #facet_wrap(MVC_Stim~MVC_Voli)+
+    facet_wrap(MVC_Stim~MVC_Voli)+
     labs(x = "Frames",
        y = "Normalized MAV",
        title = "Droping 4 Consecutive Frames",
        subtitle = SubTitleString)+
     ylim(0,0.0003)
+plt
+#dev.off()
 
-dev.off()
-#geom_vline(xintercept = 525, linetype="dashed", color = "blue", size=0.5,color ='stim off')+
-#plot_df<-filter(df,Test==tests & Filt_Type== 'Unfilt' | Filt_Type=='Dropped')
+```
+```{r}
+group_by(Education) %>%summarise(min = min(SBP), Q1 = quantile(SBP, 0.25), median = median(SBP),
+Q3 = quantile(SBP, 0.75), max = max(SBP),
+mean = mean(SBP), sd = sd(SBP), n = n(), missing = sum(is.na(SBP)))
+```
+```{r}
 
 ```
 
@@ -130,7 +140,10 @@ for (iTest in 1:length(reps))
 SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
 
 plot_df<-filter(df, Test==tests & Repeat==reps& Filt_Type== filt | Filt_Type=='Dropped')
+summary (plot_df)
+```
 
+```{r }
 ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Divide_Cat)) +
     geom_point() +
     geom_line(data= filter(df,Test==tests & Repeat=="Rep_1"& Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +

@@ -17,7 +17,7 @@
 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16"];
+TestFolders=["jan7" "jan11" "jan12"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -714,21 +714,21 @@ lpFilt = designfilt('lowpassfir','PassbandFrequency',Fpass,...
 
 % fvtool(lpFilt,'MagnitudeDisplay','magnitude')
 N = filtord(lpFilt)
-%
-clear FiltFramesInd
-fs=S.(TestStruct).ExpPar.fs;
-ExpstoAna=ExpLabels([2,4]);
+%%
 
-% FiltFramesInd{ExptoAnaInd(1)}=floor([5.5*stim_freq: 10*stim_freq]);
-% FiltFramesInd{ExptoAnaInd(2)}=floor([5.5*stim_freq: 15*stim_freq]);
+clear FiltFramesInd ExpLabels
+ExpstoAna= ["RC" ;"Occ"];
+
+for iExp=1:length(ExpstoAna)
+    ExpLabels(iExp)=S.(AnaStruct).AnaPar.ExpTable.(ExpstoAna(iExp));
+end
 
 for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
     
-    ExptoAna=S.(TestStruct).ExpPar.ExpLabels([2,4]);
-    for iExp=1:length(ExptoAna)
-        ExpLabel=ExptoAna{iExp};
+    for iExp=1:length(ExpLabels)
+        ExpLabel=ExpLabels(iExp);
         
         TrialNum=S.(TestStruct).(ExpLabel).NumofTrials;
 
@@ -810,7 +810,7 @@ for iTest=1:length(TestFolders)
     end
 end
 
-%%DroppedFrames Features
+%% DroppedFrames Features
 
 ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
 ExpstoAna=ExpLabels([2,3,4]);

@@ -3,7 +3,7 @@
 %% Stats with dropped frames
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16"];
+TestFolders=["feb27" "mar7" "mar16"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders(iTest));
