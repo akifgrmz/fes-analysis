@@ -2,7 +2,7 @@
 title: "Dropped_Stats"
 output: html_document
 date: "2023-01-27"
-desc: This file is created for analysis of dropped frames versus vEMG for EMBC2023
+desc: This file is created for analysis of dropped frames for EMBC2023
 # theme: darkly
 ---
 

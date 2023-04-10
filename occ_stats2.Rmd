@@ -1,8 +1,9 @@
 ---
-title: "occ_statics"
+title: "Occlusion Stats v2"
 output: html_document
-date: "2023-03-25"
+date: "2023-04-10"
 ---
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -26,8 +27,7 @@ library(ggplot2)
 
 ```{r Data Inject } 
 
-occraw<- read_csv("occlusion.csv",show_col_types = FALSE)
-occraw<-occraw[,-7]
+occraw<- read_csv("occlusion_v3.csv",show_col_types = FALSE)
 
 occraw
 
@@ -38,7 +38,9 @@ occraw
 occ<-occraw%>%mutate(Test = as.factor(Test),
                      MVC_Voli = as.factor(MVC_Voli),
                      MVC_Stim = as.factor(MVC_Stim),
-                     Tau = as.factor(Tau))
+                     Tau = as.factor(Tau),
+                     Feat = as.factor(Feat),
+                     Filt = as.factor(Filt))
 
 occ<-occ%>%mutate(MVC_Voli=recode(MVC_Voli,
                                 '10' = 'Voli_10',
@@ -57,28 +59,17 @@ summary(occ)
 ```
 
 
-```{r  calculating mean occlusion}
-selected_tau='3*tau'
-selected_test='jan7'
-
-mean_occ<- filter(occ,Tau==selected_tau, Test==selected_test,MVC_Stim!="Stim_0") %>% group_by( MVC_Voli, MVC_Stim) %>% summarise( Mean_F_vprime=round(mean(F_vprime_mvc),3), Std_F_vprime=round(sd(F_vprime_mvc),3), Mean_F_occ=round(mean(F_occ_mvc),3), Std_F_occ=round(sd(F_occ_mvc),3), n = n())
-mean_occ
-
-mean_occ_mvc <- filter(occ,Tau==selected_tau,MVC_Stim!="Stim_0") %>% group_by( MVC_Voli, MVC_Stim) %>% summarise( Mean_F_vprime_mvc=round(mean(F_vprime_mvc),3), Std_F_vprime_mvc=round(sd(F_vprime_mvc),3), Mean_F_occ_mvc=round(mean(F_occ_mvc),3), Std_F_occ_mvc=round(sd(F_occ_mvc),3), n = n())
-mean_occ_mvc
-
-#mosaic::favstats( F_vprime_mvc~ selected_tau, MVC_Voli, data = occ)%>% knitr::kable(digits = 2)
-
-```
-
 ```{r Plotting the results }
 
-plot_tibble<-filter(occ,MVC_Stim!="Stim_0",Tau=="3*tau")
+plot_tibble<-filter(occ, MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
 
-ggplot(plot_tibble, aes(x =  F_v_mvc , y = F_vprime_mvc , color = MVC_Stim)) +
+
+ggplot(plot_tibble, aes(x =  v_mvc , y = vprime_mvc , color = MVC_Stim)) +
     geom_point() +
-    geom_smooth(method = "lm")
-#    facet_wrap(MVC_Stim~MVC_Voli)+
+    geom_smooth(method = "lm")+
+    geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
+    facet_wrap(~Feat)
+
    # labs(x = "F_v",
      #  y = "F_vprime",
    #    title = "Droping 4 Consecutive Frames",
@@ -87,30 +78,35 @@ ggplot(plot_tibble, aes(x =  F_v_mvc , y = F_vprime_mvc , color = MVC_Stim)) +
 ```
 ```{r Plotting the results }
 
-plot_tibble<-filter(occ,MVC_Stim!="Stim_0",Tau=="3*tau")
+plot_tibble<-filter(occ, MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
 
-ggplot(plot_tibble, aes(x =  F_v_mvc, y = F_occ_mvc, color = MVC_Stim)) +
+ggplot(plot_tibble, aes(x =  v_mvc , y = Occ_mvc , color = MVC_Stim)) +
     geom_point() +
-    geom_smooth(method = "lm")
+    geom_smooth(method = "lm")+
+    facet_wrap(~Feat)
+
 ```
 
 ```{r Occlusion Heat Map}
+plot_tibble<-filter(occ, MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
 
-plot_tibble<-filter(occ,MVC_Stim!="Stim_0",Tau=="3*tau")
+ggplot(plot_tibble, aes(x =  MVC_Voli, y = MVC_Stim, fill = Occ_mvc)) +
+    geom_tile() +
+    geom_smooth(method = "lm")+
+    facet_wrap(~Feat)
 
-ggplot(plot_tibble, aes(x =  MVC_Voli, y = MVC_Stim, fill = F_occ_mvc)) +
-  geom_tile() 
-  #facet_wrap(~Test)
 ```
 
 ```{r}
 
-plot_tibble<-filter(occ,MVC_Stim!="Stim_0",Tau=="3*tau")
+plot_tibble<-filter(occ,MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
 
-ggplot(plot_tibble, aes(x =  F_v, y = F_occ, color = MVC_Stim))+
+ggplot(plot_tibble, aes(x =  v_mvc, y = Occ_mvc, color = MVC_Stim))+
   geom_point()+
   geom_smooth(method = "lm")+
-  facet_wrap(~Test)
+  facet_wrap(Feat~Test,scales = "free")
+
+
 ```
 
 ```{r Occlusion Heat Map}

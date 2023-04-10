@@ -1,5 +1,4 @@
-%% Fatigue Analysis
-
+%% Fatigue Related Analysis
 %% Data Inject 
 clc
 clear all
@@ -10,185 +9,490 @@ for iTest=1:length(TestFolders)
 end
 
 S = load_test(TestFolders,TestFiles);
+%% Initial Plotting 
+close all
+iTest=1;  % pick a test to plot 
+FolderName=TestFolders(iTest);  %% Folders to be loaded 
+Trials=[1];  % Trial
+TimeRange=[5 15];  % in seconds
+Exp= ["Fat"];
+AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+TestStruct=sprintf("%s_test",TestFolders{iTest});
+ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(Exp);
 
-%% Frequency Shift
+NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
+if sum(Trials>NumofTrials)>0
+    error(sprintf('Trial %d does not exist \n',Trials(Trials>NumofTrials)))
+end
 
-CondLabels={'Volitional','Stimulated','StimVoli'};
-FeatLabels={'MAV','MedFreq','MeanFreq','Ssc','Zc'};
-MatLabels={'Unfilt','CombvEMG','CombMwave','GsvEMG','GsMwaves'};
-FeatNum=length(FeatLabels);
-FeatInd=[1 2 3 4 5];
-TrialNum=S.(ExpLabel).iTrial-1;
-iVoli=1;
-iStim=2;
-iStimVoli=3;
-AvgLength=0.4;
-VoliStart=14;
-VoliEnd=VoliStart+AvgLength;
-StimStart=29;
-StimEnd=StimStart+AvgLength;
-StimVoliStart=40;
-StimVoliEnd=StimVoliStart+AvgLength;
-IndVoli=[VoliStart*StimFreq:VoliEnd*StimFreq];
-IndStim=[StimStart*StimFreq:StimEnd*StimFreq];
-IndStimVoli=[StimVoliStart*StimFreq:StimVoliEnd*StimFreq];
-Ind=[IndVoli;IndStim;IndStimVoli];
-
-for iFeat=1:FeatNum 
-    FeatLabel2=FeatLabels{iFeat};
+for iTrial=Trials
+    TrialLabel=sprintf('Trial_%d',iTrial);
     
-    for iFilt=1:FiltNum
-        FiltLabel=FiltLabels{iFilt};
-%         FeatLabel=sprintf('%svEMGFeatMat',FiltLabel);
-        FeatLabel='UnfiltFeatMat';
-        
-        for iCond=1:3
-            CondLabel=CondLabels{iCond};
+    Time=S.(AnaStruct).(ExpLabel).(TrialLabel).data.("Time");
+    TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
+    
+    EMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("BPFilt_EMG");
+    Trigger=S.(TestStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("Trigger");
+    Force=S.(TestStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("Force");
+    PW=S.(TestStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("PW");
+    
+    figure(iTrial)
+    subplot(2,1,1)
+    plot(Time(TimeInd),Trigger/1000,'r','LineWidth',1)
+    hold
+    plot(Time(TimeInd),EMG,'b','LineWidth',2)
+    legend({'Trigger(a.u.)','Raw EMG (V)'})
+    title('Trigger and EMG Signal')
+    xlabel('Time (s)')
+    
+    subplot(2,1,2)
+    plot(Time(TimeInd),PW*100,'r','LineWidth',1)
+    hold
+    plot(Time(TimeInd),Force,'b','LineWidth',2)
+    legend({'PW (a.u.)','Force(N)'})
+    title('Pulse Width and Force Signal')
+%     set(gca,'XTick',[5 8 11 12 15 18 21])
+    xlabel('Time (s)')
+end
+
+%% Linear Models
+% # Calculating the relevant fitting stats and plotting them
+% # Plotting the Mean, Median and MAV 
+% # 
+Exp= ["Fat"];
+
+VoliStart=5;
+VoliEnd=VoliStart+10;
+StimStart=15;
+StimEnd=StimStart+10;
+StimVoliStart=25;
+StimVoliEnd=StimVoliStart+10;
+Segments=[VoliStart VoliEnd; StimStart StimEnd; StimVoliStart StimVoliEnd];  %% segment beggining and ends 
+SegLabels=["Voli" "Stim" "Stim+Voli"];
+TestStruct=sprintf("%s_test",TestFolders{1});
+AnaStruct=sprintf("%s_ana",TestFolders{1});
+
+stim_freq=S.(TestStruct).ExpPar.stim_freq;
+IndVoli=[VoliStart*stim_freq:VoliEnd*stim_freq];
+IndStim=[StimStart*stim_freq:StimEnd*stim_freq];
+IndStimVoli=[StimVoliStart*stim_freq:StimVoliEnd*stim_freq];
+SegInd=[IndVoli;IndStim;IndStimVoli];
+[NumofSegs,~]=size(SegInd);
+
+ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(Exp);
+FeatLabels=string(S.(AnaStruct).AnaPar.FeatLabels);
+FiltLabels=string(S.(AnaStruct).AnaPar.FiltLabels);
+
+
+Fat_stats=table([],[],[],[],[],[],[],[],[],[],[],[],[],...
+    'VariableNames',["Test" "Exp" " Filt" "Trial"...
+    "Feat" "Segment" "EMG" "R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "LPFilt"]);
+
+Fat=table([],[],[],[],[],[],[],[],[],[],[],[],...
+    'VariableNames',["Feat_Val" "LPFilt_Val" " Force" "LPFilt_Force"...
+    "Frame" "Feat" "Segment" "EMG" "Trial" "Filt" "Test" "Exp"]);
+                    
+count=1;
+for iTest=1:length(TestFolders)
+    AnaStruct=sprintf("%s_ana",TestFolders(iTest));
+    TestStruct=sprintf("%s_test",TestFolders(iTest));
+    NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
+   
+    for iFilt=1:length(FiltLabels)
+        FiltLabel=FiltLabels(iFilt);            
+        samp_filt=1;
+
+        for iTrial=1:NumofTrials
+            TrialLabel=sprintf("Trial_%d",iTrial);
             
-            for iTrial=1:TrialNum
-                TrialLabel=sprintf('Trial_%d',iTrial);
+            for iSeg=1:NumofSegs
+                SegLabel=SegLabels(iSeg);
+                y=mean(S.(AnaStruct).(ExpLabel).(TrialLabel).ForceFrames(:,SegInd(iSeg,:)));
+                y_filt=S.(AnaStruct).(ExpLabel).(TrialLabel).FiltForceFrames(:,SegInd(iSeg,:));
+                                
+                for iFeat =1:length(FeatLabels)
+                    FeatVar=sprintf("%s_vEMG",FeatLabels(iFeat)); 
+                
+                    x=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats(SegInd(iSeg,:),:).(FeatVar);
+                    
+                    Mdl = fitlm(y,x); 
+                    Mdlr_sqr=Mdl.Rsquared.Ordinary;
+                    Mdlcoef_p_val=Mdl.Coefficients.pValue;
+                    Mdlcoef=Mdl.Coefficients;
+                    AnovaTable=anova(Mdl,'summary');
+                    F=table2array(AnovaTable(2,4));
+                    p_val=table2array(AnovaTable(2,5));
+                    FeatForceCorr=corr2(y',x);
 
-                x=S.(ExpLabel).(TrialLabel).(FiltLabel).(FeatLabel)(Ind(iCond,:),FeatInd(iFeat));
-                AvgTrials(iCond,iTrial)= mean(x);
-                y=S.(ExpLabel).(TrialLabel).ForceMat(Ind(iCond,:));
-                AvgForce(iCond,iTrial)=mean(y);
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlr_sqr(iSeg)=Mdlr_sqr;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef_p_val(:,iSeg)=Mdlcoef_p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef=Mdlcoef;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).p_val(iSeg)=p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).ForceCorr(iSeg)=FeatForceCorr;
+                    
+                    frames(samp_filt)="Unfilt";
+                    emgs(samp_filt)="vEMG";
+                    coefs(:,samp_filt)=Mdlcoef.('Estimate');
+                    r_sqr(samp_filt)=Mdlr_sqr;
+                    coef_p_val(:,samp_filt)=Mdlcoef_p_val;
+                    anova_p(samp_filt)=p_val;
+                    force_corr(samp_filt)=FeatForceCorr;
+                    trials(samp_filt)=TrialLabel;
+                    feats(samp_filt)=FeatLabels(iFeat);
+                    filts(samp_filt)=FiltLabel;
+                    tests(samp_filt)=TestFolders(iTest);
+                    exps(samp_filt)=ExpLabel;
+                    segs(samp_filt)=SegLabel;
+                    samp_filt=samp_filt+1;
+                    
+                    FeatVar=sprintf("%s_MWave",FeatLabels(iFeat)); 
+                    FiltFeatVar=sprintf("Filt_%s_MWave",FeatLabels(iFeat)); 
+                    x=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats(SegInd(iSeg,:),:).(FeatVar);
+                    
+                    Mdl = fitlm(y,x); 
+                    Mdlr_sqr=Mdl.Rsquared.Ordinary;
+                    Mdlcoef_p_val=Mdl.Coefficients.pValue;
+                    Mdlcoef=Mdl.Coefficients;
+                    AnovaTable=anova(Mdl,'summary');
+                    F=table2array(AnovaTable(2,4));
+                    p_val=table2array(AnovaTable(2,5));
+                    FeatForceCorr=corr2(y',x);
 
-                avg_x=S.(ExpLabel).(TrialLabel).(FiltLabel).(FeatLabel)(Ind(iCond,:),iFeat+FeatNum);
-                avg_y=S.(ExpLabel).(TrialLabel).AvgForceFrame(Ind(iCond,:),:);
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlr_sqr(iSeg)=Mdlr_sqr;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef_p_val(:,iSeg)=Mdlcoef_p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef=Mdlcoef;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).p_val(iSeg)=p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).ForceCorr(iSeg)=FeatForceCorr;
+                    
+                    frames(samp_filt)="Unfilt";
+                    emgs(samp_filt)="MWave";
+                    coefs(:,samp_filt)=Mdlcoef.('Estimate');
+                    r_sqr(samp_filt)=Mdlr_sqr;
+                    coef_p_val(:,samp_filt)=Mdlcoef_p_val;
+                    anova_p(samp_filt)=p_val;
+                    force_corr(samp_filt)=FeatForceCorr;
+                    trials(samp_filt)=TrialLabel;
+                    feats(samp_filt)=FeatLabels(iFeat);
+                    filts(samp_filt)=FiltLabel;
+                    tests(samp_filt)=TestFolders(iTest);
+                    exps(samp_filt)=ExpLabel;
+                    segs(samp_filt)=SegLabel;
+                    samp_filt=samp_filt+1;
+                    
+                    FiltFeatVar=sprintf("Filt_%s_vEMG",FeatLabels(iFeat));
+                    FeatVar=sprintf("%s_vEMG",FeatLabels(iFeat)); 
+                    x_filt=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).FiltFeats(SegInd(iSeg,:),:).(FiltFeatVar);
 
-                Mdl = fitlm(avg_y,avg_x);
-                Mdlr_sqr=Mdl.Rsquared.Ordinary;
-                Mdlcoef_p_val=Mdl.Coefficients.pValue;
-                Mdlcoef=Mdl.Coefficients;
-                AnovaTable=anova(Mdl,'summary');
-                F=table2array(AnovaTable(2,4));
-                p_val=table2array(AnovaTable(2,5));
-                FeatForceCorr=corr2(avg_y,avg_x);
+                    Mdl = fitlm(y_filt,x_filt); 
+                    Mdlr_sqr=Mdl.Rsquared.Ordinary;
+                    Mdlcoef_p_val=Mdl.Coefficients.pValue;
+                    Mdlcoef=Mdl.Coefficients;
+                    AnovaTable=anova(Mdl,'summary');
+                    F=table2array(AnovaTable(2,4));
+                    p_val=table2array(AnovaTable(2,5));
+                    FeatForceCorr=corr2(y',x);
 
-                S.(ExpLabel).(TrialLabel).AvgForceMdl.(FeatLabel2).(CondLabel).Mdlr_sqr=Mdlr_sqr;
-                S.(ExpLabel).(TrialLabel).AvgForceMdl.(FeatLabel2).(CondLabel).Mdlcoef=Mdlcoef;
-                S.(ExpLabel).(TrialLabel).AvgForceMdl.(FeatLabel2).(CondLabel).p_val=p_val;
-                S.(ExpLabel).(TrialLabel).AvgForceMdl.(FeatLabel2).(CondLabel).iCond=iCond;
-                S.(ExpLabel).(TrialLabel).AvgForceMdl.(FeatLabel2).(CondLabel).FeatForceCorr=FeatForceCorr;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlr_sqr(iSeg)=Mdlr_sqr;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef_p_val(:,iSeg)=Mdlcoef_p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef=Mdlcoef;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).p_val(iSeg)=p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).ForceCorr(iSeg)=FeatForceCorr;
+                    
+                    frames(samp_filt)="LPFilt";
+                    emgs(samp_filt)="vEMG";
+                    coefs(:,samp_filt)=Mdlcoef.('Estimate');
+                    r_sqr(samp_filt)=Mdlr_sqr;
+                    coef_p_val(:,samp_filt)=Mdlcoef_p_val;
+                    anova_p(samp_filt)=p_val;
+                    force_corr(samp_filt)=FeatForceCorr;
+                    trials(samp_filt)=TrialLabel;
+                    feats(samp_filt)=FeatLabels(iFeat);
+                    filts(samp_filt)=FiltLabel;
+                    tests(samp_filt)=TestFolders(iTest);
+                    exps(samp_filt)=ExpLabel;
+                    segs(samp_filt)=SegLabel;
+                    samp_filt=samp_filt+1;
+                    
+                    FiltFeatVar=sprintf("Filt_%s_MWave",FeatLabels(iFeat)); 
+                    FeatVar=sprintf("%s_MWave",FeatLabels(iFeat)); 
+                    x_filt=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).FiltFeats(SegInd(iSeg,:),:).(FiltFeatVar);
+                    
+                    Mdl = fitlm(y_filt,x_filt); 
+                    Mdlr_sqr=Mdl.Rsquared.Ordinary;
+                    Mdlcoef_p_val=Mdl.Coefficients.pValue;
+                    Mdlcoef=Mdl.Coefficients;
+                    AnovaTable=anova(Mdl,'summary');
+                    F=table2array(AnovaTable(2,4));
+                    p_val=table2array(AnovaTable(2,5));
+                    FeatForceCorr=corr2(y',x);
 
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlr_sqr(iSeg)=Mdlr_sqr;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef_p_val(:,iSeg)=Mdlcoef_p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Mdlcoef=Mdlcoef;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).p_val(iSeg)=p_val;
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).ForceCorr(iSeg)=FeatForceCorr;
+                    
+                    frames(samp_filt)="LPFilt";
+                    emgs(samp_filt)="MWave";
+                    coefs(:,samp_filt)=Mdlcoef.('Estimate');
+                    r_sqr(samp_filt)=Mdlr_sqr;
+                    coef_p_val(:,samp_filt)=Mdlcoef_p_val;
+                    anova_p(samp_filt)=p_val;
+                    force_corr(samp_filt)=FeatForceCorr;
+                    trials(samp_filt)=TrialLabel;
+                    feats(samp_filt)=FeatLabels(iFeat);
+                    filts(samp_filt)=FiltLabel;
+                    tests(samp_filt)=TestFolders(iTest);
+                    exps(samp_filt)=ExpLabel;
+                    segs(samp_filt)=SegLabel;
+                    samp_filt=samp_filt+1;
+                        
+                    
+                    FeatVar=sprintf("%s_vEMG",FeatLabels(iFeat)); 
+                    FiltFeatVar=sprintf("Filt_%s_vEMG",FeatLabels(iFeat)); 
+                    x=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats(SegInd(iSeg,:),:).(FeatVar);
+                    x_filt=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).FiltFeats(SegInd(iSeg,:),:).(FiltFeatVar);
+                    
+                    lg=length(x);
+                    g_frame=strings(1,lg);
+                    g_frame(:)=1:lg;
+                    g_trial=strings(1,lg);
+                    g_trial(:)=TrialLabel;
+                    g_feat=strings(1,lg);
+                    g_feat(:)=FeatLabels(iFeat); 
+                    g_filt=strings(1,lg);
+                    g_filt(:)=FiltLabel;
+                    g_test=strings(1,lg);
+                    g_test(:)=TestFolders(iTest);
+                    g_exp=strings(1,lg);
+                    g_exp(:)=ExpLabel;
+                    g_seg=strings(1,lg);
+                    g_seg(:)=SegLabel;
+                    g_emg=strings(1,lg);
+                    g_emg(:)="vEMG";
+                    
+                    temp=table(x, x_filt, y', y_filt' ,g_frame' ,g_feat' ,g_seg' ,g_emg'...
+                        ,g_trial' ,g_filt' ,g_test' ,g_exp','VariableNames',...
+                        ["Feat_Val" "LPFilt_Val" " Force" "LPFilt_Force"...
+                        "Frame" "Feat" "Segment" "EMG" "Trial" "Filt" "Test" "Exp"]);
+                        
+                    Fat= [Fat; temp];
+                    
+                    FeatVar=sprintf("%s_MWave",FeatLabels(iFeat)); 
+                    FiltFeatVar=sprintf("Filt_%s_MWave",FeatLabels(iFeat)); 
+                    x=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats(SegInd(iSeg,:),:).(FeatVar);
+                    x_filt=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).FiltFeats(SegInd(iSeg,:),:).(FiltFeatVar);
+                    
+                    lg=length(x);
+                    
+                    g_frame=strings(1,lg);
+                    g_frame(:)=1:lg;
+                    g_trial=strings(1,lg);
+                    g_trial(:)=TrialLabel;
+                    g_feat=strings(1,lg);
+                    g_feat(:)=FeatLabels(iFeat); 
+                    g_filt=strings(1,lg);
+                    g_filt(:)=FiltLabel;
+                    g_test=strings(1,lg);
+                    g_test(:)=TestFolders(iTest);
+                    g_exp=strings(1,lg);
+                    g_exp(:)=ExpLabel;
+                    g_seg=strings(1,lg);
+                    g_seg(:)=SegLabel;
+                    g_emg=strings(1,lg);
+                    g_emg(:)="MWave";
+                    
+                    temp=table(x, x_filt, y', y_filt' ,g_frame' ,g_feat' ,g_seg' ,g_emg'...
+                        ,g_trial' ,g_filt' ,g_test' ,g_exp','VariableNames',...
+                        ["Feat_Val" "LPFilt_Val" " Force" "LPFilt_Force"...
+                        "Frame" "Feat" "Segment" "EMG" "Trial" "Filt" "Test" "Exp"]);
+                        
+                    Fat= [Fat; temp];
+
+                end
             end
-            
-            ForMdl = fitlm(AvgForce(iCond,:),AvgTrials(iCond,:));
-            ForMdlr_sqr=ForMdl.Rsquared.Ordinary;
-            ForMdlcoef_p_val=ForMdl.Coefficients.pValue;
-            ForMdlcoef=ForMdl.Coefficients;
-            AnovaTable=anova(ForMdl,'summary');
-            F=table2array(AnovaTable(2,4));
-            Forp_val=table2array(AnovaTable(2,5));
-            
-            ForceCorr=corr2(AvgForce(iCond,:),AvgTrials(iCond,:));
-            
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).ForceCorr(iCond)=ForceCorr;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).ForMdlr_sqr(iCond)=ForMdlr_sqr;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).Forp_val(iCond)=Forp_val;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).AvgForce(iCond,:)=AvgForce(iCond,:);
-            
-            Mdl = fitlm([1:TrialNum],AvgTrials(iCond,:));
-            Mdlr_sqr(iCond)=Mdl.Rsquared.Ordinary;
-            Mdlcoef_p_val=Mdl.Coefficients.pValue;
-            Mdlcoef=Mdl.Coefficients;
-            AnovaTable=anova(Mdl,'summary');
-            F=table2array(AnovaTable(2,4));
-            p_val(iCond)=table2array(AnovaTable(2,5));
-            
-            PercentShift=(AvgTrials(:,1)-AvgTrials(:,end))./AvgTrials(:,1)*100;
-%            MeanShift=(AvgMeanFreqTrials(:,1)-AvgMeanFreqTrials(:,end))./AvgMeanFreqTrials(:,1)*100;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).AvgTrials=AvgTrials;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).AvgForce=AvgForce;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).PercentShift=PercentShift;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).(CondLabel).Mdl=Mdl;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).Mdlr_sqr(iCond)=Mdlr_sqr(iCond);
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).(CondLabel).Mdlcoef_p_val=Mdlcoef_p_val;
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).p_val(iCond)=p_val(iCond);
-            S.(ExpLabel).(FiltLabel).(FeatLabel2).(CondLabel).Mdlcoef=Mdlcoef;
+        end
+
+        FatTable=table(tests',exps',filts',trials',feats',segs',emgs',r_sqr',...
+            coef_p_val',coefs',anova_p',force_corr',frames',...
+            'VariableNames',["Test" "Exp" " Filt" "Trial"...
+            "Feat" "Segment" "EMG" "R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "LPFilt"]);
+        S.(AnaStruct).(ExpLabel).(FiltLabel).FatTable=FatTable;
+        Fat_stats= [ Fat_stats; FatTable];
+        clear tests exps filts trials feats r_sqr coef_p_val anova_p force_corr segs coefs emgs frames FatTable
+    
+    end
+end
+
+writetable( Fat_stats, 'fatigue_stats.csv')
+writetable( Fat, 'fatigue_frames.csv')
+
+%% Fatigue Features Shifts
+% # Data Inject 
+clc
+clear all
+TestFolders=["jan7" "jan11" "jan12"];
+
+for iTest=1:length(TestFolders)
+    TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
+end
+
+S = load_test(TestFolders,TestFiles);
+
+%% Plotting Features  
+close all
+iTest=1;  % pick a test to plot 
+FolderName='jan7';  %% Folders to be loaded 
+Trials=[1 5];  % Trial
+TimeRange=[1 35];  % in seconds
+Exp= ["Fat"];
+FiltLabel="Unfilt";
+AnaLabel=sprintf("%s_ana",TestFolders{iTest});
+TestLabel=sprintf("%s_test",TestFolders{iTest});
+ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(Exp);
+stim_freq=S.(TestLabel).ExpPar.stim_freq;
+FrameInd=TimeRange(1)*stim_freq:TimeRange(2)*stim_freq;
+
+NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
+if sum(Trials>NumofTrials)>0
+    error(sprintf('Trial %d does not exist \n',Trials(Trials>NumofTrials)))
+end
+
+for iTest=1:length(TestFolders)
+    TestLabel=sprintf("%s_test",TestFolders{iTest});
+    AnaLabel=sprintf("%s_ana",TestFolders{iTest});
+
+    for iTrial=Trials
+        TrialLabel=sprintf('Trial_%d',iTrial);
+
+        Frames=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).TmFrames(:,FrameInd));
+        Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).ForceFrames(:,FrameInd));
+        
+        FatMAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MAV_vEMG");
+        FatMedFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MedFreq_vEMG");
+        FatMeanFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MeanFreq_vEMG");
+
+        MAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MAV_vEMG");
+        MedFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MedFreq_vEMG");
+        MeanFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MeanFreq_vEMG");
+
+        figure(iTrial)
+        
+        subplot(4,1,1)
+        plot(Frames,Force,'LineWidth',2.5,'DisplayName',sprintf("%s Force(N)",TestFolders{iTest}))
+        hold on
+        title(sprintf('Force of Trial %d of Different Subjects',iTrial))
+        xlabel('Time (s)')
+        legend
+        grid on
+        
+        subplot(4,1,2)
+        plot(Frames,MAV,'--','LineWidth',0.02,'DisplayName',TestFolders{iTest})
+        hold on 
+        plot(Frames,FatMAV,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}))
+        title(sprintf('MAV of Trial %d of Different Subjects',iTrial))
+        xlabel('Time (s)')
+        ylim([0 max(MAV)/3])
+        legend
+        grid on
+
+        subplot(4,1,3)
+        plot(Frames,MedFreq,'--','LineWidth',.02,'DisplayName',TestFolders{iTest})
+        hold on
+        plot(Frames,FatMedFreq,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}))
+        title(sprintf('Median Freq. of Trial %d of Different Subjects',iTrial))
+        xlabel('Time (s)')
+        legend
+        grid on
+        
+        subplot(4,1,4)
+        plot(Frames,MeanFreq,'--','LineWidth',.02,'DisplayName',TestFolders{iTest})
+        hold on
+        plot(Frames,FatMeanFreq,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}))
+        title(sprintf('Mean Freq. of Trial %d of Different Subjects',iTrial))
+        xlabel('Time (s)')
+        ylabel('Hz')
+        legend
+        grid on 
+
+    end
+end
+
+%% # Fatigue by Trials Plotting 
+clc
+Exp="Fat";
+SegLabels=["Voli" "Stim" "Stim+Voli"];
+
+FiltLabel="Unfilt";
+EMGLabel="vEMG";
+FeatFilt="FatFeats";
+FeatFiltLabel="Filt_";
+
+VoliStart=10;
+VoliEnd=VoliStart+5;
+StimStart=20;
+StimEnd=StimStart+5;
+StimVoliStart=30;
+StimVoliEnd=StimVoliStart+5;
+
+AnaLabel=sprintf("%s_ana",TestFolders(1));
+TestLabel=sprintf("%s_test",TestFolders{1});
+ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(Exp);
+
+stim_freq=S.(TestLabel).ExpPar.stim_freq;
+IndVoli=[VoliStart*stim_freq:VoliEnd*stim_freq];
+IndStim=[StimStart*stim_freq:StimEnd*stim_freq];
+IndStimVoli=[StimVoliStart*stim_freq:StimVoliEnd*stim_freq];
+SegInd=[IndVoli;IndStim;IndStimVoli];
+[NumofSegs,~]=size(SegInd);
+
+for iTest=1:length(TestFolders)
+    AnaLabel=sprintf("%s_ana",TestFolders(iTest));
+    TestLabel=sprintf("%s_test",TestFolders(iTest));
+    
+    FiltLabels=string(S.(AnaLabel).AnaPar.FiltLabels);
+    FeatLabels=string(S.(AnaLabel).AnaPar.FeatLabels);
+    NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
+    clear FiltFeat
+    
+    FatTable=S.(AnaLabel).(ExpLabel).(FiltLabel).FatTable;
+
+    [SegNum,~]=size(SegInd);
+    for iSeg=1:SegNum
+        SegLabel=SegLabels(iSeg);
+
+        for iFeat=1:3 % MAV, Med, Median Freq
+            FeatLabel=sprintf("%s%s_%s",FeatFiltLabel, FeatLabels(iFeat), EMGLabel);
+
+            for iTrial=1:NumofTrials
+                TrialLabel=sprintf("Trial_%d",iTrial);
+%                     FiltForce=S.(AnaLabel).(ExpLabel).(TrialLabel).FiltForceFrames(SegInd(:,iSeg));
+                FiltFeat(iTrial)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).(FeatFilt)(SegInd(iSeg,:),:).(FeatLabel));
+            end
+
+            figure(100)
+            subplot(SegNum,length(TestFolders),iSeg*SegNum-SegNum+iTest)
+            plot(1:NumofTrials,FiltFeat/FiltFeat(1),'DisplayName',FeatLabel)
+            hold on 
+            title(sprintf("Test: %s, Segment: %s, Filt: %s ",TestFolders(iTest),SegLabel,FiltLabel))
+            xlabel('Trials')
+            ylabel('Norm. EMG Feature')
         end
     end
 end
 
+legend('Location', 'NorthWest')
+
+% # Figures with mWaves 
+
+% # Figures with vEMG 
+
 %% "Shifts" by fatigue Analysis
-ExpLabel='FatigueTrials';
-CondLabels={'Volitional', 'Stimulated','StimVoli'};
-FeatLabels={'MAV','MedFreq','MeanFreq','Ssc','Zc'};
-IndLabels={'Unfilt','CombvEMG','CombMwave','GsvEMG','GsMwave'};
-CondLabels={'Volitional', 'Stimulated','StimVoli'};
-
-FeatNum=length(FeatLabels);
-FeatInd=[1 2 3 4 5];
-TrialNum=S.(ExpLabel).iTrial-1;
-
-% VoliStart=14;
-% VoliEnd=14.4;
-% StimStart=25;
-% StimEnd=25.4;
-% StimVoliStart=40;
-% StimVoliEnd=40.4;
-% IndVoli=[VoliStart*StimFreq:VoliEnd*StimFreq];
-% IndStim=[StimStart*StimFreq:StimEnd*StimFreq];
-% IndStimVoli=[StimVoliStart*StimFreq:StimVoliEnd*StimFreq];
-% IndCond=[IndVoli;IndStim;IndStimVoli];
-
-iCond=2; %For stim-only
-iFeat=1; % for MAV
-iInd=3; % for *** data
-CondLabel=CondLabels{iCond};
-FeatLabel2=FeatLabels{iFeat};
-
-FeatIndVec=[1 2 3 4 5 6 7 8 9 10];
-iMAV=FeatIndVec(1);
-iMedFreq=FeatIndVec(2);
-iMeanFreq=FeatIndVec(3);
-iSsc=FeatIndVec(4);
-iZc=FeatIndVec(5);
-iAvgMAV=FeatIndVec(6);
-iAvgMedFreq=FeatIndVec(7);
-iAvgMeanFreq=FeatIndVec(8);
-iAvgSsc=FeatIndVec(9);
-iAvgZc=FeatIndVec(10);
-
-ForceBeg=5;
-ForceEnd=40;
-ForceTimeInd=round([ForceBeg*fs:ForceEnd*fs]);
-MovAvgTime=0.5;
-MovAvgLength=MovAvgTime*fs;
-
-% StimBeg=25;
-% StimEnd=25.4;
-% StimTimeInd=[StimBeg*StimFreq:StimEnd*StimFreq];
-% VoliBeg=14;
-% VoliEnd=14.4;
-% VoliTimeInd=[VoliBeg*StimFreq:VoliEnd*StimFreq];
-
-clear AvgMedFreq AvgMAV MeanForceByFrame AvgMeanFreq ttl2 ttl1 ttl
-figure(10)
-subplot(1,3,3)
 
 for iFilt=1:1
     FiltLabel=FiltLabels{iFilt};
-    
-    MatLabel=sprintf('%sFrameMat',IndLabels{iInd});
-    FeatMatLabel=sprintf('%sFeatMat',IndLabels{iInd});
-    FeatLabel=sprintf('%sUnfiltFeatMat',FiltLabel);
-%         FeatLabel='UnfiltFeatMat';
 
     TrialLabel=sprintf('Trial_%d',iTrial);
-
-%         x=S.(ExpLabel).(TrialLabel).(FiltLabel).(FeatLabel)(IndCond(iCond,:),FeatInd(iFeat));
-%         y=S.(ExpLabel).(TrialLabel).ForceMat(IndCond(iCond,:));
-%         AvgForce(iCond,iTrial)=mean(y);
-
-%         Force=S.(ExpLabel).(TrialLabel).data(ForceTimeInd,iForce);
-%         MAForce=movmean(Force,[MovAvgLength-1 0 ]);
-%         S.(ExpLabel).ShiftTrials.MAForce(:,iTrial)=MAForce;
-
-%         AvgMAV(iTrial)=mean(S.(ExpLabel).(TrialLabel).(FiltLabel).(FeatMatLabel)(VoliTimeInd,iAvgMAV));
-%         AvgMedFreq(iTrial)=mean(S.(ExpLabel).(TrialLabel).(FiltLabel).(FeatMatLabel)(VoliTimeInd,iAvgMedFreq));
-%         AvgMeanFreq(iTrial)=mean(S.(ExpLabel).(TrialLabel).(FiltLabel).(FeatMatLabel)(VoliTimeInd,iAvgMeanFreq));
-%         MeanForceByFrame(iTrial)=mean(S.(ExpLabel).(TrialLabel).MeanForceByFrame(StimTimeInd));
 
     MAV=S.(ExpLabel).(FiltLabel).MAV.AvgTrials(1,:);
     MedFreq=S.(ExpLabel).(FiltLabel).MedFreq.AvgTrials(2,:);
@@ -228,7 +532,7 @@ FeatPlotLabels={'MAV','Median Freq.','Mean Freq.','SSC','ZC'};
 ColorVec={'k','r'};
 UnfiltLabel='UnfiltFeatMat';
 iExp=4;
-ExpLabel=ExpLabels{iExp}; 
+ExpLabel=ExpLabels{iExp};
 TrialNum=S.(ExpLabel).iTrial-1;
 
 for iTrial=PlotTrial(1):PlotTrial(2)
@@ -249,6 +553,7 @@ for iTrial=PlotTrial(1):PlotTrial(2)
             mWaveFeat=S.(ExpLabel).(TrialLabel).(FiltLabel).(mWaveLabel)(FrameInd,iFeat);
             
             Time=S.(ExpLabel).(TrialLabel).data(iLow:iHigh,iTime);
+            
             figure(1)
             subplot(FiltNum,FeatNum,(iFilt-1)*(FeatNum)+iFeat)
             plot(FrameInd,vEMGFeat,ColorVec{iFilt},'LineWidth',2)

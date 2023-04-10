@@ -1,13 +1,15 @@
-function []=save_test(TestFolders,S)
-% This function saves the analysis results to their corresponding test folders
+function []=save_test(Tests,S)
+% Type: save_test(TestFolders,S) to save the analysis.
+%This function saves the analysis results to their corresponding test
+% folders 
 % enter folder names without the extension (such as _test )
 
 
-for iTest=1:length(TestFolders)
-    TestStruct=sprintf("%s_test",TestFolders{iTest});
-    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+for iTest=1:length(Tests)
+    TestStruct=sprintf("%s_test",Tests{iTest});
+    AnaStruct=sprintf("%s_ana",Tests{iTest});
 
-    str=sprintf('%s/%s',TestFolders{iTest},AnaStruct);
+    str=sprintf('%s/%s',Tests{iTest},AnaStruct);
     save(str,'-struct','S',TestStruct,AnaStruct)
 end
     

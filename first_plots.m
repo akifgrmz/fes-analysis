@@ -3,13 +3,13 @@
 clear all
 close all
 iTestPlot=1;  % pick a test to plot 
-FolderNames={'mar16'};  %% Folders to be loaded 
-FileNames={'mar16_test'};  %% Files to be loaded 
+FolderNames={'jan11'};  %% Folders to be loaded 
+FileNames={'jan11_test'};  %% Files to be loaded 
 
 
 TimeRange=[4 22];  % in seconds
 PlotRange=[ 3 3 ];  % Trial
-iExp=4;    % pick an exp to plot 
+iExp=5;    % pick an exp to plot 
 
 M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);
@@ -40,7 +40,7 @@ for iTrial=PlotRange(1):PlotRange(2)
     plot(Time(TimeInd),Trigger/5,'r','LineWidth',1)
     hold
     plot(Time(TimeInd),EMG,'b','LineWidth',2)
-    legend({'Trigger(a.u.)','Raw EMG (a.u.)'})
+    legend({'Trigger(a.u.)','Raw EMG (V)'})
     title('Trigger and EMG Signal')
     xlabel('Time (s)')
     
@@ -62,43 +62,3 @@ for iTrial=PlotRange(1):PlotRange(2)
 end
 OccTable=M.(ExpStruct).OccTrials.RepTableMat;
 OccTable=[[1:length(OccTable)]' OccTable]
-%% Checking the recruitment curves
-% NOT READY
-iTestPlot=2;  % pick a test to plot 
-FolderNames={'nov28_2','dec5'};  %% Folders to be loaded 
-iExp=2;
-TimeRange=[4 22];  % in seconds
-PlotRange=[ 10   15 ]; 
-iForce=3;
-iTrigger=2;
-iEMG=1;
-iTime=5;
-iPW=4;
-
-for iFile=1:length(FolderNames)
-    ExpStruct=sprintf('%s_test',char(FolderNames{iFile}));
-    str=sprintf('%s/%s',char(FolderNames{iFile}),ExpStruct);
-    load (str);
-    fields = fieldnames(S);
-    M.(fields{1})=S.(fields{1});
-end
-
-% works only with dec5 for now 
-ExpStruct=sprintf('%s_test',char(FolderNames{iTestPlot}));
-ExpLabels=M.(ExpStruct).ExpLabels;
-y=M.(ExpStruct).(ExpLabels{iTestPlot}).MeanForce;
-RedoTrials=M.(ExpStruct).(ExpLabels{iTestPlot}).RedoTrials;
-for iRedo=1:length(RedoTrials)
-    RedoLabel=sprintf('RedoTrial_%d',iRedo);
-    y(iRedo)=M.(ExpStruct).(ExpLabels{iTestPlot}).(RedoLabel).AvgForce;
-end
-
-%  gompertz
-
-
-
-function Vars = gompertz(a, PW)
-
-Vars = a(1)*exp(a(2)*exp(a(3)*PW));
-
-end

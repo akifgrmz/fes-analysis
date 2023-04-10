@@ -75,11 +75,10 @@ for iExp=1:length(ExpLabels)
     end
     S.(ExpStruct).ExpPar.NumofTrialsTable{iExp,1}=ExpLabel;
     S.(ExpStruct).ExpPar.NumofTrialsTable{iExp,2}=S.(ExpStruct).(ExpLabel).NumofTrials;
-    
 end
 
 %
-% Here, check if the variable exist and add if does not
+% Here, check if certain variables exist and add if does not
 %  experiments before feb27 need this part 
 %
 
@@ -122,6 +121,14 @@ if ~isfield(S.(ExpStruct).OccTrials, 'num_of_dropped')
 
 end
 
+dropped=0;
+if ~isfield(S.(ExpStruct).FatigueTrials, 'num_of_dropped')
+
+    S.(ExpStruct).FatigueTrials.num_of_dropped=num_of_dropped;
+    S.(ExpStruct).FatigueTrials.dropped=dropped;
+
+end
+    
 % 3- stim_freq, FreqList
 
 stim_freq=35;

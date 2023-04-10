@@ -3,7 +3,7 @@
 %% Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "mar7" ];
+TestFolders=["jan7" "jan11" "jan12" ];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -351,8 +351,8 @@ clc
 clear all
 % TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
 % TestFolder=["dec5","nov28_2","nov27","nov8"];
-TestFiles=["jan7_tau_test" "jan11_tau_test" "jan12_tau_test" "mar7_tau_test" "mar16_tau_test"];
-TestFolders=["jan7" "jan11" "jan12" "mar7" "mar16" ];
+TestFiles=["jan7_tau_test" "jan11_tau_test" "jan12_tau_test"];
+TestFolders=["jan7" "jan11" "jan12"];
 ExpLabel=["RCCurveTrials"];
 K = load_test(TestFolders,TestFiles);
 
@@ -384,7 +384,7 @@ S = load_test(TestFolders,TestFiles);
 clc
 PWPoints{1:length(TestFolders)}
 close all
-PlotPW = [130 140 120 100 100 105];
+PlotPW = [130 120 120 100 100 105];
 for iTest=1:length(TestFolders)
     TestLabel=sprintf('%s_test',TestFolders{iTest});
 
@@ -453,35 +453,38 @@ for iTest=1:length(TestFolders)
 
 end
 %%
-% # Determining Occlusion 
+% # Determining Force, MAV Occlusion 
 % Occ eqn F_o= Fs-Fs'   
 % Fs : RC curve value with the corresponding PW -> R(PW)
 % Fs': Force value at 3*tau
 
 % To do :
-% 1- incorporate redos
+% 1- incorporate redos: already incorporated earlier 
 
 tau = mean(Tau_table.('TimeConst')); % average time constant to be used 
 OccRefs = [3*tau 4*tau 5*tau]; % referance time for occlusion to be calculated
 TauLabels=["3*tau" "4*tau" "5*tau"];
-OccRefMargin= 0.025 ; % in secs
-PreOffMargin=0.5; % Avg period before stim turning off 
+
 AnaLabel=sprintf("%s_ana",TestFolders(1));
  % Fitting the RC curve: turns out no need for this 
 lbl=S.(AnaLabel).AnaPar.ExpTable.('RC');
 PWPoints=S.(TestLabel).(lbl).PWPoints;
 RCVar=S.(TestLabel).(lbl).RCVar;
-
 MVClevels= (PWPoints-min(PWPoints))/max(PWPoints-min(PWPoints))*30;
 MeanForce=S.(TestLabel).(lbl).MeanForce;
-rc_coef=rc_curve(MeanForce,MVClevels);
-MVCRange=MVClevels(1):0.1:MVClevels(end);
-RC_MVC= rc_coef(1)*exp(rc_coef(2)*exp(rc_coef(3)*MVCRange));
 
-Occ=table([], [], [], [], [] ,[], [],[], [], [] ,[] ,[], [] ,[], [],...
-    'VariableNames',["Target_Level" "Stim_Force" "Voli_Force" ...
-    "MVC_Voli" "MVC_Stim" "PW" "Done?" "F_occ" "F_vprime" "F_v"...
-    "F_occ_mvc" "F_vprime_mvc" "F_v_mvc" "Test" "Tau"]);
+% rc_coef=rc_curve(MeanForce,MVClevels);
+% MVCRange=MVClevels(1):0.1:MVClevels(end);
+% RC_MVC= rc_coef(1)*exp(rc_coef(2)*exp(rc_coef(3)*MVCRange));
+
+
+% Occ=table([], [], [], [], [] ,[], [],[], [], [] ,[] ,[], [] ,[], [],[],[],...
+%     'VariableNames',["Target_Level" "Stim_Force" "Voli_Force" ...
+%     "MVC_Voli" "MVC_Stim" "PW" "Done?" "F_occ" "F_vprime" "F_v"...
+%     "F_target" "F_occ_mvc" "F_vprime_mvc" "F_v_mvc" "F_target_mvc" "Test" "Tau"]);
+
+
+Occ=[ [] [] [] [] [] [] [] [] [] [] [] []];
 
 for iTau=1:length(OccRefs)
     OccRef=OccRefs(iTau);
@@ -489,35 +492,46 @@ for iTau=1:length(OccRefs)
     for iTest=1:length(TestFolders)
         TestLabel=sprintf("%s_test",TestFolders(iTest));
         AnaLabel=sprintf("%s_ana",TestFolders(iTest));
+        FiltLabels=S.(AnaLabel).AnaPar.FiltLabels;
         
+        stim_freq=S.(TestLabel).ExpPar.stim_freq;
+        OccRefMargin= 1/stim_freq ; % in secs
+        PreOffMargin=10/stim_freq; % Avg period before stim turning off 
+    %----This section should go to main_analysis 
         ExpLabel= S.(AnaLabel).AnaPar.ExpTable.('MVC');
+        FiltLabel="Unfilt";
         MVC=S.(TestLabel).(ExpLabel).MVC;
-
+        for iTrial=1:length(S.(TestLabel).(ExpLabel).NumofTrials)
+            TrialLabel=sprintf('Trial_%d',iTrial );
+            TrialsMAV(iTrial) = mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(25:65,:).('MAV_vEMG'));
+        end
+        
+        MAV_max=mean(TrialsMAV);
+    %----
         ExpLabel= S.(AnaLabel).AnaPar.ExpTable.('Occ');
         NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
         TurnOffTime=S.(TestLabel).(ExpLabel).StimProfile;
-        RedoTrials= S.(TestLabel).(ExpLabel).RedoTrials;
         RepMatTable=array2table(S.(TestLabel).(ExpLabel).RepTableMat,...
             'VariableNames',["Target_Level" "Stim_Force" "Voli_Force"...
             "MVC_Voli" "MVC_Stim" "PW","Done?"]);
         
-        OccTable=[ [] [] [] [] [] [] [] []];
-
+%         ForceOcc=[ [] [] [] [] [] [] [] []];
         for iTrial=1:NumofTrials
             TrialLabel=sprintf("Trial_%d", iTrial);
-
-            Force=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Filt_Force');
+            
             Time=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Time');
+            PostOffInd= TurnOffTime+OccRef-OccRefMargin<=Time & TurnOffTime+OccRef+OccRefMargin>=Time;
+            PreOffInd=TurnOffTime-PreOffMargin<=Time & TurnOffTime>=Time;
+            
+            Force=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Filt_Force');
 
             [~,TurnOffInd]=min(abs(Time-TurnOffTime));
-
-            PostOffInd= TurnOffTime+OccRef-OccRefMargin<=Time & TurnOffTime+OccRef+OccRefMargin>=Time;
-            PreOffInd=TurnOffTime<=Time & TurnOffTime+PreOffMargin>=Time;
             PostForceLevel= mean(Force( PostOffInd));
             PreForceLevel= mean(Force( PreOffInd));
             PW_level=RepMatTable(iTrial,:).('PW');
             F_v=RepMatTable(iTrial,:).('Voli_Force');
             F_stim=RepMatTable(iTrial,:).('Stim_Force');
+            F_target=RepMatTable(iTrial,:).('Target_Level');
     
 %             F_s=gompertz(RCVar,PW_level);
 
@@ -527,18 +541,56 @@ for iTau=1:length(OccRefs)
             F_occ_mvc=F_occ/MVC*100;
             F_vprime_mvc=F_vprime/MVC*100;
             F_v_mvc=F_v/MVC*100;
+            F_target_mvc=F_target/MVC*100;
 
-            OccTable=[ OccTable;  F_occ  F_vprime F_v F_occ_mvc F_vprime_mvc F_v_mvc TestFolders(iTest) TauLabels(iTau) ];
-
-        end
+            Occ=[ Occ;  F_occ  F_vprime F_v F_target F_occ_mvc F_vprime_mvc...
+                F_v_mvc F_target_mvc TestFolders(iTest) TauLabels(iTau) "Force" "Unfilt" table2array(RepMatTable(iTrial,:) )];
         
-        OccTable=table(OccTable(:,1),OccTable(:,2),OccTable(:,3),OccTable(:,4),...
-            OccTable(:,5), OccTable(:,6), OccTable(:,7), OccTable(:,8),...
-        'VariableNames',["F_occ" "F_vprime" "F_v" "F_occ_mvc" "F_vprime_mvc" "F_v_mvc" "Test" "Tau"]);
-        Occ=[ Occ; RepMatTable OccTable];
+            PostOffFrameInd=round((TurnOffTime+OccRef-OccRefMargin)*stim_freq:( TurnOffTime+OccRef+OccRefMargin)*stim_freq);
+            PreOffFrameInd=round((TurnOffTime-PreOffMargin)*stim_freq:( TurnOffTime)*stim_freq);
+            MVC_Voli=RepMatTable(iTrial,:).('MVC_Voli');
+            MVC_Stim=RepMatTable(iTrial,:).('MVC_Stim');
+            sMVC=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('sMVC');
+            vMVC=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('vMVC');
+            MAV_v=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(MVC_Voli==vMVC & sMVC==0,:).('Mean');
+            
+            for iFilt=1:length(FiltLabels)
+                FiltLabel=FiltLabels{iFilt};
+                
+                MAV_target=F_target; %%% ---- Fix This 
+
+                PreOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(PreOffFrameInd,:).('MAV_vEMG'));
+                PostOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(PostOffFrameInd,:).('MAV_vEMG'));
+                MAV_vprime=PostOffMAV;
+                MAV_occ=MAV_vprime-MAV_v;
+                MAV_occ_mvc=MAV_occ/MAV_max*100;
+                MAV_vprime_mvc=MAV_vprime/MAV_max*100;
+                MAV_v_mvc=MAV_v/MAV_max*100;
+                MAV_target_mvc=MAV_target/MAV_max*100;
+                
+                Occ=[ Occ;  MAV_occ  MAV_vprime MAV_v MAV_target MAV_occ_mvc ...
+                    MAV_vprime_mvc MAV_v_mvc MAV_target_mvc TestFolders(iTest) TauLabels(iTau) "MAV" FiltLabel table2array(RepMatTable(iTrial,:)) ];
+
+            end
+        end
+%         MAVOcc=table(MAVOcc(:,1),MAVOcc(:,2),MAVOcc(:,3),MAVOcc(:,4),...
+%             MAVOcc(:,5), MAVOcc(:,6), MAVOcc(:,7), MAVOcc(:,8),MAVOcc(:,9),MAVOcc(:,10),MAVOcc(:,11),...
+%         'VariableNames',["MAV_occ" "MAV_vprime" "MAV_v" "MAV_target" "MAV_occ_mvc" "MAV_vprime_mvc" "MAV_v_mvc" "MAV_target_mvc" "Test" "Tau" "Filt"]);
+%     
+%         ForceOcc=table(ForceOcc(:,1),ForceOcc(:,2),ForceOcc(:,3),ForceOcc(:,4),...
+%             ForceOcc(:,5), ForceOcc(:,6), ForceOcc(:,7), ForceOcc(:,8),ForceOcc(:,9),ForceOcc(:,10),...
+%         'VariableNames',["F_occ" "F_vprime" "F_v" "F_target" "F_occ_mvc" "F_vprime_mvc" "F_v_mvc" "F_target_mvc" "Test" "Tau" "Feat" "Filt"]);
+%     
+    
+%         Occ=[ Occ; RepMatTable ForceOcc];
+%         Occ= [Occ; table2array(RepMatTable )] ;
     end
 end
 
-writetable( Occ,'occlusion.csv')
+OccTable=table(Occ(:,1),Occ(:,2),Occ(:,3),Occ(:,4),Occ(:,5), Occ(:,6), Occ(:,7),...
+    Occ(:,8),Occ(:,9),Occ(:,10),Occ(:,11),Occ(:,12),Occ(:,13),Occ(:,14),Occ(:,15),Occ(:,16),Occ(:,17),Occ(:,18),'VariableNames',...
+    [ "Occ" "vprime" "v" "Target" "Occ_mvc" "vprime_mvc" "v_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" "Target_Level" " Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW"])
+
+writetable( OccTable,'occlusion_v3.csv')
 
 

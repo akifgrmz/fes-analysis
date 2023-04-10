@@ -64,9 +64,9 @@ $\sum_{i=1}^{I=10} \frac{1}{I}\frac{MAV_{D,i}-MAV_{F,i}}{MAV_{D,i}}\times100$
 
 ```{r Plotting the dropped-frames }
 
-tests <- c('mar16','')
-filt<-c('GS','Comb', 'Unfilt')
-reps<-c('Rep_1','Rep_2','Rep_3')
+tests <- c("mar7", "mar16",'feb27')
+filt='GS'
+reps=c('Rep_1','Rep_2','Rep_3')
 
 TestString<-""
 for (iTest in 1:length(tests)) 
@@ -82,16 +82,16 @@ for (iTest in 1:length(reps))
 
 SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
 
-plot_df<-filter(df, Test==tests & Frame<=525 & Repeat==reps & Filt_Type==filt |Filt_Type=='Dropped' )
+plot_df<-filter(df, Test==tests  & Repeat==reps & Filt_Type==filt |Filt_Type=='Dropped' )
 
 summary(plot_df)
 
 #pdf("figures/4dropped3.pdf")
 
-plt<-ggplot(plot_df, aes(x = Frame, y = Frame_Val, color = Test)) +
+plt<-ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Drp_Order)) +
     geom_point() + #size = 1.2, alpha = 0.6
     geom_line(data= filter(df,Test==tests & Repeat=="Rep_1" & Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
-    geom_segment(aes(x = 350, y = 1, xend = 525, yend = 1, linetype='dashed', color='Avg. 0-Stim Level'))+
+    geom_segment(aes(x = 350, y = 1, xend = 525, yend = 1, color='Avg. 0-Stim Level'))+
     geom_segment(aes(x = 525, y = 0.01, xend = 525, yend = 4, color='Stim Turn Off'))+
     geom_smooth(method = "loess", se=F)+
     facet_wrap(MVC_Stim~MVC_Voli)+
@@ -99,7 +99,7 @@ plt<-ggplot(plot_df, aes(x = Frame, y = Frame_Val, color = Test)) +
        y = "Normalized MAV",
        title = "Droping 4 Consecutive Frames",
        subtitle = SubTitleString)+
-    ylim(0,0.0003)
+    ylim(0,6)
 plt
 #dev.off()
 
@@ -109,13 +109,10 @@ group_by(Education) %>%summarise(min = min(SBP), Q1 = quantile(SBP, 0.25), media
 Q3 = quantile(SBP, 0.75), max = max(SBP),
 mean = mean(SBP), sd = sd(SBP), n = n(), missing = sum(is.na(SBP)))
 ```
-```{r}
-
-```
 
 
 ```{r deviding the dropped frames in two way cat.  }
-tests <- c("mar7", "mar16")
+tests <- c("mar7", "mar16",'feb27')
 filt='GS'
 reps=c('Rep_1','Rep_2','Rep_3')
 
@@ -139,11 +136,9 @@ for (iTest in 1:length(reps))
 
 SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
 
-plot_df<-filter(df, Test==tests & Repeat==reps& Filt_Type== filt | Filt_Type=='Dropped')
+plot_df<-filter(df, Test==tests & Repeat==reps & Filt_Type== filt | Filt_Type=='Dropped')
 summary (plot_df)
-```
 
-```{r }
 ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Divide_Cat)) +
     geom_point() +
     geom_line(data= filter(df,Test==tests & Repeat=="Rep_1"& Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
@@ -160,6 +155,48 @@ ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Divide_Cat)) +
 #dev.off()
 ```
 
+
+```{r Non Normalized values }
+tests <- c('mar7','mar16','feb27')
+filt<-c('GS')
+reps<-c('Rep_1','Rep_2','Rep_3')
+
+TestString<-""
+for (iTest in 1:length(tests)) 
+{
+  TestString<-sprintf("%s, %s",TestString, tests[iTest])
+}
+
+RepString<-""
+for (iTest in 1:length(reps)) 
+{
+  RepString<-sprintf("%s, %s",RepString, reps[iTest])
+}
+
+SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
+
+plot_df<-filter(df, Test==tests  & Repeat==reps & Filt_Type==filt |Filt_Type=='Dropped' )
+
+summary(plot_df)
+
+ggplot(plot_df, aes(x = Frame, y = Frame_Val, color = Divide_Cat)) +
+    geom_point() + #size = 1.2, alpha = 0.6
+    geom_line(data= filter(df,Test==tests & Repeat=="Rep_1" & Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5/35000, color = "Target (a.u.)")) +
+    geom_segment(aes(x = 350, y = 1/35000, xend = 525, yend = 1/35000, color='Avg. 0-Stim Level'))+
+    geom_segment(aes(x = 525, y = 0.01/35000, xend = 525, yend = 4/35000, color='Stim Turn Off'))+
+    geom_smooth(method = "loess", se=F)+
+    facet_wrap(MVC_Stim~MVC_Voli)+
+    labs(x = "Frames",
+       y = "MAV",
+       title = "Droping 4 Consecutive Frames",
+       subtitle = SubTitleString)+
+    ylim(0,0.0002)
+
+#pdf("figures/4dropped3.pdf")
+
+#dev.off()
+
+```
 
 ```{r plotting with boxplots}
 
@@ -272,6 +309,37 @@ glance(model_one) %>% select(r.squared) %>% kable(digits = 3)
 
 model_one <- lm(Norm_Val ~ Filt_Type, data = filt_variables) 
 
+```
+
+
+
+
+```{r}
+library(ggplot2)
+library(EnvStats)
+
+mtcars2 <- mtcars %>% 
+  group_by(cyl, am) %>% mutate(n = n()) %>% 
+  mutate(label = paste0(cyl,' [N = ',n,']'))
+
+ggplot(mtcars2,
+   aes(x = factor(label), y = mpg, color = factor(label))) + 
+  geom_point() + 
+  facet_wrap(~am, scales = 'free_x') +
+  #theme(legend.position = "none")+
+  xlab('cyl') 
+```
+```{r}
+library(ggplot2)
+library(EnvStats)
+
+p <- ggplot(mtcars, 
+  aes(x = factor(cyl), y = mpg, color = factor(cyl))) + 
+  theme(legend.position = "none")
+
+p + geom_point() + 
+  stat_n_text() + 
+  labs(x = "Number of Cylinders", y = "Miles per Gallon")
 ```
 
 

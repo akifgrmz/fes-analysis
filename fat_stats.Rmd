@@ -1,0 +1,48 @@
+---
+title: "fat_stats"
+output: html_document
+date: "2023-04-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE}
+library(magrittr); 
+library(here); 
+library(janitor)
+library(readxl);
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+```
+
+
+```{r Data Inject } 
+
+fat_csv<- read_csv("fatigue_stats.csv",show_col_types = FALSE)
+
+fat_csv
+
+```
+```{r dataframe modifications}
+
+fat<-fat_csv%>%mutate(Test = as.factor(Test),
+                     Exp = as.factor(Exp),
+                     Filt = as.factor(Filt),
+                     Trial = as.factor(Trial),
+                     Feat = as.factor(Feat),
+                     Segment = as.factor(Segment),
+                     EMG = as.factor(EMG),
+                     LPFilt = as.factor(LPFilt))
+
+summary(fat)
+
+```
