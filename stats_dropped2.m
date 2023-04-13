@@ -150,7 +150,6 @@ for iFeat=1:1
                         g_trial(:)=string(TrialLabel);
                         g_order(:)=NaN;
                         
-
                         g=[g; g_filt' g_voli' g_stim' g_test' g_feattype' g_rep' g_trial' g_order' ];
                         x=[x ;x_feat x_norm x_target x_framenum ];
                         
@@ -201,22 +200,6 @@ S.(AnaStruct).(ExpLabel).Dropped_stats=Dropped_stats;
 % % DirLabelCSV=sprintf('%s/%s_dropped.csv',TestFolders{iTest},TestFolders{iTest});
 writetable( Dropped_stats, 'dropped_stats2.csv')
 % save_test(TestFolders,S)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

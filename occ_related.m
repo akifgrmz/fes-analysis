@@ -3,7 +3,7 @@
 %% Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" ];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" ];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -63,7 +63,7 @@ end
 
 %% Time Constants of RCCurve Trials
 
-%% To Do List
+%To Do List
 % 1- remove filtering of force
 % 2- indicing simplifications 
 % 3- Saving fixes: dont save the averages, save all the coefficients ^
@@ -129,7 +129,8 @@ for iTest=1:length(TestFolders)
          %There is no need for this 
          %%
         FiltDesign=Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign;
-        F_filtered = filtfilt(FiltDesign,F);
+%         F_filtered = filtfilt(FiltDesign,F);
+        F_filtered=F;
         
         Ind= T> AvgRangePreOff(1) & T<AvgRangePreOff(2);
         PreAvgForce= mean(F_filtered(Ind));
@@ -198,7 +199,9 @@ for iTest=1:length(TestFolders)
             T=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Time');
             
             FiltDesign=Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign;
-            F_filtered = filtfilt(FiltDesign,F);
+%             F_filtered = filtfilt(FiltDesign,F);
+            F_filtered=F;
+
             Ind= T> AvgRangePreOff(1) & T<AvgRangePreOff(2);
             PreAvgForce= mean(F_filtered(Ind));
             Ind= T> AvgRangePostOff(1) & T<AvgRangePostOff(2);
@@ -460,6 +463,8 @@ end
 
 % To do :
 % 1- incorporate redos: already incorporated earlier 
+% 2- a section goes to main analysis
+% 3- what to do with mav target
 
 tau = mean(Tau_table.('TimeConst')); % average time constant to be used 
 OccRefs = [3*tau 4*tau 5*tau]; % referance time for occlusion to be calculated
@@ -472,17 +477,6 @@ PWPoints=S.(TestLabel).(lbl).PWPoints;
 RCVar=S.(TestLabel).(lbl).RCVar;
 MVClevels= (PWPoints-min(PWPoints))/max(PWPoints-min(PWPoints))*30;
 MeanForce=S.(TestLabel).(lbl).MeanForce;
-
-% rc_coef=rc_curve(MeanForce,MVClevels);
-% MVCRange=MVClevels(1):0.1:MVClevels(end);
-% RC_MVC= rc_coef(1)*exp(rc_coef(2)*exp(rc_coef(3)*MVCRange));
-
-
-% Occ=table([], [], [], [], [] ,[], [],[], [], [] ,[] ,[], [] ,[], [],[],[],...
-%     'VariableNames',["Target_Level" "Stim_Force" "Voli_Force" ...
-%     "MVC_Voli" "MVC_Stim" "PW" "Done?" "F_occ" "F_vprime" "F_v"...
-%     "F_target" "F_occ_mvc" "F_vprime_mvc" "F_v_mvc" "F_target_mvc" "Test" "Tau"]);
-
 
 Occ=[ [] [] [] [] [] [] [] [] [] [] [] []];
 
@@ -513,7 +507,7 @@ for iTau=1:length(OccRefs)
         TurnOffTime=S.(TestLabel).(ExpLabel).StimProfile;
         RepMatTable=array2table(S.(TestLabel).(ExpLabel).RepTableMat,...
             'VariableNames',["Target_Level" "Stim_Force" "Voli_Force"...
-            "MVC_Voli" "MVC_Stim" "PW","Done?"]);
+            "MVC_Voli" "MVC_Stim" "PW","Done"]);
         
 %         ForceOcc=[ [] [] [] [] [] [] [] []];
         for iTrial=1:NumofTrials
@@ -573,17 +567,6 @@ for iTau=1:length(OccRefs)
 
             end
         end
-%         MAVOcc=table(MAVOcc(:,1),MAVOcc(:,2),MAVOcc(:,3),MAVOcc(:,4),...
-%             MAVOcc(:,5), MAVOcc(:,6), MAVOcc(:,7), MAVOcc(:,8),MAVOcc(:,9),MAVOcc(:,10),MAVOcc(:,11),...
-%         'VariableNames',["MAV_occ" "MAV_vprime" "MAV_v" "MAV_target" "MAV_occ_mvc" "MAV_vprime_mvc" "MAV_v_mvc" "MAV_target_mvc" "Test" "Tau" "Filt"]);
-%     
-%         ForceOcc=table(ForceOcc(:,1),ForceOcc(:,2),ForceOcc(:,3),ForceOcc(:,4),...
-%             ForceOcc(:,5), ForceOcc(:,6), ForceOcc(:,7), ForceOcc(:,8),ForceOcc(:,9),ForceOcc(:,10),...
-%         'VariableNames',["F_occ" "F_vprime" "F_v" "F_target" "F_occ_mvc" "F_vprime_mvc" "F_v_mvc" "F_target_mvc" "Test" "Tau" "Feat" "Filt"]);
-%     
-    
-%         Occ=[ Occ; RepMatTable ForceOcc];
-%         Occ= [Occ; table2array(RepMatTable )] ;
     end
 end
 
@@ -592,5 +575,16 @@ OccTable=table(Occ(:,1),Occ(:,2),Occ(:,3),Occ(:,4),Occ(:,5), Occ(:,6), Occ(:,7),
     [ "Occ" "vprime" "v" "Target" "Occ_mvc" "vprime_mvc" "v_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" "Target_Level" " Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW"])
 
 writetable( OccTable,'occlusion_v3.csv')
+
+
+%% Occlusion from dropped frames 
+
+DirLabelCSV=sprintf('%s/%s_taustats.csv',TestFolders{iTest},TestFolders{iTest});
+Tau_Cell{iTest}= readtable(DirLabelCSV);
+
+DirLabelCSV=['tau_estimates.csv'];
+
+
+
 
 

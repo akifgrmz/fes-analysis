@@ -66,7 +66,7 @@ plot_tibble<-filter(occ, MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
 
 ggplot(plot_tibble, aes(x =  v_mvc , y = vprime_mvc , color = MVC_Stim)) +
     geom_point() +
-    geom_smooth(method = "lm")+
+    geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
     facet_wrap(~Feat)
 
