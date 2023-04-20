@@ -43,7 +43,8 @@ for iTest=1:length(TestFolders)
     end
     
     MAV_Mean(:,iTest)=mean(MAV_Vals)';
-    S.(AnaLabel).(ExpLabel).MAV_Vals=table(PWPoints, MAV_Vals(1,:)',MAV_Vals(2,:)',MAV_Vals(3,:)',mean(MAV_Vals)',std(MAV_Vals)',...
+    S.(AnaLabel).(ExpLabel).MAV_Vals=table(PWPoints, MAV_Vals(1,:)',...
+        MAV_Vals(2,:)',MAV_Vals(3,:)',mean(MAV_Vals)',std(MAV_Vals)',...
         'VariableNames',["PW" "Rep_1" "Rep_2" "Rep_3" "Mean" "Std"]);
     
     S.(AnaLabel).(ExpLabel).MAV_Mean=array2table(MAV_Mean(:,iTest),...
@@ -86,8 +87,8 @@ for iTest=1:length(TestFolders)
             for iTrial=1:length(TrialsInd(:,c))
                 TrialLabel=sprintf('Trial_%d',TrialsInd(iTrial,c));
 
-                MAV_Mean(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('MAV_vEMG')(MeanRangeInd));
-                MAV_Mean(TrialsInd(iTrial,c),2)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats.('MAV_vEMG')(MeanRangeInd));
+                MAV_Mean(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(MeanRangeInd).('MAV_vEMG'));
+                MAV_Mean(TrialsInd(iTrial,c),2)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(MeanRangeInd).('MAV_vEMG'));
                 MAV_Mean(TrialsInd(iTrial,c),3:5)=RepTableMat(TrialsInd(iTrial,c),[1,4,5]);
             end
             MAV_Mean_Reps(c,:) = [ c mean(MAV_Mean(TrialsInd(:,c),1))  std(MAV_Mean(TrialsInd(:,c),1)) RepTableMat(TrialsInd(iTrial,c),[4 5 ])];

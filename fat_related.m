@@ -352,6 +352,7 @@ TestLabel=sprintf("%s_test",TestFolders{iTest});
 ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(Exp);
 stim_freq=S.(TestLabel).ExpPar.stim_freq;
 FrameInd=TimeRange(1)*stim_freq:TimeRange(2)*stim_freq;
+cm = lines(length(TestFolders));
 
 NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
 if sum(Trials>NumofTrials)>0
@@ -379,7 +380,7 @@ for iTest=1:length(TestFolders)
         figure(iTrial)
         
         subplot(4,1,1)
-        plot(Frames,Force,'LineWidth',2.5,'DisplayName',sprintf("%s Force(N)",TestFolders{iTest}))
+        plot(Frames,Force,'LineWidth',2.5,'DisplayName',sprintf("%s Force(N)",TestFolders{iTest}),'Color',cm(iTest,:))
         hold on
         title(sprintf('Force of Trial %d of Different Subjects',iTrial))
         xlabel('Time (s)')
@@ -387,9 +388,9 @@ for iTest=1:length(TestFolders)
         grid on
         
         subplot(4,1,2)
-        plot(Frames,MAV,'--','LineWidth',0.02,'DisplayName',TestFolders{iTest})
+        plot(Frames,MAV,'--','LineWidth',0.02,'DisplayName',TestFolders{iTest},'Color',cm(iTest,:))
         hold on 
-        plot(Frames,FatMAV,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}))
+        plot(Frames,FatMAV,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}),'Color',cm(iTest,:))
         title(sprintf('MAV of Trial %d of Different Subjects',iTrial))
         xlabel('Time (s)')
         ylim([0 max(MAV)/3])
@@ -397,18 +398,18 @@ for iTest=1:length(TestFolders)
         grid on
 
         subplot(4,1,3)
-        plot(Frames,MedFreq,'--','LineWidth',.02,'DisplayName',TestFolders{iTest})
+        plot(Frames,MedFreq,'--','LineWidth',.02,'DisplayName',TestFolders{iTest},'Color',cm(iTest,:))
         hold on
-        plot(Frames,FatMedFreq,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}))
+        plot(Frames,FatMedFreq,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}),'Color',cm(iTest,:))
         title(sprintf('Median Freq. of Trial %d of Different Subjects',iTrial))
         xlabel('Time (s)')
         legend
         grid on
         
         subplot(4,1,4)
-        plot(Frames,MeanFreq,'--','LineWidth',.02,'DisplayName',TestFolders{iTest})
+        plot(Frames,MeanFreq,'--','LineWidth',.02,'DisplayName',TestFolders{iTest},'Color',cm(iTest,:))
         hold on
-        plot(Frames,FatMeanFreq,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}))
+        plot(Frames,FatMeanFreq,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}),'Color',cm(iTest,:))
         title(sprintf('Mean Freq. of Trial %d of Different Subjects',iTrial))
         xlabel('Time (s)')
         ylabel('Hz')

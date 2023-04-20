@@ -17,7 +17,7 @@
 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12"];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
@@ -128,7 +128,7 @@ for iTest=1:length(TestFolders)
                 RedoLabel=sprintf('RedoTrial_%d',RedoTrials(iRedo));
                 TrialLabel=sprintf('Trial_%d',RedoTrials(iRedo));
                 S.(TestStruct).(ExpLabel).(TrialLabel)=S.(TestStruct).(ExpLabel).(RedoLabel);
-               
+                S.(TestStruct).(ExpLabel).(TrialLabel).Redo=1;
            end
         end 
     end
@@ -1019,6 +1019,70 @@ for iTest=1:length(TestFolders)
     S.(AnaStruct).(ExpLabel).RepTrialsInd=[array2table([TrialsInd'],...
         'VariableNames',["Rep1" "Rep2" "Rep3"]) MAV_Mean_Reps(:,'sMVC') MAV_Mean_Reps(:,'vMVC')];
 end
+
+%%Normalize the Features over zero stim trials
+FeatLabels=string(S.(AnaStruct).AnaPar.FeatLabels);
+VoliMVCLevels=[10 20 30 40 ];
+StimMVCLevels=[0 10 20 30 ];
+for iFeat=1:1
+    FeatLabel=FeatLabels(iFeat);
+    
+    for iTest=1:length(TestFolders)
+        TestStruct=sprintf("%s_test",TestFolders{iTest});
+        AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+
+        RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
+
+        for iVoli=1:length(VoliMVCLevels)
+            sMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('sMVC');
+            vMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('vMVC');
+
+            Voli_NormCoeff=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('Mean')...
+                (sMVC_Vec==0 & vMVC_Vec==VoliMVCLevels(iVoli));
+
+            for iStim=1:length(StimMVCLevels)
+                sMVC=StimMVCLevels(iStim);
+                vMVC=VoliMVCLevels(iVoli);
+                IndTrials=find_trialnum(vMVC,sMVC,RepTableMat);
+
+                for iRep=1:length(IndTrials)
+                    TrialLabel=sprintf('Trial_%d',IndTrials(iRep));
+                    FiltLabels=S.(AnaStruct).AnaPar.FiltLabels;
+
+                    for iFilt=1:length(S.(AnaStruct).AnaPar.FiltLabels)
+                        FiltLabel=S.(AnaStruct).AnaPar.FiltLabels{iFilt};
+                        vEMGLabel=sprintf('%s_vEMG',FeatLabel);
+                        MWaveLabel=sprintf('%s_MWave',FeatLabel);
+
+                        
+                        FeatvEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.(vEMGLabel);
+                        FeatMWave=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats.(MWaveLabel);
+
+                        NormvEMGFeat=FeatvEMG/Voli_NormCoeff;
+                        NormMWaveFeat=FeatMWave/Voli_NormCoeff;
+
+                        S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats...
+                            .(sprintf('Norm_%s',vEMGLabel))=NormvEMGFeat;
+                        
+                        S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).Feats...
+                            .(sprintf('Norm_%s',MWaveLabel))=NormMWaveFeat;
+
+                    end
+                end
+            end
+        end
+    end
+end
+
+
+%% Code Below is not used 
+%        ||
+%        ||
+%        ||
+%        ||
+%       \||/
+%        \/
+
 
 %% Target profile normalization
 exp_lbl='Occ';

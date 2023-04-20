@@ -100,7 +100,7 @@ for iFeat=1:1
             sMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('sMVC');
             vMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('vMVC');
 
-            Voli_NormCoeff=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('MAV_Mean')...
+            Voli_NormCoeff=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('Mean')...
                 (sMVC_Vec==0 & vMVC_Vec==VoliMVCLevels(iVoli));
 
             for iStim=1:length(StimMVCLevels)
@@ -116,7 +116,7 @@ for iFeat=1:1
                         FiltLabel=S.(AnaStruct).AnaPar.FiltLabels{iFilt};
                         vEMGLabel=sprintf('%s_vEMG',FeatLabel);
                         
-                        DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
+                        DroppedFeatLabel=sprintf('%s',FeatLabel);
                         DroppedFeat=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel);
                         DroppedFrameNum=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;                        
                         
@@ -155,7 +155,7 @@ for iFeat=1:1
                         
                     end
                     
-                    DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
+                    DroppedFeatLabel=sprintf('%s',FeatLabel);
                     num_of_dropped=S.(TestStruct).(ExpLabel).num_of_dropped;
                     DroppedFeat=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel);
                     DroppedFrameNum=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;

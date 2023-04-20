@@ -27,7 +27,7 @@ library(ggplot2)
 ```{r Data Inject } 
 
 df <- read_csv("dropped_stats2.csv",show_col_types = FALSE)
-df<-df %>% mutate(Drp_Order = replace_na(Drp_Order, 0))
+#df<-df %>% mutate(Drp_Order = replace_na(Drp_Order, 0))
 
 df<-df%>%mutate(Filt_Type = as.factor(Filt_Type),
                 Repeat = as.factor(Repeat),
@@ -51,7 +51,7 @@ df<-df%>%mutate(Drp_Order=recode(Drp_Order,
                                 '2' = '2nd_Dropped',
                                 '3' = '3rd_Dropped',
                                 '4' = '4th_Dropped',
-                                '0' = 'NonDropped'))
+                                'NonDropped' = 'NonDropped'))
 
 summary(df)
 ```
@@ -105,9 +105,11 @@ plt
 
 ```
 ```{r}
+
 group_by(Education) %>%summarise(min = min(SBP), Q1 = quantile(SBP, 0.25), median = median(SBP),
 Q3 = quantile(SBP, 0.75), max = max(SBP),
 mean = mean(SBP), sd = sd(SBP), n = n(), missing = sum(is.na(SBP)))
+
 ```
 
 

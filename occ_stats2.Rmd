@@ -28,7 +28,8 @@ library(ggplot2)
 ```{r Data Inject } 
 
 occraw<- read_csv("occlusion_v3.csv",show_col_types = FALSE)
-
+occdropped<- read_csv("dropped_occ.csv",show_col_types = FALSE)
+occdropped
 occraw
 
 ```
@@ -36,35 +37,40 @@ occraw
 ```{r dataframe modifications}
 
 occ<-occraw%>%mutate(Test = as.factor(Test),
-                     MVC_Voli = as.factor(MVC_Voli),
-                     MVC_Stim = as.factor(MVC_Stim),
+
                      Tau = as.factor(Tau),
                      Feat = as.factor(Feat),
                      Filt = as.factor(Filt))
 
-occ<-occ%>%mutate(MVC_Voli=recode(MVC_Voli,
+occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
                                 '10' = 'Voli_10',
                                 '20' = 'Voli_20',
                                 '30' = 'Voli_30',
                                 '40' = 'Voli_40')) %>%
-            mutate(MVC_Stim=recode(MVC_Stim,
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
                                  '0' = 'Stim_0',
                                 '10' = 'Stim_10',
                                 '20' = 'Stim_20',
                                 '30' = 'Stim_30'))
 
-occ<-occ%>%filter(Test!="mar7",Test!="mar16")
-summary(occ)
+occ<-occ%>%filter(Test!="mar7",Test!="mar16",Test!="feb27")
 
+
+occdropped<-occdropped%>%mutate(Test = as.factor(Test),
+                     StimMVC = as.factor(StimMVC),
+                     Repeat = as.factor(Repeat),
+                     NumofDropped = as.factor(NumofDropped))
+summary(occdropped)
+occ
 ```
 
 
-```{r Plotting the results }
+```{r Plotting: maintain section  }
 
-plot_tibble<-filter(occ, MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
 
 
-ggplot(plot_tibble, aes(x =  v_mvc , y = vprime_mvc , color = MVC_Stim)) +
+ggplot(plot_tibble, aes(x =  v_mvc , y = vprime_mvc , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
@@ -78,24 +84,49 @@ ggplot(plot_tibble, aes(x =  v_mvc , y = vprime_mvc , color = MVC_Stim)) +
 ```
 ```{r Plotting the results }
 
-plot_tibble<-filter(occ, MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
 
-ggplot(plot_tibble, aes(x =  v_mvc , y = Occ_mvc , color = MVC_Stim)) +
+ggplot(plot_tibble, aes(x =  v_mvc , y = Occ_mvc , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+
     facet_wrap(~Feat)
 
+lm_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='Force')
+
+ m1 <- lm(Occ_mvc ~ MVC_Voli + MVC_Stim, data = lm_tibble) 
+tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+
 ```
 
-```{r Occlusion Heat Map}
-plot_tibble<-filter(occ, MVC_Stim!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
+```{r Plotting: dropped frames occlusion}
+plotibble<-filter(occdropped, NumofDropped =='4_Drops')
 
-ggplot(plot_tibble, aes(x =  MVC_Voli, y = MVC_Stim, fill = Occ_mvc)) +
+ggplot(plotibble, aes(x =  VoliMVC , y = Dropped_MAV , color = StimMVC)) +
+    geom_point() +
+    geom_smooth(method = "lm",level=0.90)+
+    geom_segment(aes(x = 10, y = .31, xend = 40, yend = 1, color='No Occlusion Level'))
+
+ggplot(plotibble, aes(x =  VoliMVC , y = Occ_MAV , color = StimMVC)) +
+    geom_point() +
+    geom_smooth(method = "lm")
+
+```
+
+
+
+
+
+
+```{r Occlusion Heat Map}
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
+
+ggplot(plot_tibble, aes(x = MVC_Stim_Cat , y =  MVC_Voli_Cat, fill = Occ_mvc)) +
     geom_tile() +
     geom_smooth(method = "lm")+
     facet_wrap(~Feat)
 
 ```
+
 
 ```{r}
 
