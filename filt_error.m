@@ -2,115 +2,22 @@
 % # Data Inject
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" ];
+TestFolders=["jan7" "jan11" "jan12" "apr20"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
 end
 
 S = load_test(TestFolders,TestFiles);
-% # Mean MAV of RC Trials 
-%%
-clear MAV_Mean
-exp_lbl='RC';
-MeanTime=[8 10]; % Calculating the means at time [8 10]
 
-for iTest=1:length(TestFolders)
-    TestLabel=sprintf("%s_test",TestFolders{iTest});
-    AnaLabel=sprintf("%s_ana",TestFolders{iTest});
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(exp_lbl);
-    stim_freq=S.(TestLabel).ExpPar.stim_freq;
-
-    MeanFrame=[MeanTime(1)*stim_freq MeanTime(2)*stim_freq];
-    MeanRangeInd=[MeanFrame(1): MeanFrame(2)];
-    FiltLabel="Unfilt";
-    
-    NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials';
-    PercentMVCVals=S.(TestLabel).(ExpLabel).PercentMVC';
-    PWPoints=S.(TestLabel).(ExpLabel).PWPoints';
-    PWofTrials=S.(TestLabel).(ExpLabel).PWTrials';
-    
-    for iPW=1:length(PWPoints)
-        
-        Ind_PW(:,iPW)=PWofTrials==PWPoints(iPW);
-        IndTrials(:,iPW)=find(Ind_PW(:,iPW)==1);
-        
-        for iTrial=1:length(IndTrials(:,iPW))
-            TrialLabel=sprintf('Trial_%d',IndTrials(iTrial,iPW));
-            MAV_Vals(iTrial,iPW)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel)...
-                .(FiltLabel).Feats.('MAV_vEMG')(MeanRangeInd));
-        end
-    end
-    
-    MAV_Mean(:,iTest)=mean(MAV_Vals)';
-    S.(AnaLabel).(ExpLabel).MAV_Vals=table(PWPoints, MAV_Vals(1,:)',...
-        MAV_Vals(2,:)',MAV_Vals(3,:)',mean(MAV_Vals)',std(MAV_Vals)',...
-        'VariableNames',["PW" "Rep_1" "Rep_2" "Rep_3" "Mean" "Std"]);
-    
-    S.(AnaLabel).(ExpLabel).MAV_Mean=array2table(MAV_Mean(:,iTest),...
-        'VariableName',TestFolders(iTest));
-    
-end
-
-% Update this to more general
-RC_MAV=array2table(MAV_Mean,'VariableNames',TestFolders);
-
-
-%Mean MAV of Occ Trials 
-clc
-exp_lbl='Occ';
-VoliLevels=[10 20 30 40];
-StimLevels=[ 0 10 20 30];
-MeanTime=[ 11 14];
-% Calculating the means at time [10 15]
-for iTest=1:length(TestFolders)
-    TestLabel=sprintf("%s_test",TestFolders{iTest});
-    AnaLabel=sprintf("%s_ana",TestFolders{iTest});
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(exp_lbl);
-
-    RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
-    stim_freq=S.(TestLabel).ExpPar.FreqList(1);
-
-    MeanFrame=[MeanTime(1)*stim_freq MeanTime(2)*stim_freq];
-    MeanRangeInd=[MeanFrame(1):MeanFrame(2)];
-    FiltLabel="Unfilt";
-    c=1;
-    clear MAV_Mean MAV_Mean_Reps TrialsInd
-    for iVoli=1:length(VoliLevels)
-        VoliLevel=VoliLevels(iVoli);
-
-        for iStim=1:length(StimLevels)
-            StimLevel=StimLevels(iStim);
-
-            TrialsInd(:,c)= find_trialnum(VoliLevel, StimLevel, RepTableMat);
-            
-            for iTrial=1:length(TrialsInd(:,c))
-                TrialLabel=sprintf('Trial_%d',TrialsInd(iTrial,c));
-
-                MAV_Mean(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(MeanRangeInd).('MAV_vEMG'));
-                MAV_Mean(TrialsInd(iTrial,c),2)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(MeanRangeInd).('MAV_vEMG'));
-                MAV_Mean(TrialsInd(iTrial,c),3:5)=RepTableMat(TrialsInd(iTrial,c),[1,4,5]);
-            end
-            MAV_Mean_Reps(c,:) = [ c mean(MAV_Mean(TrialsInd(:,c),1))  std(MAV_Mean(TrialsInd(:,c),1)) RepTableMat(TrialsInd(iTrial,c),[4 5 ])];
-            c=c+1;
-        end
-    end
-
-    MAV_Mean=array2table(MAV_Mean,'VariableNames',["Mean", "Std" "Theo_Force","vMVC","sMVC"]);
-    MAV_Mean_Reps=array2table(MAV_Mean_Reps,'VariableNames',["Unique_Trial" "Mean" "Std" "vMVC" "sMVC"]);
-    
-    S.(AnaLabel).(ExpLabel).MAV_Mean=MAV_Mean;
-    S.(AnaLabel).(ExpLabel).MAV_Mean_Reps=MAV_Mean_Reps;
-    S.(AnaLabel).(ExpLabel).RepTrialsInd=[array2table([TrialsInd'],...
-        'VariableNames',["Rep1" "Rep2" "Rep3"]) MAV_Mean_Reps(:,'sMVC') MAV_Mean_Reps(:,'vMVC')];
-end
 %% Plotting
+
 cm = lines(length(TestFolders));
 sMVC=0;
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable.('Occ');
-
+    
     sMVCzero_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('sMVC');
     MAVMean_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('Mean');
     vMVCVal_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('vMVC');
@@ -119,24 +26,117 @@ for iTest=1:length(TestFolders)
     MAVMean=S.(AnaLabel).(ExpLabel).MAV_Mean.('Mean');
     vMVCVal=S.(AnaLabel).(ExpLabel).MAV_Mean.('vMVC');
     
+    Amp_Modul_Mean=S.(AnaLabel).(ExpLabel).Amp_Modul_Mean.('Mean');
+    
     Ind=(sMVCzero==sMVC);
     Ind_Reps=(sMVCzero_Reps==sMVC);
-    p=polyfit(vMVCVal(Ind),MAVMean(Ind),1);
+    p1=polyfit(vMVCVal(Ind),MAVMean(Ind),1);
+
+    p2=polyfit(vMVCVal(Ind),Amp_Modul_Mean(Ind),1);
+
     
-    figure(10)
-    plot(vMVCVal(Ind),MAVMean(Ind),'*','LineWidth',1,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    figure(1)
+    subplot(2,1,1)
+    plot(vMVCVal(Ind),MAVMean(Ind),'o','LineWidth',1,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
     legend
     hold on
-    plot(vMVCVal(Ind),polyval(p,vMVCVal(Ind)),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    plot(vMVCVal(Ind),polyval(p1,vMVCVal(Ind)),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    xlabel('% Voli. MVC')
+    ylabel('Mean MAV')
+    xlim([0 50])
+
+
+    subplot(2,1,2)
+    plot(vMVCVal(Ind),Amp_Modul_Mean(Ind),'o','LineWidth',1,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    legend
+    hold on
+    plot(vMVCVal(Ind),polyval(p2,vMVCVal(Ind)),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    ylabel('% Amp modul')
+    xlabel('% Voli. MVC')
+    xlim([0 50])
+
+
 end
 
-xlabel('% Voli. MVC')
-ylabel('Avg MAV')
-title(sprintf('Avg MAV (constant region) with Stim=%d%% MVC',sMVC))
-grid
-xlim([0 50])
+% ylabel('Avg MAV')
+% title(sprintf('Avg MAV (constant region) with Stim=%d%% MVC',sMVC))
+% grid
+%% Plotting Adaptive Modul
+TestFolders="apr20";
+AnaLabel=sprintf("%s_ana",TestFolders);
+
+S = load_test(TestFolders,AnaLabel);
+%%
+PlotRange=[ 5 15];
+vMVC=10;
+sMVC=0;
+FiltLabel="GS";
+TestFolders="apr20";
+for iTest=1:length(TestFolders)
+    AnaLabel=sprintf("%s_ana",TestFolders{iTest});
+    TestLabel=sprintf("%s_test",TestFolders{iTest});
+
+    ExpLabel=S.(AnaLabel).AnaPar.ExpTable.('Occ');
+    
+    RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
+    IndTrials=find_trialnum(vMVC,sMVC,RepTableMat);
+    stim_freq=S.(TestLabel).ExpPar.stim_freq;
+    FrameInd=ceil([stim_freq*PlotRange(1): stim_freq*PlotRange(2)]);
+
+%     ttl=sprintf('Test: %s, sMVC: %d, vMVC: %d',TestFolders(iTest),sMVC,vMVC);
+
+    for iTrial=1:length(IndTrials)
+        TrialLabel=sprintf("Trial_%d",IndTrials(iTrial));
+        Adap_vEMG=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(FrameInd,:).('Amp_MAV_vEMG');
+        Clip_vEMG=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(FrameInd,:).('Clip_MAV_vEMG');
+        TrialNum=IndTrials(iTrial);
+        cm=lines(length(IndTrials));
+
+        MAV_vEMG=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).('MAV_vEMG');
+
+        figure(1)    
+        subplot(3,1,1)
+        plot(FrameInd,MAV_vEMG,'DisplayName',sprintf('AmpMAV, Trial: %d',TrialNum),'Color',cm(iTrial,:))
+        hold on
+        ylabel('MAV')
+        xlabel('Frames')
+        title(sprintf('Filt: %s, Trial: %d, Stim: %d%% Voli: %d%%',...
+        FiltLabel,TrialNum,RepTableMat(TrialNum,5),RepTableMat(TrialNum,4)));
+        xlim([FrameInd(1) FrameInd(end)])
+        grid on
+        subplot(3,1,2)
+        plot(FrameInd,Clip_vEMG,'DisplayName',sprintf('AmpClipped, Trial: %d',TrialNum),'Color',cm(iTrial,:))
+        hold on
+        ylabel('Norm. MAV')
+        xlabel('Frames')
+        title('Scaled MAV');
+        xlim([FrameInd(1) FrameInd(end)])
+        grid on
+
+
+        subplot(3,1,3)
+        plot(FrameInd,Adap_vEMG,'DisplayName',sprintf('AmpMAV, Trial: %d',TrialNum),'Color',cm(iTrial,:))
+        hold on
+        plot([175 350 525],[0 mean(Adap_vEMG(end-150:end)) mean(Adap_vEMG(end-150:end))],'Color',cm(iTrial,:))
+        ylabel('Norm. MAV')
+        xlabel('Frames')
+        title('Amplitude Modulated MAV');
+%         ylim([0  mean(Adap_vEMG(end-150:end))*1.5])
+        xlim([FrameInd(1) FrameInd(end)])
+        grid on
+
+        figure(2)    
+        
+
+        
+
+    end
+end
+
+
 
 %%
+
 
 figure
 for iTest=1:length(TestFolders)

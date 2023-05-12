@@ -2,7 +2,7 @@
 %% Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12"];
+TestFolders=["jan7" "jan11" "jan12" "apr20"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -12,7 +12,7 @@ S = load_test(TestFolders,TestFiles);
 %% Initial Plotting 
 close all
 iTest=1;  % pick a test to plot 
-FolderName=TestFolders(iTest);  %% Folders to be loaded 
+FolderName=TestFolders(iTest);  %% Folders to be loaded  
 Trials=[1];  % Trial
 TimeRange=[5 15];  % in seconds
 Exp= ["Fat"];
@@ -55,7 +55,7 @@ for iTrial=Trials
     xlabel('Time (s)')
 end
 
-%% Linear Models
+%% Fatigue Linear Models
 % # Calculating the relevant fitting stats and plotting them
 % # Plotting the Mean, Median and MAV 
 % # 
@@ -327,11 +327,138 @@ end
 writetable( Fat_stats, 'fatigue_stats.csv')
 writetable( Fat, 'fatigue_frames.csv')
 
+%% Fatigue Trials Stats
+Exp="Fat";
+SegLabels=["Voli" "Stim" "Stim+Voli"];
+
+EMGLabels=["vEMG" "MWave"];
+FeatFilt="FatFeats";
+FeatFiltLabel="Filt_";
+
+VoliStart=12;
+VoliEnd=VoliStart+4;
+StimStart=22;
+StimEnd=StimStart+4;
+StimVoliStart=32;
+StimVoliEnd=StimVoliStart+4;
+
+AnaLabel=sprintf("%s_ana",TestFolders(1));
+TestLabel=sprintf("%s_test",TestFolders{1});
+ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(Exp);
+
+stim_freq=S.(TestLabel).ExpPar.stim_freq;
+IndVoli=[VoliStart*stim_freq:VoliEnd*stim_freq];
+IndStim=[StimStart*stim_freq:StimEnd*stim_freq];
+IndStimVoli=[StimVoliStart*stim_freq:StimVoliEnd*stim_freq];
+SegInd=[IndVoli;IndStim;IndStimVoli];
+[NumofSegs,~]=size(SegInd);
+
+FatStimOnlyFrameStats=table([],[],[],[],[],[],[],[],[],'VariableNames',...
+    ["Feat_Val"  "Force" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
+      
+samp_filt=1;
+for iEMG=1:length(EMGLabels)
+    EMGLabel=EMGLabels(iEMG);
+    FiltLabels=string(S.(AnaLabel).AnaPar.FiltLabels);
+
+    for iFilt=1:length(FiltLabels)
+        FiltLabel=FiltLabels(iFilt);
+
+        for iTest=1:length(TestFolders)
+            AnaLabel=sprintf("%s_ana",TestFolders(iTest));
+            TestLabel=sprintf("%s_test",TestFolders(iTest));
+
+            FeatLabels=string(S.(AnaLabel).AnaPar.FeatLabels);
+            NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
+            clear FiltFeat
+
+            FatTable=S.(AnaLabel).(ExpLabel).(FiltLabel).FatTable;
+
+            [SegNum,~]=size(SegInd);
+            for iSeg=1:SegNum
+                SegLabel=SegLabels(iSeg);
+
+                for iFeat=2:3 % MAV, Med Freq, Mean Freq
+                    FeatLabel=sprintf("%s%s_%s",FeatFiltLabel, FeatLabels(iFeat), EMGLabel);
+                    FiltForce=zeros(NumofTrials,1);
+                    FiltFeat=zeros(NumofTrials,1);
+
+                    for iTrial=1:NumofTrials
+                        TrialLabel=sprintf("Trial_%d",iTrial);
+                        FiltForce(iTrial)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).FiltForceFrames(SegInd(2,:))); % Segment during stim only
+                        FiltFeat(iTrial)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).(FeatFilt)(SegInd(iSeg,:),:).(FeatLabel));
+                    end
+
+                    Mdl = fitlm(FiltForce,FiltFeat); 
+                    Mdlr_sqr=Mdl.Rsquared.Ordinary;
+                    Mdlcoef_p_val=Mdl.Coefficients.pValue;
+                    Mdlcoef=Mdl.Coefficients;
+                    AnovaTable=anova(Mdl,'summary');
+                    F=table2array(AnovaTable(2,4));
+                    p_val=table2array(AnovaTable(2,5));
+                    FeatForceCorr=corr2(FiltForce,FiltFeat);
+
+                    coefs(:,samp_filt)=Mdlcoef.('Estimate');
+                    r_sqr(samp_filt)=Mdlr_sqr;
+                    coef_p_val(:,samp_filt)=Mdlcoef_p_val;
+                    anova_p(samp_filt)=p_val;
+                    force_corr(samp_filt)=FeatForceCorr;
+
+                    emgs(samp_filt)=EMGLabel;
+                    trials(samp_filt)=TrialLabel;
+                    feats(samp_filt)=FeatLabels(iFeat);
+                    filts(samp_filt)=FiltLabel;
+                    tests(samp_filt)=TestFolders(iTest);
+                    exps(samp_filt)=ExpLabel;
+                    segs(samp_filt)=SegLabel;
+                    samp_filt=samp_filt+1;
+
+                    lg=length(FiltForce);
+
+                    g_trial=strings(1,lg);
+                    g_trial(:)=1:lg;
+                    g_feat=strings(1,lg);
+                    g_feat(:)=FeatLabels(iFeat); 
+                    g_filt=strings(1,lg);
+                    g_filt(:)=FiltLabel;
+                    g_test=strings(1,lg);
+                    g_test(:)=TestFolders(iTest);
+                    g_exp=strings(1,lg);
+                    g_exp(:)=ExpLabel;
+                    g_seg=strings(1,lg);
+                    g_seg(:)=SegLabel;
+                    g_emg=strings(1,lg);
+                    g_emg(:)=EMGLabel;
+
+                    temp=table(FiltFeat, FiltForce, g_trial', g_feat' ,g_seg' ,g_emg'...
+                        ,g_filt' ,g_test' ,g_exp','VariableNames',...
+                        ["Feat_Val" "Force" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
+                    FatStimOnlyFrameStats= [FatStimOnlyFrameStats; temp];
+
+                    S.(AnaLabel).(ExpLabel).(FiltLabel).Mdlr_sqr(iSeg)=Mdlr_sqr;
+                    S.(AnaLabel).(ExpLabel).(FiltLabel).Mdlcoef_p_val(:,iSeg)=Mdlcoef_p_val;
+                    S.(AnaLabel).(ExpLabel).(FiltLabel).Mdlcoef=Mdlcoef;
+                    S.(AnaLabel).(ExpLabel).(FiltLabel).p_val(iSeg)=p_val;
+                    S.(AnaLabel).(ExpLabel).(FiltLabel).ForceCorr(iSeg)=FeatForceCorr;
+                end
+            end
+        end
+    end
+end
+FatStimOnlyStats=table(r_sqr',coef_p_val',coefs',anova_p',force_corr',tests',...
+    exps',filts',feats',segs',emgs',...
+    'VariableNames',["R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "Test"...
+    "Exp" "Filt" "Feat" "Segment" "EMG" ]);
+writetable( FatStimOnlyStats, 'fat_stimonly_force.csv')
+
+writetable( FatStimOnlyFrameStats, 'fat_stimonly_frame.csv')
+
+
 %% Fatigue Features Shifts
 % # Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12"];
+TestFolders=["jan7" "jan11" "jan12" "apr20"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -343,7 +470,7 @@ S = load_test(TestFolders,TestFiles);
 close all
 iTest=1;  % pick a test to plot 
 FolderName='jan7';  %% Folders to be loaded 
-Trials=[1 5];  % Trial
+Trials=[1 10];  % Trial
 TimeRange=[1 35];  % in seconds
 Exp= ["Fat"];
 FiltLabel="Unfilt";
@@ -354,31 +481,42 @@ stim_freq=S.(TestLabel).ExpPar.stim_freq;
 FrameInd=TimeRange(1)*stim_freq:TimeRange(2)*stim_freq;
 cm = lines(length(TestFolders));
 
-NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
-if sum(Trials>NumofTrials)>0
-    error(sprintf('Trial %d does not exist \n',Trials(Trials>NumofTrials)))
-end
 
 for iTest=1:length(TestFolders)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
+    NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
 
     for iTrial=Trials
         TrialLabel=sprintf('Trial_%d',iTrial);
 
-        Frames=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).TmFrames(:,FrameInd));
-        Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).ForceFrames(:,FrameInd));
+        if iTrial-NumofTrials>0
+            sprintf(sprintf('Trial %d does not exist \n for %s experiments',iTrial, TestFolders{iTest}))
+            Frames= NaN;
+            Force=NaN;
+            FatMAV=NaN;
+            FatMedFreq=NaN;
+            FatMeanFreq=NaN;
+            MAV=NaN;
+            MedFreq=NaN;
+            MeanFreq=NaN;
+            DispName="not exist";
+        else
         
-        FatMAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MAV_vEMG");
-        FatMedFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MedFreq_vEMG");
-        FatMeanFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MeanFreq_vEMG");
+            Frames=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).TmFrames(:,FrameInd));
+            Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).ForceFrames(:,FrameInd));
 
-        MAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MAV_vEMG");
-        MedFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MedFreq_vEMG");
-        MeanFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MeanFreq_vEMG");
+            FatMAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MAV_vEMG");
+            FatMedFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MedFreq_vEMG");
+            FatMeanFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).("Filt_MeanFreq_vEMG");
 
+            MAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MAV_vEMG");
+            MedFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MedFreq_vEMG");
+            MeanFreq=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).("MeanFreq_vEMG");
+            DispName=TestFolders{iTest};
+        end
         figure(iTrial)
-        
+
         subplot(4,1,1)
         plot(Frames,Force,'LineWidth',2.5,'DisplayName',sprintf("%s Force(N)",TestFolders{iTest}),'Color',cm(iTest,:))
         hold on
@@ -393,7 +531,7 @@ for iTest=1:length(TestFolders)
         plot(Frames,FatMAV,'LineWidth',2.5,'DisplayName',sprintf("%s Filtered",TestFolders{iTest}),'Color',cm(iTest,:))
         title(sprintf('MAV of Trial %d of Different Subjects',iTrial))
         xlabel('Time (s)')
-        ylim([0 max(MAV)/3])
+%         ylim([max(MAV)/10000 max(MAV)/3])
         legend
         grid on
 
@@ -415,12 +553,13 @@ for iTest=1:length(TestFolders)
         ylabel('Hz')
         legend
         grid on 
-
+        
+        
     end
 end
 
 %% # Fatigue by Trials Plotting 
-clc
+close all
 Exp="Fat";
 SegLabels=["Voli" "Stim" "Stim+Voli"];
 
@@ -429,12 +568,12 @@ EMGLabel="vEMG";
 FeatFilt="FatFeats";
 FeatFiltLabel="Filt_";
 
-VoliStart=10;
-VoliEnd=VoliStart+5;
-StimStart=20;
-StimEnd=StimStart+5;
-StimVoliStart=30;
-StimVoliEnd=StimVoliStart+5;
+VoliStart=11;
+VoliEnd=VoliStart+3;
+StimStart=21;
+StimEnd=StimStart+3;
+StimVoliStart=32;
+StimVoliEnd=StimVoliStart+3;
 
 AnaLabel=sprintf("%s_ana",TestFolders(1));
 TestLabel=sprintf("%s_test",TestFolders{1});
@@ -462,7 +601,7 @@ for iTest=1:length(TestFolders)
     for iSeg=1:SegNum
         SegLabel=SegLabels(iSeg);
 
-        for iFeat=1:3 % MAV, Med, Median Freq
+        for iFeat=1:3 % MAV, Med Freq, Mean Freq
             FeatLabel=sprintf("%s%s_%s",FeatFiltLabel, FeatLabels(iFeat), EMGLabel);
 
             for iTrial=1:NumofTrials
@@ -472,12 +611,21 @@ for iTest=1:length(TestFolders)
             end
 
             figure(100)
-            subplot(SegNum,length(TestFolders),iSeg*SegNum-SegNum+iTest)
+            subplot(SegNum,length(TestFolders),iSeg*length(TestFolders)-length(TestFolders)+iTest)
             plot(1:NumofTrials,FiltFeat/FiltFeat(1),'DisplayName',FeatLabel)
             hold on 
             title(sprintf("Test: %s, Segment: %s, Filt: %s ",TestFolders(iTest),SegLabel,FiltLabel))
             xlabel('Trials')
             ylabel('Norm. EMG Feature')
+            grid
+            figure(101)
+            subplot(SegNum,length(TestFolders),iSeg*length(TestFolders)-length(TestFolders)+iTest)
+            plot(1:NumofTrials,FiltFeat,'DisplayName',FeatLabel)
+            hold on 
+            title(sprintf("Test: %s, Segment: %s, Filt: %s ",TestFolders(iTest),SegLabel,FiltLabel))
+            xlabel('Trials')
+            ylabel('EMG Feature')
+            grid
         end
     end
 end
@@ -488,7 +636,7 @@ legend('Location', 'NorthWest')
 
 % # Figures with vEMG 
 
-%% "Shifts" by fatigue Analysis
+%% Shifts by fatigue Analysis
 
 for iFilt=1:1
     FiltLabel=FiltLabels{iFilt};

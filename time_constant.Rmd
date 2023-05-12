@@ -28,7 +28,7 @@ library(ggpmisc)
 
 ```{r Data Inject } 
 
-df <- read_csv("tau_estimates.csv",show_col_types = FALSE)
+df <- read_csv("tau_estimates2.csv",show_col_types = FALSE)
 
 df<-df%>%mutate(PW = as.integer(PW),
                      TrialNum = as.integer(TrialNum),
