@@ -1,7 +1,7 @@
 %% Plotting for EMBC 
 clc
 clear all
-TestFolders=[ "jan7"];
+TestFolders=[ "jan7" "apr20"];
 
 for iTest=1:length(TestFolders)
     TestFiles{iTest}=sprintf("%s_ana",TestFolders{iTest});
@@ -11,12 +11,14 @@ AnaStruct=sprintf("%s_ana",TestFolders);
 S = load_test(TestFolders,TestFiles);
 %% 
 close all
-TestStruct=sprintf("%s_test",TestFolders);
+PlotTrial=[ 18 18];
+PlotFrame=floor([ 489 491]);
+TestFolder="apr20";
+TestStruct=sprintf("%s_test",TestFolder);
+AnaStruct=sprintf("%s_ana",TestFolder);
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='Occ';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
-PlotTrial=[15 19];
-PlotFrame=floor([ 486 490]);
 ExpLabel=ExpTable{1};
 DataLabels=S.(AnaStruct).AnaPar.DataLabels;
 BlankLength=S.(AnaStruct).AnaPar.BlankLength;
@@ -37,7 +39,7 @@ for iTrial=PlotTrial(1):PlotTrial(2)
 
     figure
     subplot(2,1,1)
-    plot(Time,Trig/2000,'b','LineWidth',2)
+    plot(Time,Trig/10000,'b','LineWidth',2)
     hold on
     plot(Time,EMG/AmpGain,'k','LineWidth',2)
     plot(Time,BlankEMG,'r','LineWidth',2)
@@ -75,7 +77,9 @@ for iTrial=PlotTrial(1):PlotTrial(2)
 end
 
 %%
-TestStruct=sprintf("%s_test",TestFolders);
+TestFolder="apr20";
+TestStruct=sprintf("%s_test",TestFolder);
+AnaStruct=sprintf("%s_ana",TestFolder);
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='Occ';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
@@ -122,7 +126,7 @@ for iTrial=PlotTrial(1):PlotTrial(2)
     end
 
     grid on 
-    text(13.65,4*10^-4,'Dropped Frame')
+%     text(13.65,4*10^-4,'Dropped Frame')
 
     S.(TestStruct).(ExpLabel).TrialsPW
     DataLabels=S.(AnaStruct).AnaPar.DataLabels;

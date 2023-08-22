@@ -353,8 +353,8 @@ IndStimVoli=[StimVoliStart*stim_freq:StimVoliEnd*stim_freq];
 SegInd=[IndVoli;IndStim;IndStimVoli];
 [NumofSegs,~]=size(SegInd);
 
-FatStimOnlyFrameStats=table([],[],[],[],[],[],[],[],[],'VariableNames',...
-    ["Feat_Val"  "Force" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
+FatStimOnlyFrameStats=table([],[],[],[],[],[],[],[],[],[],[],'VariableNames',...
+    ["Feat_Val"  "Force" "Force_Norm" "Feat_Norm" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
       
 samp_filt=1;
 for iEMG=1:length(EMGLabels)
@@ -378,7 +378,7 @@ for iEMG=1:length(EMGLabels)
             for iSeg=1:SegNum
                 SegLabel=SegLabels(iSeg);
 
-                for iFeat=2:3 % MAV, Med Freq, Mean Freq
+                for iFeat=1:3 % MAV, Med Freq, Mean Freq
                     FeatLabel=sprintf("%s%s_%s",FeatFiltLabel, FeatLabels(iFeat), EMGLabel);
                     FiltForce=zeros(NumofTrials,1);
                     FiltFeat=zeros(NumofTrials,1);
@@ -430,9 +430,9 @@ for iEMG=1:length(EMGLabels)
                     g_emg=strings(1,lg);
                     g_emg(:)=EMGLabel;
 
-                    temp=table(FiltFeat, FiltForce, g_trial', g_feat' ,g_seg' ,g_emg'...
+                    temp=table(FiltFeat, FiltForce, FiltForce/FiltForce(1), FiltFeat/FiltFeat(1), g_trial', g_feat' ,g_seg' ,g_emg'...
                         ,g_filt' ,g_test' ,g_exp','VariableNames',...
-                        ["Feat_Val" "Force" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
+                        ["Feat_Val" "Force" "Force_Norm" "Feat_Norm" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
                     FatStimOnlyFrameStats= [FatStimOnlyFrameStats; temp];
 
                     S.(AnaLabel).(ExpLabel).(FiltLabel).Mdlr_sqr(iSeg)=Mdlr_sqr;
@@ -445,14 +445,15 @@ for iEMG=1:length(EMGLabels)
         end
     end
 end
+
 FatStimOnlyStats=table(r_sqr',coef_p_val',coefs',anova_p',force_corr',tests',...
     exps',filts',feats',segs',emgs',...
     'VariableNames',["R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "Test"...
-    "Exp" "Filt" "Feat" "Segment" "EMG" ]);
+    "Exp" "Filt" "Feat"  "Segment" "EMG" ]);
+
 writetable( FatStimOnlyStats, 'fat_stimonly_force.csv')
 
 writetable( FatStimOnlyFrameStats, 'fat_stimonly_frame.csv')
-
 
 %% Fatigue Features Shifts
 % # Data Inject 

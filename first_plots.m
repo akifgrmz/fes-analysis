@@ -40,7 +40,7 @@ for iTrial=PlotRange(1):PlotRange(2)
     plot(Time(TimeInd),Trigger/5,'r','LineWidth',1)
     hold
     plot(Time(TimeInd),EMG,'b','LineWidth',2)
-    legend({'Trigger(a.u.)','Raw EMG (V)'})
+    legend({'Trigger(a.u.)','Raw EMG (mV)'})
     title('Trigger and EMG Signal')
     xlabel('Time (s)')
     

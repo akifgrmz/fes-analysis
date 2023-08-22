@@ -190,80 +190,6 @@ for iTest=1:length(TestFolders)
     F_table=array2table(F_mat,'VariableNames',VarNames);
     clear F_mat
     Tau.(TestLabel).(ExpLabel).TimeCons.F_filtered=F_table;
-
-    %%
-    % Similar algo for the redo trials
-    %%
-    
-%     clear F_mat VarNames Taus IndTau
-% 
-%     RedoTrials=S.(TestLabel).(ExpLabel).RedoTrials;
-%     S.(TestLabel).(ExpLabel).TimeConsRedo.RedoTrials=RedoTrials;
-%     PWVal=S.(TestLabel).(ExpLabel).PWTrials
-% 
-%     if ~isempty(RedoTrials)
-%         for iTrial=1:length(RedoTrials)
-%             TrialLabel=sprintf('RedoTrial_%d',RedoTrials(iTrial));
-% 
-%             F=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Force');
-%             T=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Time');
-%             
-%             FiltDesign=Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign;
-% %             F_filtered = filtfilt(FiltDesign,F);
-%             F_filtered=F;
-% 
-%             Ind= T> AvgRangePreOff(1) & T<AvgRangePreOff(2);
-%             PreAvgForce= mean(F_filtered(Ind));
-%             Ind= T> AvgRangePostOff(1) & T<AvgRangePostOff(2);
-%             PostAvgForce=mean(F_filtered(Ind));
-%             
-% %             t_end=mean(AvgRangePreOff)-TurnOffTime;
-% %             tau=-t_end*log((PreAvgForce-PostAvgForce)/PreAvgForce);
-%             tau=est_tau(F_filtered(T> TurnOffTime & T<AvgRangePostOff(1))-PostAvgForce,-TurnOffTime+T(T> TurnOffTime & T<AvgRangePostOff(1)),PreAvgForce-PostAvgForce);
-% 
-% %             F_tau=TauTime*abs(PreAvgForce-PostAvgForce)+PostAvgForce;
-% %             Ind=T> TurnOffTime & T<AvgRangePostOff(1); % Ind for Force Drop region 
-% %             [~,IndTau]=min(abs(F_tau-F_filtered(Ind)));
-% 
-%             IndTau=round((TurnOffTime+tau)*fs);
-%         
-% %             IndTau=IndTau+round(TurnOffTime*fs);
-% %             tau=T(IndTau)-TurnOffTime;
-%     %         IndTau=max((find(abs(PreAvgForce-F_filtered)<=0.63*(PreAvgForce-PostAvgForce))));
-%     %         tau=T(IndTau)-TurnOffTime;
-%         
-%             Taus(iTrial,7)= PostAvgForce;
-%             Taus(iTrial,6)= PreAvgForce;
-%             Taus(iTrial,5)= RedoTrials(iTrial);
-%             Taus(iTrial,4)= iTest;
-%             Taus(iTrial,3)= tau;
-%             Taus(iTrial,2)= IndTau;
-%             Taus(iTrial,1)= PWVal(RedoTrials(iTrial));
-% 
-%             F_mat(:,iTrial)=F_filtered()';
-%             VarNames{iTrial}=char(TrialLabel);
-%         end
-% 
-%         Tau_table_redo=array2table(Taus,'VariableNames',TauVars);
-%         
-%         Redo= true(height(Tau_table_redo),1);
-%         T_redo = table(Redo,'VariableNames',"Redo");
-%         Tau_table_redo= [Tau_table_redo T_redo];
-%         Tau.(TestLabel).(ExpLabel).TimeConsRedo.TurnOffTime=TurnOffTime;
-%         Tau.(TestLabel).(ExpLabel).TimeConsRedo.AvgRangePostOff=AvgRangePostOff;
-%         Tau.(TestLabel).(ExpLabel).TimeConsRedo.AvgRangePreOff=AvgRangePreOff;
-%         Tau.(TestLabel).(ExpLabel).TimeConsRedo.Taus=Taus;
-%         Tau.(TestLabel).(ExpLabel).TimeConsRedo.Tau_table=Tau_table_redo;
-% 
-%         F_table_redo=array2table(F_mat,'VariableNames',VarNames);
-%         clear F_mat
-% 
-%         Tau.(TestLabel).(ExpLabel).TimeConsRedo.F_filtered=F_table_redo;
-%         F_table=[F_table F_table_redo];
-%         Tau_table=[Tau_table; Tau_table_redo];        
-% 
-%     end
-
     Tau.(TestLabel).(ExpLabel).Tau_table=Tau_table;
     Tau.(TestLabel).(ExpLabel).F_table=F_table;
 
@@ -495,7 +421,7 @@ PWPoints=S.(TestLabel).(lbl).PWPoints;
 RCVar=S.(TestLabel).(lbl).RCVar;
 MVClevels= (PWPoints-min(PWPoints))/max(PWPoints-min(PWPoints))*30;
 MeanForce=S.(TestLabel).(lbl).MeanForce;
-Occ=[ [] [] [] [] [] [] [] [] [] [] [] []];
+Occ=[ [] [] [] [] [] [] [] [] [] [] [] [] [] []];
 
 for iTau=1:length(OccRefs)
     OccRef=OccRefs(iTau);
@@ -508,7 +434,7 @@ for iTau=1:length(OccRefs)
         stim_freq=S.(TestLabel).ExpPar.stim_freq;
         OccRefMargin= 1/stim_freq ; % in secs
         PreOffMargin=10/stim_freq; % Avg period before stim turning off 
-    %----This section should go to main_analysis 
+    %-------------- This section should go to main_analysis 
     % MAV_MAX = avg MAV at the last 2 seconds
         AvgTime=2;
         AvgInd=stim_freq*AvgTime-5;
@@ -517,9 +443,9 @@ for iTau=1:length(OccRefs)
         MVC=S.(TestLabel).(ExpLabel).MVC;
         for iTrial=1:S.(TestLabel).(ExpLabel).NumofTrials
             TrialLabel=sprintf('Trial_%d',iTrial );
+            
             TrialsMAV(iTrial) = mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(end-AvgInd:end,:).('MAV_vEMG'));
             TrialsAmp_MAV(iTrial) = mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(end-AvgInd:end,:).('Amp_MAV_vEMG'));
-
         end
         MAV_max=mean(TrialsMAV);
         S.(AnaLabel).(ExpLabel).MAV_MAX=MAV_max;
@@ -543,8 +469,8 @@ for iTau=1:length(OccRefs)
         poly1=polyfit(vMVCVal(Ind),MAVMean(Ind),1);
         poly2=polyfit(vMVCVal(Ind),Amp_Modul_Mean(Ind),1);
 
-        MAV_max_theo=polyval(poly1,100);
-        AmpModul_max_theo=polyval(poly2,100);
+        MAV_max_theo=polyval(poly1,120);
+        AmpModul_max_theo=polyval(poly2,120);
 
         ExpLabel= S.(AnaLabel).AnaPar.ExpTable.('MVC');
         S.(AnaLabel).(ExpLabel).MAV_MAX_theo=MAV_max_theo;
@@ -566,13 +492,16 @@ for iTau=1:length(OccRefs)
             
             end
         end
-    %----
+        
+    %---------------
         ExpLabel= S.(AnaLabel).AnaPar.ExpTable.('Occ');
         NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
         TurnOffTime=S.(TestLabel).(ExpLabel).StimProfile;
         RepMatTable=array2table(S.(TestLabel).(ExpLabel).RepTableMat,...
             'VariableNames',["Target_Level" "Stim_Force" "Voli_Force"...
             "MVC_Voli" "MVC_Stim" "PW","Done"]);
+%         S.(TestLabel).(ExpLabel).RepTableMat=RepMatTable;          
+        
         
         for iTrial=1:NumofTrials
             TrialLabel=sprintf("Trial_%d", iTrial);
@@ -594,15 +523,17 @@ for iTau=1:length(OccRefs)
 %             F_s=gompertz(RCVar,PW_level);
             
             F_vprime=PostForceLevel;
+            F_sprime=PreForceLevel-PostForceLevel;
             F_occ=F_vprime-F_v;
             
             F_occ_mvc=F_occ/MVC*100;
             F_vprime_mvc=F_vprime/MVC*100;
+            F_sprime_mvc=F_sprime/MVC*100;
             F_v_mvc=F_v/MVC*100;
             F_target_mvc=F_target/MVC*100;
             
-            Occ=[ Occ;  F_occ  F_vprime F_v F_target F_occ_mvc F_vprime_mvc...
-                F_v_mvc F_target_mvc TestFolders(iTest) TauLabels(iTau) "Force" "Unfilt" table2array(RepMatTable(iTrial,:) )];
+            Occ=[ Occ;  F_occ  F_vprime F_sprime F_v F_target F_occ_mvc F_vprime_mvc...
+                F_sprime_mvc F_v_mvc F_target_mvc TestFolders(iTest) TauLabels(iTau) "Force" "Unfilt" table2array(RepMatTable(iTrial,:) )];
             
             PostOffFrameInd=round((TurnOffTime+OccRef-OccRefMargin)*stim_freq:( TurnOffTime+OccRef+OccRefMargin)*stim_freq);
             PreOffFrameInd=round((TurnOffTime-PreOffMargin)*stim_freq:( TurnOffTime)*stim_freq);
@@ -614,45 +545,55 @@ for iTau=1:length(OccRefs)
             MAV_v=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(MVC_Voli==vMVC & sMVC==0,:).('Mean');
             AmpModul_MAV_v=S.(AnaLabel).(ExpLabel).Amp_Modul_Mean_Reps(MVC_Voli==vMVC & sMVC==0,:).('Mean');
 
+            MAV_max=MAV_max_theo;            %% MAV_MAX replacement 
+            AmpModul_MAV_max=AmpModul_max_theo;
             
             for iFilt=1:length(FiltLabels)
                 FiltLabel=FiltLabels{iFilt};
                 
                 MAV_target=F_target; %%% ---- Fix This 
-                
+
                 PreOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(PreOffFrameInd,:).('MAV_vEMG'));
                 PostOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(PostOffFrameInd,:).('MAV_vEMG'));
                 MAV_vprime=PostOffMAV;
+                MAV_sprime=PreOffMAV-PostOffMAV;
+                
                 MAV_occ=MAV_vprime-MAV_v;
                 MAV_occ_mvc=MAV_occ/MAV_max*100;
                 MAV_vprime_mvc=MAV_vprime/MAV_max*100;
+                MAV_sprime_mvc=MAV_sprime/MAV_max*100;
+
                 MAV_v_mvc=MAV_v/MAV_max*100;
                 MAV_target_mvc=MAV_target/MAV_max*100;
                 
-                Occ=[ Occ;  MAV_occ  MAV_vprime MAV_v MAV_target MAV_occ_mvc ...
-                    MAV_vprime_mvc MAV_v_mvc MAV_target_mvc TestFolders(iTest) TauLabels(iTau) "MAV" FiltLabel table2array(RepMatTable(iTrial,:)) ];
+                Occ=[ Occ;  MAV_occ  MAV_vprime MAV_sprime MAV_v MAV_target MAV_occ_mvc ...
+                    MAV_vprime_mvc MAV_sprime_mvc MAV_v_mvc MAV_target_mvc TestFolders(iTest) TauLabels(iTau) "MAV" FiltLabel table2array(RepMatTable(iTrial,:)) ];
             
                 AmpModul_MAV_target=F_target; %%% ---- Fix This 
                 
                 AmpModul_PreOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(PreOffFrameInd,:).('Amp_MAV_vEMG'));
                 AmpModul_PostOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(PostOffFrameInd,:).('Amp_MAV_vEMG'));
                 AmpModul_MAV_vprime=AmpModul_PostOffMAV;
+                AmpModul_MAV_sprime=AmpModul_PreOffMAV-AmpModul_PostOffMAV;
+
                 AmpModul_MAV_occ=AmpModul_MAV_vprime-AmpModul_MAV_v;
                 AmpModul_MAV_occ_mvc=AmpModul_MAV_occ/AmpModul_MAV_max*100;
                 AmpModul_MAV_vprime_mvc=AmpModul_MAV_vprime/AmpModul_MAV_max*100;
+                AmpModul_MAV_sprime_mvc=AmpModul_MAV_sprime/AmpModul_MAV_max*100;
+
                 AmpModul_MAV_v_mvc=AmpModul_MAV_v/AmpModul_MAV_max*100;
                 AmpModul_MAV_target_mvc=AmpModul_MAV_target/AmpModul_MAV_max*100;
                 
-                Occ=[ Occ;  AmpModul_MAV_occ  AmpModul_MAV_vprime AmpModul_MAV_v AmpModul_MAV_target AmpModul_MAV_occ_mvc ...
-                    AmpModul_MAV_vprime_mvc AmpModul_MAV_v_mvc AmpModul_MAV_target_mvc TestFolders(iTest) TauLabels(iTau) "Amp_Modul" FiltLabel table2array(RepMatTable(iTrial,:)) ];
+                Occ=[ Occ;  AmpModul_MAV_occ  AmpModul_MAV_vprime AmpModul_MAV_sprime AmpModul_MAV_v AmpModul_MAV_target AmpModul_MAV_occ_mvc ...
+                    AmpModul_MAV_vprime_mvc AmpModul_MAV_sprime_mvc AmpModul_MAV_v_mvc AmpModul_MAV_target_mvc TestFolders(iTest) TauLabels(iTau) "Amp_Modul" FiltLabel table2array(RepMatTable(iTrial,:)) ];
             
             end
         end
         
-        OccTest=Occ(Occ(:,9)==TestFolders(iTest),:);
+        OccTest=Occ(Occ(:,11)==TestFolders(iTest),:);
         OccTest=table(OccTest(:,1),OccTest(:,2),OccTest(:,3),OccTest(:,4),OccTest(:,5), OccTest(:,6), OccTest(:,7),...
-            OccTest(:,8),OccTest(:,9),OccTest(:,10),OccTest(:,11),OccTest(:,12),OccTest(:,13),OccTest(:,14),OccTest(:,15),OccTest(:,16),OccTest(:,17),OccTest(:,18),'VariableNames',...
-            [ "Occ" "vprime" "v" "Target" "Occ_mvc" "vprime_mvc" "v_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" "Target_Level" " Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW"]);
+            OccTest(:,8),OccTest(:,9),OccTest(:,10),OccTest(:,11),OccTest(:,12),OccTest(:,13),OccTest(:,14),OccTest(:,15),OccTest(:,16),OccTest(:,17),OccTest(:,18),OccTest(:,19),OccTest(:,20),'VariableNames',...
+            [ "Occ" "vprime" "sprime" "v" "Target" "Occ_mvc" "vprime_mvc" "sprime_mvc" "v_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" "Target_Level" " Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW"]);
         S.(AnaLabel).(ExpLabel).OccTest=OccTest;
         
         clear OccTest
@@ -660,8 +601,8 @@ for iTau=1:length(OccRefs)
 end
 
 OccTable=table(Occ(:,1),Occ(:,2),Occ(:,3),Occ(:,4),Occ(:,5), Occ(:,6), Occ(:,7),...
-    Occ(:,8),Occ(:,9),Occ(:,10),Occ(:,11),Occ(:,12),Occ(:,13),Occ(:,14),Occ(:,15),Occ(:,16),Occ(:,17),Occ(:,18),'VariableNames',...
-    [ "Occ" "vprime" "v" "Target" "Occ_mvc" "vprime_mvc" "v_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" "Target_Level" " Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW"])
+    Occ(:,8),Occ(:,9),Occ(:,10),Occ(:,11),Occ(:,12),Occ(:,13),Occ(:,14),Occ(:,15),Occ(:,16),Occ(:,17),Occ(:,18),Occ(:,19),Occ(:,20),'VariableNames',...
+    [ "Occ" "vprime" "sprime"  "v" "Target" "Occ_mvc" "vprime_mvc" "sprime_mvc" "v_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" "Target_Level" " Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW"])
 
 writetable( OccTable,'occlusion_v4.csv')
 
@@ -672,9 +613,13 @@ clear Occ_MVC OccMap
 % TestFolders=["jan7" "jan11" "jan12" "apr20"];
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf('%s_ana',TestFolders(iTest));
-    OccTest=S.(AnaLabel).(ExpLabel).OccTest; 
+    
+    OccTest=S.(AnaLabel).(ExpLabel).OccTest;
+
     [~,VoliLevels]=findgroups(OccTest.('MVC_Voli'));
     [~,StimLevels]=findgroups(OccTest.('MVC_Stim'));
+    
+        clear OccForce OccMAV OccAmpModul
 
     for iVoli=1:length(VoliLevels)
         VoliLabel=VoliLevels(iVoli);
@@ -688,14 +633,15 @@ for iTest=1:length(TestFolders)
                 &  OccTest.('Tau')=='3*tau';
             
             OccForce(iVoli,iStim-1)=mean(str2double(OccTest(RowInd,:).('Occ_mvc')));
-            OccMap(iTest,iVoli,iStim-1)=OccForce(iVoli,iStim-1);
-
+            OccForceMap(iTest,iVoli,iStim-1)=OccForce(iVoli,iStim-1);
+            
             % 2- MAV
             RowInd=OccTest.('MVC_Stim')==StimLabel & OccTest.('MVC_Voli')==VoliLabel...
                 & OccTest.('Filt')=='Unfilt' &  OccTest.('Feat')=='MAV'...
                 &  OccTest.('Tau')=='3*tau';
             
             OccMAV(iVoli,iStim-1)=mean(str2double(OccTest(RowInd,:).('Occ_mvc')));
+            OccMAVMap(iTest,iVoli,iStim-1)=OccMAV(iVoli,iStim-1);
             
             % 3- Amplitude Modul.
             RowInd=OccTest.('MVC_Stim')==StimLabel & OccTest.('MVC_Voli')==VoliLabel...
@@ -703,24 +649,57 @@ for iTest=1:length(TestFolders)
                 &  OccTest.('Tau')=='3*tau';
             
             OccAmpModul(iVoli,iStim-1)=mean(str2double(OccTest(RowInd,:).('Occ_mvc')));
-
+            OccAmpMap(iTest,iVoli,iStim-1)=OccAmpModul(iVoli,iStim-1);
+            
+            % 4- F_sprime_mvc
+%             RowInd=OccTest.('MVC_Stim')==StimLabel & OccTest.('MVC_Voli')==VoliLabel...
+%                 & OccTest.('Filt')=='Unfilt' &  OccTest.('Feat')=='Force'...
+%                 &  OccTest.('Tau')=='3*tau';
+            
+%             Fs_prime(iVoli,iStim-1)=mean(str2double(OccTest(RowInd,:).('sprime_mvc')));
+%             Fs_primeMap(iTest,iVoli,iStim-1)=Fs_prime(iVoli,iStim-1);
+            
+            % 5- Mean F_fprime
+            RowInd=OccTest.('MVC_Stim')==StimLabel & OccTest.('MVC_Voli')==VoliLabel...
+                & OccTest.('Filt')=='Unfilt' &  OccTest.('Feat')=='Force'...
+                &  OccTest.('Tau')=='3*tau';
+            
+            Fv_prime(iVoli,iStim-1)=mean(str2double(OccTest(RowInd,:).('vprime_mvc')));
+            Fv_primeMap(iTest,iVoli,iStim-1)=Fs_prime(iVoli,iStim-1);
+            
         end
     end
-    S.(AnaLabel).(ExpLabel).OccForce=OccForce;
-    S.(AnaLabel).(ExpLabel).OccMAV=OccMAV;
-    S.(AnaLabel).(ExpLabel).OccAmpModul=OccAmpModul;
+    
+    dx=1;
+    VoliLevels=str2double(VoliLevels);
+    StimLevels=str2double(StimLevels(2:end));
+    vx=[VoliLevels(1):1/(StimLevels(end)-StimLevels(1))/dx:VoliLevels(end)];
+    vy=[StimLevels(1):1/(VoliLevels(end)-VoliLevels(1))/dx:StimLevels(end)];
 
-    clear OccForce OccMAV OccAmpModul
+    vq_force=interpn(VoliLevels,StimLevels,OccForce,vx',vy);
+    vq_mav=interpn(VoliLevels,StimLevels,OccMAV,vx',vy);
+    vq_amp=interpn(VoliLevels,StimLevels,OccAmpModul,vx',vy);
+
+    S.(AnaLabel).(ExpLabel).OccForce_Base=OccForce;
+    S.(AnaLabel).(ExpLabel).OccForce_Interp=vq_force;
+
+    S.(AnaLabel).(ExpLabel).OccMAV_Base=OccMAV;
+    S.(AnaLabel).(ExpLabel).OccMAV_Interp=vq_mav;
+
+    S.(AnaLabel).(ExpLabel).OccAmpModul_Base=OccAmpModul;
+    S.(AnaLabel).(ExpLabel).OccAmpModul_Interp=vq_amp;
+
+    S.(AnaLabel).(ExpLabel).Interp_vx=vx;
+    S.(AnaLabel).(ExpLabel).Interp_vy=vy;
+
 end
 
 dx=1;
-Occ_MVC=squeeze(mean(OccMap));
-VoliLevels=str2double(VoliLevels);
-StimLevels=str2double(StimLevels(2:end));
+Mean_OccForceMap=squeeze(mean(OccForceMap));
 vx=[VoliLevels(1):1/(StimLevels(end)-StimLevels(1))/dx:VoliLevels(end)];
 vy=[StimLevels(1):1/(VoliLevels(end)-VoliLevels(1))/dx:StimLevels(end)];
 
-% vq=interpn(VoliLevels,StimLevels,Occ_MVC,vx',vy);
+vq=interpn(VoliLevels,StimLevels,Mean_OccForceMap,vx',vy);
 
 % figure
 % mesh(vx,vy,vq)
@@ -731,10 +710,15 @@ vy=[StimLevels(1):1/(VoliLevels(end)-VoliLevels(1))/dx:StimLevels(end)];
 %% Effort simulation 
 ExpstoAna= ["Occ"];
 AnaLabel=sprintf('%s_ana',TestFolders(1));
-
+OccKickOffLevel=0.3;  % Percent effort
 for iExp=1:length(ExpstoAna)
     ExpLabels(iExp)=S.(AnaLabel).AnaPar.ExpTable.(ExpstoAna(iExp));
 end
+
+OccCoef=[-1.7 -0.109 0.919];  % These coefficienst are from Rstudio results: [resid Voli Stim]
+Fs_primeCoef=[2.117 0.061 0.118 ]; % These coefficienst are from Rstudio results: [resid Voli Stim]
+Fv_primeCoef=[-1.361 0.891 0.848 ]; % These coefficienst are from Rstudio results: [resid Voli Stim]
+
 
 FeattoAna=["Filt_MAV_vEMG"];
 RampTime=[5 10];
@@ -747,81 +731,89 @@ clear Effort
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf('%s_ana',TestFolders(iTest));
     TestLabel=sprintf("%s_test",TestFolders(iTest));
-
+    
     MAV_MAX=S.(AnaLabel).MVCTrials.MAV_MAX_theo;
     AmpModul_max_theo=S.(AnaLabel).MVCTrials.AmpModul_max_theo;
     
     F_MAX=S.(TestLabel).MVCTrials.MVC;
-
+    
     FiltLabels=string(S.(AnaLabel).AnaPar.FiltLabels);
     OccTest=S.(AnaLabel).(ExpLabel).OccTest; 
     RCLabel=S.(AnaLabel).AnaPar.ExpTable.('RC');
     RCVar=S.(TestLabel).(RCLabel).RCVar; 
     MVCLabel=S.(AnaLabel).AnaPar.ExpTable.('MVC');
     MVC=S.(TestLabel).(MVCLabel).MVC; 
-
+    
     for iExp=1:length(ExpLabels)
         ExpLabel=ExpLabels(iExp);
-
+        
         NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
-
+        
         for iTrial=1:NumofTrials 
             TrialLabel=sprintf("Trial_%d",iTrial);
-
+            
             DroppedFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames;
             PWofFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).PWofFrames;
             StimMVC=S.(TestLabel).(ExpLabel).RepTableMat(iTrial,5);
             StimMVCofFrames=gompertz(RCVar,PWofFrames)/MVC*100+0.00001;
-
+            
+            RepMatTable=array2table(S.(TestLabel).(ExpLabel).RepTableMat,...
+            'VariableNames',["Target_Level" "Stim_Force" "Voli_Force"...
+            "MVC_Voli" "MVC_Stim" "PW","Done"]);
+            
             for iFilt=1:length(FiltLabels)
                 FiltLabel=FiltLabels(iFilt);
-
+                
                 KeepInd=S.(AnaLabel).(ExpLabel).(TrialLabel).KeepInd;
+                
                 % 1- Force 
                 Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).ForceFrames(:,KeepInd))';
                 Effort_f=Force/F_MAX*100;
-
+                TargetFrames=mean(S.(AnaLabel).(ExpLabel).TargetFrames);
+                Target_mvc=RepMatTable(iTrial,:).('Target_Level')/F_MAX*TargetFrames;
+                VoliEffort=RepMatTable(iTrial,:).('MVC_Voli')*TargetFrames;
+                StimEffort=RepMatTable(iTrial,:).('MVC_Stim')*TargetFrames;
+                
+                for iFrame=1:length(Effort_f)
+                    Effort_fs_prime(iFrame,1)=Fs_primeCoef(1)+Fs_primeCoef(2)*VoliEffort(iFrame)+Fs_primeCoef(3)*StimEffort(iFrame);
+                    Effort_fv_prime(iFrame,1)=Fv_primeCoef(1)+Fv_primeCoef(2)*VoliEffort(iFrame)+Fv_primeCoef(3)*StimEffort(iFrame);
+                end
+                
                 % 2-MAV
                 Filt_Feats=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats.('Filt_MAV_vEMG');
                 MAV_Noise=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).MAV_Noise;
 
                 Effort_e_MAV=(Filt_Feats-MAV_Noise)/(MAV_MAX-MAV_Noise)*100;
-                OccStimInd=round(StimMVCofFrames(KeepInd)*length(vy)/max(StimLevels));
-                OccVoliInd=round([Effort_e_MAV]*length(vx)/max(VoliLevels));
-                OccVoliInd(OccVoliInd>=length(vx))=length(vx);
-                OccVoliInd(OccVoliInd<=0)=1;
-                OccStimInd(OccStimInd<=0)=1;
-                OccStimInd(OccStimInd>=length(vy))=length(vy);
+%                 StimEffort=StimMVCofFrames(KeepInd);
+%                 VoliEffort=Effort_e_MAV;
 
                 for iFrame=1:length(Filt_Feats)
-                    Effort_o_MAV(iFrame,1)=vq(OccVoliInd(iFrame),OccStimInd(iFrame));
+                    Effort_o_MAV(iFrame,1)=OccCoef(1)+OccCoef(2)*VoliEffort(iFrame)+OccCoef(3)*StimEffort(iFrame);
                 end
                 
                 % 3-Amp Modul
                 AmpModul_Feats=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats.('Amp_MAV_vEMG');
                 AmpModul_MAV_Noise=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModul_MAV_Noise;
-
+                
                 Effort_e_Amp=(AmpModul_Feats-AmpModul_MAV_Noise)/(AmpModul_max_theo-AmpModul_MAV_Noise)*100;
-                OccStimInd=round(StimMVCofFrames(KeepInd)*length(vy)/max(StimLevels));
-                OccVoliInd=round([Effort_e_Amp]*length(vx)/max(VoliLevels));
-                OccVoliInd(OccVoliInd>=length(vx))=length(vx);
-                OccVoliInd(OccVoliInd<=0)=1;
-                OccStimInd(OccStimInd<=0)=1;
-                OccStimInd(OccStimInd>=length(vy))=length(vy);
+%                 VoliEffort=Effort_e_Amp;
 
                 for iFrame=1:length(AmpModul_Feats)
-                    Effort_o_Amp(iFrame,1)=vq(OccVoliInd(iFrame),OccStimInd(iFrame));
+                    Effort_o_Amp(iFrame,1)=OccCoef(1)+OccCoef(2)*VoliEffort(iFrame)+OccCoef(3)*StimEffort(iFrame);
                 end
                 
                 % 4- Saving the Results
-
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats.('Effort_e_MAV')=Effort_e_MAV;
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats.('Effort_o_MAV')=Effort_o_MAV;
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats.('Effort_f')=Effort_f;
-
+                S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats.('Effort_fs_prime')=Effort_fs_prime;
+                S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats.('Effort_fv_prime')=Effort_fv_prime;
+                
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats.('Effort_e_Amp')=Effort_e_Amp;
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats.('Effort_o_Amp')=Effort_o_Amp;
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats.('Effort_f')=Effort_f;
+                S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats.('Effort_fs_prime')=Effort_fs_prime;
+                S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats.('Effort_fv_prime')=Effort_fv_prime;
 
             end
         end
@@ -832,7 +824,7 @@ end
 close all
 clc
 lbl='Occ';
-PlotVoli=4;
+PlotVoli=1;
 PlotStim=4;
 % TestFolders=["jan7" "jan12" "apr20"];
 TimeRange=[1 15];
@@ -840,9 +832,9 @@ VoliMVCLevels=[10 20 30 40 ];
 StimMVCLevels=[ 0 10 20 30 ];
 sMVC=StimMVCLevels(PlotStim);
 vMVC=VoliMVCLevels(PlotVoli);
-cm=lines(3);
+cm=lines(4);
 ln=["--" ":" "-."];
-FiltLabel="Comb";
+FiltLabel="GS";
 for iTest=1:4
     AnaLabel=sprintf('%s_ana',TestFolders(iTest));
     TestLabel=sprintf('%s_test',TestFolders(iTest));
@@ -861,6 +853,7 @@ for iTest=1:4
         Effort_e=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).('Effort_e_MAV');
         Effort_o=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).('Effort_o_MAV');   
         Effort_f=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).('Effort_f');   
+        Effort_fv_prime=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats(FrameInd,:).('Effort_fv_prime');   
         
         Effort_e_Amp=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(FrameInd,:).('Effort_e_Amp');
         Effort_o_Amp=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(FrameInd,:).('Effort_o_Amp');
@@ -871,27 +864,32 @@ for iTest=1:4
         hold on
         plot(FrameInd,Effort_e,'DisplayName',sprintf('E_e, Trial: %d',IndTrials(iTrial)),'Color',cm(2,:))%,'LineStyle',ln(iTrial))
         plot(FrameInd,Effort_e+Effort_o,'DisplayName',sprintf('E_e+E_o ,Trial: %d',IndTrials(iTrial)),'Color',cm(3,:))%,'LineStyle',ln(iTrial))
+        plot(FrameInd,Effort_fv_prime,'DisplayName',sprintf('F_{vprime} ,Trial: %d',IndTrials(iTrial)),'Color',cm(4,:))%,'LineStyle',ln(iTrial))
+
         ylabel('Estimated % Effort')
         xlabel('Frames')
-
+        grid on
 
         figure(7)
         subplot(length(TestFolders),1,iTest)
-        plot(FrameInd,Effort_f,'DisplayName',sprintf('E_f, Trial: %d',IndTrials(iTrial)),'Color',cm(1,:))%,'LineStyle',ln(iTrial))
+        plot(FrameInd,Effort_f,'DisplayName',sprintf('E_f'),'Color',cm(1,:))%,'LineStyle',ln(iTrial))
         hold on
-        plot(FrameInd,Effort_e_Amp,'DisplayName',sprintf('E_e, Trial: %d',IndTrials(iTrial)),'Color',cm(2,:))%,'LineStyle',ln(iTrial))
-        plot(FrameInd,Effort_e_Amp+Effort_o_Amp,'DisplayName',sprintf('E_e+E_o ,Trial: %d',IndTrials(iTrial)),'Color',cm(3,:))%,'LineStyle',ln(iTrial))
-        ylabel('Estimated % Effort (Ron s)')
+        plot(FrameInd,Effort_e_Amp,'DisplayName',sprintf('E_{MAV}'),'Color',cm(2,:))%,'LineStyle',ln(iTrial))
+        plot(FrameInd,(Effort_e_Amp+Effort_o_Amp),'DisplayName',sprintf('E_{MAV}+E_o'),'Color',cm(3,:))%,'LineStyle',ln(iTrial))
+        plot(FrameInd,Effort_fv_prime,'DisplayName',sprintf('F_{vprime} ,Trial: %d',IndTrials(iTrial)),'Color',cm(4,:))%,'LineStyle',ln(iTrial))
+
+        ylabel('Estimated % Effort')
         xlabel('Frames')
+        grid on
+
     end
-    figure(4)
+    figure(6)
     title(ttl)
-    figure(5)
+    figure(7)
     title(ttl)
-    legend('Location','NorthWest')
-    grid on
-    ylim([-10 100])
+    ylim([-10 60])
 end
+    legend('Location','NorthWest')
 
 
 %%  Occlusion from dropped frames 

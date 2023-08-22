@@ -5,11 +5,11 @@
 % 
 %
 
-% clear all
-% TestFolders=["jan7" "jan11" "jan12"];
-% for iTest=1:length(TestFolders)
-%     tidy_data(TestFolders(iTest));
-% end
+clear all
+TestFolders=["may19" ];
+for iTest=1:length(TestFolders)
+    tidy_data(TestFolders(iTest));
+end
 
 %
 %
@@ -18,7 +18,7 @@
 clc
 clear all
 % TestFolders=["apr20" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20"];
-TestFolders=["jan7" "jan11" "jan12" "apr20"];
+TestFolders=["may19"];
 % TestFolders=["apr20"];
 
 
@@ -323,11 +323,13 @@ for iTest=1:length(TestFolders)
             
             Force=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Force');
             Time=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Time');
+            Trigger=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Trigger');
+
 
             BegofFrames= S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
             NumofFrames=length(BegofFrames);
 
-            clear y x f t FrameLengths PWFrames TmFrames
+            clear y x f t tg FrameLengths PWFrames TmFrames
             for iFrame=1:NumofFrames-1
                 FrameLengths(iFrame)=-BegofFrames(iFrame)+BegofFrames(iFrame+1);
                 % # BP filt EMG
@@ -338,6 +340,9 @@ for iTest=1:length(TestFolders)
                 f(:,iFrame)= Force(BegofFrames(iFrame+1)+1-FrameLength:BegofFrames(iFrame+1));
                 % # Time Frames
                 t(:,iFrame)= Time(BegofFrames(iFrame+1)+1-FrameLength:BegofFrames(iFrame+1));
+                % # Trigger Frames
+                tg(:,iFrame)= Trigger(BegofFrames(iFrame+1)+1-FrameLength:BegofFrames(iFrame+1));
+
 
             end
 
@@ -345,6 +350,7 @@ for iTest=1:length(TestFolders)
             S.(AnaStruct).(ExpLabel).(TrialLabel).EMGFrames=x;
             S.(AnaStruct).(ExpLabel).(TrialLabel).ForceFrames=f;
             S.(AnaStruct).(ExpLabel).(TrialLabel).TmFrames=t;
+            S.(AnaStruct).(ExpLabel).(TrialLabel).TriggerFrames=tg;
             S.(AnaStruct).(ExpLabel).(TrialLabel).BlankTmFrames=t;
             S.(AnaStruct).(ExpLabel).(TrialLabel).FrameLengths=FrameLengths;
 
@@ -655,26 +661,32 @@ for iTest=1:length(TestFolders)
 
             EMGFrames(:,:,iFilt)=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).vEMGFrames(1:FrameLength,PlotFrame(1):PlotFrame(2));
             MWaveFrames(:,:,iFilt)=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).MWaveFrames(1:FrameLength,PlotFrame(1):PlotFrame(2));
-            TimeFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).TmFrames(1:FrameLength,PlotFrame(1):PlotFrame(2));
-            Time=reshape(TimeFrames,1,FrameLength*length(PlotFrame(1):PlotFrame(2)));
-            Trigger=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Trigger');
+
             vEMG(:,iFilt)=reshape(EMGFrames(:,:,iFilt),1,FrameLength*length(PlotFrame(1):PlotFrame(2)));
             MWave(:,iFilt)=reshape(MWaveFrames(:,:,iFilt),1,FrameLength*length(PlotFrame(1):PlotFrame(2)));
 
         end
 
+        TimeFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).TmFrames(1:FrameLength,PlotFrame(1):PlotFrame(2));
+        TriggerFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).TriggerFrames(1:FrameLength,PlotFrame(1):PlotFrame(2));
+
+        Time=reshape(TimeFrames,1,FrameLength*length(PlotFrame(1):PlotFrame(2)));
+        Trig=reshape(TriggerFrames,1,FrameLength*length(PlotFrame(1):PlotFrame(2)));
+
         figure('Name',sprintf('%s Results, Test: %s',FiltLabels{2},TestFolders{iTest}),'NumberTitle','off')
         subplot(2,1,1)
+        plot(Time,Trig/10000,'b','LineWidth',2)
+        hold on
         plot(Time,vEMG(:,1),'k','LineWidth',2)
-        hold
+        
         plot(Time,vEMG(:,2),'r','LineWidth',2)
-        hold
-        legend({'Unfiltered', 'Comb vEMG'})
+        legend({'Trigger(a.u)', 'Unfiltered', 'Comb vEMG'})
         ttl=sprintf('%s at %s, Test: %s, TrialNum: %d, Frame: %d-%d'...
             ,DataLabels{8},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2)+1);
         title(ttl);
         xlabel(DataLabels{5})
         ylabel(DataLabels{1})
+        
         subplot(2,1,2)
         plot(Time,vEMG(:,1),'k','LineWidth',2)
         hold
@@ -688,15 +700,19 @@ for iTest=1:length(TestFolders)
     
         figure('Name',sprintf('%s Results, Test: %s',FiltLabels{3},TestFolders{iTest}),'NumberTitle','off')
         subplot(2,1,1)
+        plot(Time,Trig/10000,'b','LineWidth',2)
+        hold on
         plot(Time,vEMG(:,1),'k','LineWidth',2)
-        hold
+        
         plot(Time,vEMG(:,3),'r','LineWidth',2)
-        legend({'Unfiltered', 'GS vEMG'})
+        legend({'Trigger(a.u)', 'Unfiltered', 'GS vEMG'})
         ttl=sprintf('%s at %s, Test: %s, TrialNum: %d, Frame: %d-%d',...
             DataLabels{10},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2)+1);
         title(ttl);
         xlabel(DataLabels{5})
         ylabel(DataLabels{1})
+        
+        
         subplot(2,1,2)
         plot(Time,vEMG(:,1),'k','LineWidth',2)
         hold
@@ -880,7 +896,6 @@ for iTest=1:length(TestFolders)
                 S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats=...
                     table(Amp_MAV_vEMG',Clip_MAV_vEMG',Amp_MAV_MWave',Clip_MAV_MWave','VariableNames',[ "Amp_MAV_vEMG" "Clip_MAV_vEMG" ...
                     "Amp_MAV_MWave" "Clip_MAV_MWave"]);
-
                  
             end
         end
