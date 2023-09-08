@@ -3,13 +3,13 @@
 clear all
 close all
 iTestPlot=1;  % pick a test to plot 
-FolderNames={'jan11'};  %% Folders to be loaded 
-FileNames={'jan11_test'};  %% Files to be loaded 
+FolderNames={'aug29'};  %% Folders to be loaded 
+FileNames={'aug29_test'};  %% Files to be loaded 
 
-
+% TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
 TimeRange=[4 22];  % in seconds
-PlotRange=[ 3 3 ];  % Trial
-iExp=5;    % pick an exp to plot 
+PlotRange=[ 41 44 ];  % Trial
+iExp=4;    % pick an exp to plot 
 
 M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);

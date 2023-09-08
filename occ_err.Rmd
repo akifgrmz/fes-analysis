@@ -1,0 +1,89 @@
+---
+title: "Occlusion Est Error"
+output: html_document
+date: "2023-09-06"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE}
+library(magrittr); 
+library(here); 
+library(janitor)
+library(readxl);
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+```
+
+
+
+```{r Data Inject } 
+
+err_raw<- read_csv("occ_est_error.csv",show_col_types = FALSE)
+err_raw
+
+occdropped<- read_csv("dropped_occ.csv",show_col_types = FALSE)
+occdropped
+
+```
+
+
+
+```{r dataframe modifications}
+
+
+err<-err_raw%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30'))
+
+err<-err%>%mutate(Test = as.factor(Test),
+                     Filt = as.factor(Filt),
+                     MVC_Stim_Cat = as.factor(MVC_Stim_Cat),
+                     MVC_Voli_Cat = as.factor(MVC_Voli_Cat),
+                     MVC_Stim = as.integer(MVC_Stim),
+                      MVC_Voli = as.integer(MVC_Voli))
+
+
+
+err_raw<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27")
+
+
+summary(err)
+
+```
+
+
+```{r Plotting: maintain section  }
+
+plot_tibble<-filter(err, MVC_Stim_Cat!="Stim_0",Filt=='GS')
+
+
+ggplot(plot_tibble, aes(x =  MVC_Voli , y = Effort_err_Amp , color = MVC_Stim_Cat)) +
+    geom_point() +
+    geom_smooth(method = "lm")+ 
+    facet_wrap(~Test)+
+    labs(x = "Volitional Effort: F_v (% MVC)",
+    y = "Maintained Volitional effort: F_vprime (% MVC)",
+    title = "Maintained force and MAV for different effort levels",
+    subtitle = "4 healthy participants")
+
+```
+
+

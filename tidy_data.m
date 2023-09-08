@@ -20,12 +20,11 @@ temp=load (str);
 S.(ExpStruct).ExpPar.Amp=temp.handles.Amp;
 S.(ExpStruct).ExpPar.MaxPW=temp.handles.MaxPW;
 S.(ExpStruct).ExpPar.FreqList=temp.handles.freq_list;
-S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
+%S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
 S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
 S.(ExpStruct).ExpPar.sample_t=temp.handles.sample_t;
 S.(ExpStruct).ExpPar.fs=1/temp.handles.sample_t;
 S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
-S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
 S.(ExpStruct).ExpPar.TrialsFreq=temp.handles.ExpTrials.TrialsFreq;
 S.(ExpStruct).ExpPar.stim_freq=temp.handles.freq_list(temp.handles.ExpTrials.TrialsFreq(1));
 
@@ -46,10 +45,10 @@ end
 % Labeling
 %
 
-DataInd=["EMG","Trigger","Force","PW","Time"];
+DataInd=["EMG","Trigger","Force","PW","Time", "Torque"];
 ExpLabels=["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
 S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
-S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,'VariableNames',DataInd);
+S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,6,'VariableNames',DataInd);
 
 % 
 % Num of Trials might not be needed anymore
