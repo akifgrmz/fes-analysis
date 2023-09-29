@@ -2,7 +2,7 @@
 %% Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "apr20"];
+TestFolders=["jan7" "jan11" "jan12" "apr20" "may19"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -11,7 +11,7 @@ end
 S = load_test(TestFolders,TestFiles);
 %% Initial Plotting 
 close all
-iTest=1;  % pick a test to plot 
+iTest=5;  % pick a test to plot 
 FolderName=TestFolders(iTest);  %% Folders to be loaded  
 Trials=[1];  % Trial
 TimeRange=[5 15];  % in seconds
@@ -60,7 +60,6 @@ end
 % # Plotting the Mean, Median and MAV 
 % # 
 Exp= ["Fat"];
-
 VoliStart=5;
 VoliEnd=VoliStart+10;
 StimStart=15;

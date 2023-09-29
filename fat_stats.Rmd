@@ -21,8 +21,7 @@ library(patchwork)
 library(vcd)
 library(dplyr)
 library(ggplot2)
-
- library(plyr)
+library(plyr)
 
 ```
 
@@ -32,7 +31,7 @@ library(ggplot2)
 fat_stats<- read_csv("fatigue_stats.csv",show_col_types = FALSE) # stats for data inside frames
 fat_byframe<- read_csv("fat_stimonly_force.csv",show_col_types = FALSE) # stats for comparing feats to force reduction among frames
 fat_byframe_data<- read_csv("fat_stimonly_frame.csv",show_col_types = FALSE) # force and feat data for fat_byframe
-fat_byframe_data
+fat_stats
 
 ```
 

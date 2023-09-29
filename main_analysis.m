@@ -17,9 +17,9 @@ end
 
 clc
 clear all
-% TestFolders=["apr20" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20"];
-TestFolders=["may19"];
-% TestFolders=["apr20"];
+% TestFolders=["may19"];
+TestFolders=["jan7"];
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20"];
 
 
 for iTest=1:length(TestFolders)
@@ -1029,6 +1029,8 @@ for iTest=1:length(TestFolders)
             TrialLabel=sprintf('Trial_%d',IndTrials(iTrial,iPW));
             MAV_Vals(iTrial,iPW)=mean(S.(AnaStruct).(ExpLabel).(TrialLabel)...
                 .(FiltLabel).Feats.('MAV_vEMG')(MeanRangeInd));
+
+
         end
     end
     
@@ -1046,12 +1048,13 @@ end
 
 
 %
-%Mean MAV of Occ Trials 
+%%Mean MAV of Occ Trials 
 clc
+clear MAVDropped
 exp_lbl='Occ';
 VoliLevels=[10 20 30 40];
-StimLevels=[ 0 10 20 30];
-MeanTime=[ 11 14];
+StimLevels=[ 10 20 30 0];
+MeanTime=[ 10 15];
 % Calculating the means at time [10 15]
 for iTest=1:length(TestFolders)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
@@ -1084,16 +1087,31 @@ for iTest=1:length(TestFolders)
                 Amp_Modul_Mean(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(MeanRangeInd,:).('Amp_MAV_vEMG'));
                 Amp_Modul_Mean(TrialsInd(iTrial,c),2)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(MeanRangeInd,:).('Amp_MAV_vEMG'));
                 Amp_Modul_Mean(TrialsInd(iTrial,c),3:5)=RepTableMat(TrialsInd(iTrial,c),[1,4,5]);
-            end
-            MAV_Mean_Reps(c,:) = [ c mean(MAV_Mean(TrialsInd(:,c),1))  std(MAV_Mean(TrialsInd(:,c),1)) RepTableMat(TrialsInd(iTrial,c),[4 5 ])];
-            Amp_Modul_Mean_Reps(c,:) = [ c mean(Amp_Modul_Mean(TrialsInd(:,c),1))  std(Amp_Modul_Mean(TrialsInd(:,c),1)) RepTableMat(TrialsInd(iTrial,c),[4 5 ])];
+                
+                if StimLevel~=0
+                    DroppedFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames;
+                    Mean_MAVDropped(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
+                        (MeanRangeInd(1)>=DroppedFrames & DroppedFrames<=MeanRangeInd(2),:).('MAV')); 
+                    Std_MAVDropped(TrialsInd(iTrial,c),1)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
+                        (MeanRangeInd(1)>=DroppedFrames & DroppedFrames<=MeanRangeInd(2),:).('MAV'));     
+                else 
+                    Mean_MAVDropped(TrialsInd(iTrial,c),1)=NaN;
+                    Std_MAVDropped(TrialsInd(iTrial,c),1)=NaN;
 
+                end
+            end
+            
+            MAV_Mean_Reps(c,:) = [ c mean(MAV_Mean(TrialsInd(:,c),1))  std(MAV_Mean(TrialsInd(:,c),1))...
+                mean(Mean_MAVDropped(TrialsInd(:,c),1)) std(Mean_MAVDropped(TrialsInd(:,c),1)) RepTableMat(TrialsInd(iTrial,c),[4 5 ])];
+            Amp_Modul_Mean_Reps(c,:) = [ c mean(Amp_Modul_Mean(TrialsInd(:,c),1))  std(Amp_Modul_Mean(TrialsInd(:,c),1))...
+                mean(Mean_MAVDropped(TrialsInd(:,c),1)) std(Mean_MAVDropped(TrialsInd(:,c),1)) RepTableMat(TrialsInd(iTrial,c),[4 5 ])];
+            
             c=c+1;
         end
     end
 
-    MAV_Mean=array2table(MAV_Mean,'VariableNames',["Mean", "Std" "Theo_Force","vMVC","sMVC"]);
-    MAV_Mean_Reps=array2table(MAV_Mean_Reps,'VariableNames',["Unique_Trial" "Mean" "Std" "vMVC" "sMVC"]);
+    MAV_Mean=array2table([MAV_Mean Mean_MAVDropped  Std_MAVDropped],'VariableNames',["Mean", "Mean_Std" "Theo_Force","vMVC","sMVC" "MeanDropped" "MeanDropped_Std"]);
+    MAV_Mean_Reps=array2table(MAV_Mean_Reps,'VariableNames',["Unique_Trial" "Mean" "Std" "MeanDropped" "MeanDropped_Std" "vMVC" "sMVC"]);
     
     S.(AnaLabel).(ExpLabel).MAV_Mean=MAV_Mean;
     S.(AnaLabel).(ExpLabel).MAV_Mean_Reps=MAV_Mean_Reps;
@@ -1101,7 +1119,7 @@ for iTest=1:length(TestFolders)
         'VariableNames',["Rep1" "Rep2" "Rep3"]) MAV_Mean_Reps(:,'sMVC') MAV_Mean_Reps(:,'vMVC')];
     
     Amp_Modul_Mean=array2table(Amp_Modul_Mean,'VariableNames',["Mean", "Std" "Theo_Force","vMVC","sMVC"]);
-    Amp_Modul_Mean_Reps=array2table(Amp_Modul_Mean_Reps,'VariableNames',["Unique_Trial" "Mean" "Std" "vMVC" "sMVC"]);
+    Amp_Modul_Mean_Reps=array2table(Amp_Modul_Mean_Reps,'VariableNames',["Unique_Trial" "Mean" "Std" "MeanDropped" "MeanDropped_Std" "vMVC" "sMVC"]);
     
     S.(AnaLabel).(ExpLabel).Amp_Modul_Mean=Amp_Modul_Mean;
     S.(AnaLabel).(ExpLabel).Amp_Modul_Mean_Reps=Amp_Modul_Mean_Reps;
