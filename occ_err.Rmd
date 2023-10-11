@@ -55,12 +55,13 @@ err<-err_raw%>%mutate(MVC_Voli_Cat=recode(VoliMVC,
 
 err<-err%>%mutate(Test = as.factor(Test),
                      Filt = as.factor(Filt),
+                     Occ_Type = as.factor(Occ_Type),
                      MVC_Stim_Cat = as.factor(MVC_Stim_Cat),
                      MVC_Voli_Cat = as.factor(MVC_Voli_Cat),
                      MVC_Stim = as.integer(StimMVC),
                       MVC_Voli = as.integer(VoliMVC))
 
-err_raw<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="may19")
+err_raw<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
 
 
 
@@ -84,6 +85,7 @@ droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
                      MVC_Stim_Cat = as.factor(MVC_Stim_Cat),
                      Repeat = as.factor(Repeat),
                      NumofDropped = as.factor(NumofDropped))
+droppedocc<-droppedocc%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
 
 summary(err)
 
@@ -92,11 +94,11 @@ summary(err)
 
 ```{r Plotting: maintain section  }
 filt="GS"
-occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt)
+occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type=='Occ_mvc')
 
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")
 
-p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp , color = MVC_Stim_Cat)) +
+p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_e_Amp_err , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
@@ -105,7 +107,7 @@ p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp , color = MVC_Stim_Cat
     title = "Effort Estimation Error before Occlusion Correction",
     subtitle = sprintf('%s filtered results',filt))
 
-p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp_Occ , color = MVC_Stim_Cat)) +
+p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_Amp_err , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
@@ -114,7 +116,7 @@ p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp_Occ , color = MVC_Stim
     title = "Effort Estimation Error after Occlusion Correction",
     subtitle = sprintf(' %s filtered results',filt))
 
-p3<-ggplot(occ_err1, aes(x =  VoliMVC , y = Effort_err_Amp , color = Filt)) +
+p3<-ggplot(occ_err1, aes(x =  VoliMVC , y = Effort_Amp_err , color = Filt)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
@@ -128,11 +130,11 @@ p1/p2 -p3
 ```
 ```{r Individualized occ errors}
 filt="GS"
-occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt)
+occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type=='Occ_mvc')
 
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")
 
-p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp , color = MVC_Stim_Cat)) +
+p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_e_Amp_err , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
@@ -142,7 +144,7 @@ p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp , color = MVC_Stim_Cat
     title = "Effort Estimation Error before Occlusion Correction",
     subtitle = sprintf('%s filtered results',filt))
 
-p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp_Occ_Indv , color = MVC_Stim_Cat)) +
+p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_Amp_Indv_err , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
@@ -152,7 +154,7 @@ p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp_Occ_Indv , color = MVC
     title = "Effort Estimation Error Using Individual Occlusion Correction",
     subtitle = sprintf(' %s filtered results',filt))
 
-p3<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp_Occ , color = MVC_Stim_Cat)) +
+p3<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_Amp_err , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
@@ -161,28 +163,62 @@ p3<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_err_Amp_Occ , color = MVC_Stim
     y = "Effort Estimation Error (% MVC)",
     title = "Effort Estimation Error Using Averaged Occlusion Correction",
     subtitle = sprintf('%s filtered results',filt))
-
-
-mean_err<-occ_err %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_err_Amp),2), "RMS"=round(sqrt(mean(Effort_err_Amp^2)),2),"Est"='Before Correction') 
-mean_err<-mean_err%>%add_row(occ_err %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_err_Amp_Occ_Indv),2), "RMS"=round(sqrt(mean(Effort_err_Amp_Occ_Indv^2)),2),"Est"='Individualized Correction') )
-mean_err<-mean_err%>%add_row(occ_err %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_err_Amp_Occ),2), "RMS"=round(sqrt(mean(Effort_err_Amp_Occ_Indv^2)),2),"Est"='After Correction') )
+mean_err<-occ_err %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_e_Amp_err),2), "RMS"=round(sqrt(mean(Effort_e_Amp_err^2)),2),"Est"='Before Correction') 
+mean_err<-mean_err%>%add_row(occ_err %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_Indv_err),2), "RMS"=round(sqrt(mean(Effort_Amp_Indv_err^2)),2),"Est"='Individualized Correction') )
+mean_err<-mean_err%>%add_row(occ_err %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_err),2), "RMS"=round(sqrt(mean(Effort_Amp_err^2)),2),"Est"='After Correction') )
 
 p4<-ggplot(mean_err, aes(x =  Est , y = Mean , color = Est)) +
-    geom_boxplot(notch = TRUE) +
+    geom_boxplot(notch = FALSE) +
     #geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
     ylim(-20, 20)+
+    facet_wrap( ~ MVC_Voli_Cat)+
     labs(x = "Volitional Effort: F_v (% MVC)",
     y = "Effort Estimation Error (% MVC)",
     title = "Mean",
     subtitle = sprintf('%s filtered results',filt))
 p5<-ggplot(mean_err, aes(x =  Est , y = RMS , color = Est)) +
-    geom_boxplot(notch = TRUE) +
+    geom_boxplot(notch = FALSE) +
     #geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
+    facet_wrap( ~ MVC_Voli_Cat)+
     labs(x = "Volitional Effort: F_v (% MVC)",
     y = "Effort Estimation Error (% MVC)",
     title = "RMS",
     subtitle = sprintf('%s filtered results',filt))
 p1/p2/p3-p4/p5
+```
+
+```{r occ errors of different methods }
+filt="GS"
+occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt)
+
+ggplot(occ_err, aes(x =  VoliMVC)) +
+  geom_point(aes( y = Effort_e_Amp_err, color='Before Correction')) +
+  geom_point(aes( y = Effort_Amp_err, color='After Correction')) +
+  geom_point(aes( y = Effort_Amp_Indv_err, color='Indiv. Correction')) +
+  geom_smooth(aes(y = Effort_e_Amp_err, color='Before Correction'), method = "lm") +
+  geom_smooth(aes(y = Effort_Amp_err, color='After Correction'), method = "lm")+
+  geom_smooth(aes( y = Effort_Amp_Indv_err, color='Indiv. Correction'), method = "lm")+
+  geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
+  facet_wrap(~Occ_Type)
+
+```
+
+```{r faceted by Test}
+
+mean_err<-occ_err %>% group_by(Test) %>% summarise( "Mean"= round(mean(Effort_e_Amp_err),2), "RMS"=round(sqrt(mean(Effort_e_Amp_err^2)),2),"Est"='Before Correction') 
+mean_err<-mean_err%>%add_row(occ_err %>% group_by(Test) %>% summarise( "Mean"= round(mean(Effort_Amp_Indv_err),2), "RMS"=round(sqrt(mean(Effort_Amp_Indv_err^2)),2),"Est"='Individualized Correction') )
+mean_err<-mean_err%>%add_row(occ_err %>% group_by(Test) %>% summarise( "Mean"= round(mean(Effort_Amp_err),2), "RMS"=round(sqrt(mean(Effort_Amp_err^2)),2),"Est"='After Correction') )
+
+ggplot(mean_err, aes(x =  Est , y = Mean , color = Est)) +
+    geom_bar(stat = "identity", position=position_dodge()) +
+    #geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
+    facet_wrap(~Test)+
+    ylim(-40, 20)+
+    labs(x = "Volitional Effort: F_v (% MVC)",
+    y = "Effort Estimation Error (% MVC)",
+    title = "Mean",
+    subtitle = sprintf('%s filtered results',filt))
+
 ```
 
 
@@ -191,10 +227,10 @@ occ_err_lm<-filter(err, MVC_Stim_Cat!="Stim_0",Filt!="Unfilt" )
 occ_err_lm <- occ_err_lm %>%
   mutate(Filt = relevel(Filt, ref = "Comb"))
 
-  m1 <- lm(Effort_err_Amp_Occ ~ Filt, data = occ_err_lm) 
+  m1 <- lm(Effort_Amp_err ~ Filt, data = occ_err_lm) 
 tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
-  m2 <- lm(Effort_err_Amp_Occ ~ MVC_Voli_Cat, data = filter(err, MVC_Stim_Cat!="Stim_0",Filt=="GS" )) 
+  m2 <- lm(Effort_Amp_err ~ MVC_Voli_Cat, data = filter(err, MVC_Stim_Cat!="Stim_0",Filt=="GS" )) 
 tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
@@ -208,7 +244,7 @@ Effort estimation error with comb filter is higher with and average of 6.4 compa
 ggplot(droppedocc, aes(x =  VoliMVC , y = MAV*100 , color = MAV_Type)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
-    #facet_wrap(~Test)+
+    facet_wrap(~Test)+
     labs(x = "Volitional Effort Levels : F_v (% MVC)",
     y = "Effort (% MVC)",
     title = "Comparing the Dropped Frames to the Volitional Trials",

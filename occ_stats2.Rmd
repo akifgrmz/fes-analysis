@@ -37,7 +37,6 @@ occraw
 ```{r dataframe modifications}
 
 occ<-occraw%>%mutate(Test = as.factor(Test),
-
                      Tau = as.factor(Tau),
                      Feat = as.factor(Feat),
                      Filt = as.factor(Filt))
