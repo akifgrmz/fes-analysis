@@ -17,14 +17,13 @@ AnaStruct=sprintf('%s_ana',FolderName);
 
 str=sprintf('%s/%s.mat',FolderName,FileName);
 temp=load (str);
-S.(ExpStruct).ExpPar.Amp=temp.handles.Amp;
-S.(ExpStruct).ExpPar.MaxPW=temp.handles.MaxPW;
+% S.(ExpStruct).ExpPar.Amp=temp.handles.Amp;
+% S.(ExpStruct).ExpPar.MaxPW=temp.handles.MaxPW;
 S.(ExpStruct).ExpPar.FreqList=temp.handles.freq_list;
-%S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
+% S.(ExpStruct).ExpPar.CalibMatrix=temp.handles.CalibMatrix;
 S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
 S.(ExpStruct).ExpPar.sample_t=temp.handles.sample_t;
 S.(ExpStruct).ExpPar.fs=1/temp.handles.sample_t;
-S.(ExpStruct).ExpPar.FolderName=temp.handles.FolderName;
 S.(ExpStruct).ExpPar.TrialsFreq=temp.handles.ExpTrials.TrialsFreq;
 S.(ExpStruct).ExpPar.stim_freq=temp.handles.freq_list(temp.handles.ExpTrials.TrialsFreq(1));
 
@@ -36,10 +35,15 @@ S.(ExpStruct).OccTrials=temp.handles.ExpTrials;
 S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
 
 
-
 if isfield(temp.handles, 'AmpGain')
     S.(ExpStruct).ExpPar.AmpGain=str2double(temp.handles.AmpGain);
 end
+
+
+% S.(ExpStruct).OccTrials.NumofTrials=48;
+% S.(ExpStruct).OccTrials.NumofTrials=49;
+% S.(ExpStruct).OccTrials.RedoTrials=[5 48];
+% S.(ExpStruct).OccTrials.NumofRedos=[2];
 
 %
 % Labeling
@@ -236,6 +240,7 @@ DtInd=S.(ExpStruct).ExpPar.DataInd;
 iPW=table2array(DtInd(:,"PW"));
 iTrigger=table2array(DtInd(:,"Trigger"));
 
+
 for iExp=1:length(ExpLabels)
     ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
     ExpLabel=ExpLabels{iExp};
@@ -292,6 +297,16 @@ for iExp=1:length(ExpLabels)
     end 
 end
 
+
+%---------------------
+
+% S.(ExpStruct).OccTrials.Trial_48=temp.handles.ExpTrials.Trial_16;
+
+
+
+
+
+%---------------------
 %        for iRedo=1:NumofRedos
 % 
 %             RedoLabel=sprintf('RedoTrial_%d',RedoTrials(iRedo));

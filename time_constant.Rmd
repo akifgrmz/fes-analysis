@@ -94,25 +94,3 @@ df-> filter
 tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 round(mean(df$TimeConst),3)
 ```
-
-
-```{r}
-df%>% mutate(bmi_cat = fct_reorder(bmi_cat, triceps_skinfold,.fun = median)) 
-
-```
-
-```{r }
-nnyfs %>%
-filter(complete.cases(bmi_cat, triceps_skinfold)) %>% mutate(bmi_cat = fct_reorder(bmi_cat,
-                                 triceps_skinfold,
-.fun = median)) %>% ggplot(., aes(x = triceps_skinfold, y = bmi_cat,
-fill = bmi_cat, height = ..density..)) + ggridges::geom_density_ridges(scale = 0.85) +
-scale_fill_viridis_d(option = "magma") +
-guides(fill = FALSE) +
-labs(title = "Ridgeline Plot of Triceps Skinfold by BMI Category (nnyfs)",
-x = "Triceps Skinfold", y = "BMI Category") + theme_light()
-
-serzinc <- serzinc %>%
-mutate(in_range = ifelse(zinc >= 66 & zinc <= 110, 1, 0))
-serzinc %>% tabyl(in_range) %>% adorn_totals() %>% adorn_pct_formatting()
-```

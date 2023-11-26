@@ -62,6 +62,7 @@ err<-err%>%mutate(Test = as.factor(Test),
                       MVC_Voli = as.integer(VoliMVC))
 
 err_raw<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+summary(err)
 
 
 
@@ -87,7 +88,6 @@ droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
                      NumofDropped = as.factor(NumofDropped))
 droppedocc<-droppedocc%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
 
-summary(err)
 
 ```
 
@@ -200,8 +200,25 @@ ggplot(occ_err, aes(x =  VoliMVC)) +
   geom_smooth(aes( y = Effort_Amp_Indv_err, color='Indiv. Correction'), method = "lm")+
   geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
   facet_wrap(~Occ_Type)
-
 ```
+
+```{r occ errors of different methods }
+filt="GS"
+occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Occ_Type=="Occ_mvc",Filt==filt)
+
+
+p1<-ggplot(occ_err, aes(y = Effort_e_Amp, x =  VoliMVC,color=MVC_Stim_Cat)) +
+  geom_point()+
+  geom_smooth(method = "lm")
+#facet_wrap(~MVC_Stim_Cat)
+
+p2<-ggplot(occ_err, aes(y = Effort_e_Amp_err, x =  VoliMVC,color=MVC_Stim_Cat)) +
+  geom_point()+
+  geom_smooth(method = "lm")
+  #facet_wrap(~Test)
+p1/p2
+```
+
 
 ```{r faceted by Test}
 

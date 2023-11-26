@@ -4,6 +4,7 @@ function IndTrials=find_trialnum(vMVC,sMVC,RepTableMat)
 % sMVC: stim MVClevels such as 10, 20 etc
 % RepTableMat: Occlusion experiment table found in Occ trials field
 % IndTrials: array with trial numbers 
+%----This needs revising 
 
 
     [VoliMVCTrials]=RepTableMat(:,4); 

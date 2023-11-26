@@ -6,7 +6,7 @@
 %
 
 clear all
-TestFolders=["may19" ];
+TestFolders=["oct25" ];
 for iTest=1:length(TestFolders)
     tidy_data(TestFolders(iTest));
 end
@@ -17,9 +17,11 @@ end
 
 clc
 clear all
-% TestFolders=["may19"];
-TestFolders=["jan7"];
-% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20"];
+% TestFolders=["jan7"];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
+% TestFolders=[ "apr20" "oct11" "oct18"];
+TestFolders=["oct25"];
+
 
 
 for iTest=1:length(TestFolders)
@@ -39,7 +41,7 @@ for iTest=1:length(TestFolders)
     
 
     % Experiments indices 
-    ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
+    ExpLabels=S.(TestStruct).ExpPar.ExpLabels;   
     DataInd=S.(TestStruct).ExpPar.DataInd;
     TableInd=DataInd.Properties.VariableNames;
     iForce=table2array(DataInd(:,"Force"));
@@ -87,7 +89,7 @@ for iTest=1:length(TestFolders)
     d2 = designfilt('lowpassfir','PassbandFrequency',LPPass,...
       'StopbandFrequency',LPStop,'PassbandRipple',Ap,...
       'DesignMethod', 'kaiserwin','SampleRate',fs);
-    LPOrder = filtord(d2)
+    LPOrder = filtord(d2);
 
 %     fvtool(d2)
     
@@ -130,8 +132,10 @@ for iTest=1:length(TestFolders)
               
                 RedoLabel=sprintf('RedoTrial_%d',RedoTrials(iRedo));
                 TrialLabel=sprintf('Trial_%d',RedoTrials(iRedo));
+%                 S.(AnaStruct).(ExpLabel).(TrialLabel)=S.(TestStruct).(ExpLabel).(RedoLabel);
+%                 S.(AnaStruct).(ExpLabel).(TrialLabel).Redo=boolean(1);
                 S.(TestStruct).(ExpLabel).(TrialLabel)=S.(TestStruct).(ExpLabel).(RedoLabel);
-                S.(TestStruct).(ExpLabel).(TrialLabel).Redo=1;
+                S.(TestStruct).(ExpLabel).(TrialLabel).Redo=boolean(1);
            end
         end 
     end
@@ -163,7 +167,7 @@ for iTest=1:length(TestFolders)
     end
 end
 
-%Trigger and Blanking
+%%Trigger and Blanking
 
 BlankTime=0.0035;
 BlankLength=round(BlankTime*fs)+1;
@@ -762,8 +766,8 @@ FatFilt = designfilt('lowpassfir','PassbandFrequency',Fpass,...
 %   'StopbandFrequency',Fstop,'PassbandRipple',Ap,'SampleRate',stim_freq);
 
 % fvtool(FatFilt,'MagnitudeDisplay','magnitude')
-N_lpFilt = filtord(lpFilt)
-N_FatFilt = filtord(FatFilt)
+N_lpFilt = filtord(lpFilt);
+N_FatFilt = filtord(FatFilt);
 
 
 clear FiltFramesInd ExpLabels
@@ -974,7 +978,6 @@ for iExp =1:length(ExpstoAna)
                     Ssc=zeros(1,FrameNum);
                     Zc=zeros(1,FrameNum);
 
-
                     for iFrame=1:FrameNum
 
                         [MedFreq_vEMG(iFrame), MeanFreq_vEMG(iFrame)]=MedMeanFreq(DroppedEMG(:,iFrame),fs);
@@ -1062,13 +1065,13 @@ for iTest=1:length(TestFolders)
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(exp_lbl);
 
     RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
-    stim_freq=S.(TestLabel).ExpPar.FreqList(1);
+    stim_freq=S.(TestLabel).ExpPar.stim_freq;
 
     MeanFrame=[MeanTime(1)*stim_freq MeanTime(2)*stim_freq];
     MeanRangeInd=[MeanFrame(1):MeanFrame(2)];
     FiltLabel="Unfilt";
     c=1;
-    clear MAV_Mean MAV_Mean_Reps TrialsInd Amp_Modul_Mean  Amp_Modul_Mean_Reps
+    clear MAV_Mean MAV_Mean_Reps TrialsInd Amp_Modul_Mean  Amp_Modul_Mean_Reps Mean_MAVDropped Std_MAVDropped
     for iVoli=1:length(VoliLevels)
         VoliLevel=VoliLevels(iVoli);
 
@@ -1109,22 +1112,29 @@ for iTest=1:length(TestFolders)
             c=c+1;
         end
     end
-
+    
     MAV_Mean=array2table([MAV_Mean Mean_MAVDropped  Std_MAVDropped],'VariableNames',["Mean", "Mean_Std" "Theo_Force","vMVC","sMVC" "MeanDropped" "MeanDropped_Std"]);
     MAV_Mean_Reps=array2table(MAV_Mean_Reps,'VariableNames',["Unique_Trial" "Mean" "Std" "MeanDropped" "MeanDropped_Std" "vMVC" "sMVC"]);
     
     S.(AnaLabel).(ExpLabel).MAV_Mean=MAV_Mean;
     S.(AnaLabel).(ExpLabel).MAV_Mean_Reps=MAV_Mean_Reps;
-    S.(AnaLabel).(ExpLabel).RepTrialsInd=[array2table([TrialsInd'],...
-        'VariableNames',["Rep1" "Rep2" "Rep3"]) MAV_Mean_Reps(:,'sMVC') MAV_Mean_Reps(:,'vMVC')];
     
+    [rw,cl]=size(TrialsInd');
+    for iCol=1:cl
+        S.(AnaLabel).(ExpLabel).RepTrialsInd(:,iCol)=array2table([TrialsInd(iCol,:)'],...
+            'VariableNames',[sprintf("Rep%d",iCol)]);
+    end
+    
+    S.(AnaLabel).(ExpLabel).RepTrialsInd(:,'sMVC')=MAV_Mean_Reps(:,'sMVC');
+    S.(AnaLabel).(ExpLabel).RepTrialsInd(:,'vMVC')=MAV_Mean_Reps(:,'vMVC');
     Amp_Modul_Mean=array2table(Amp_Modul_Mean,'VariableNames',["Mean", "Std" "Theo_Force","vMVC","sMVC"]);
     Amp_Modul_Mean_Reps=array2table(Amp_Modul_Mean_Reps,'VariableNames',["Unique_Trial" "Mean" "Std" "MeanDropped" "MeanDropped_Std" "vMVC" "sMVC"]);
     
     S.(AnaLabel).(ExpLabel).Amp_Modul_Mean=Amp_Modul_Mean;
     S.(AnaLabel).(ExpLabel).Amp_Modul_Mean_Reps=Amp_Modul_Mean_Reps;
-    S.(AnaLabel).(ExpLabel).RepTrialsInd=[array2table([TrialsInd'],...
-        'VariableNames',["Rep1" "Rep2" "Rep3"]) Amp_Modul_Mean_Reps(:,'sMVC') Amp_Modul_Mean_Reps(:,'vMVC')];
+    
+%     S.(AnaLabel).(ExpLabel).RepTrialsInd=[array2table([TrialsInd'],...
+%         'VariableNames',["Rep1" "Rep2" "Rep3"]) Amp_Modul_Mean_Reps(:,'sMVC') Amp_Modul_Mean_Reps(:,'vMVC')];
 end
 
 %%Normalize the Features over zero stim trials
