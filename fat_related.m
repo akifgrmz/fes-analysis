@@ -2,7 +2,7 @@
 %% Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "apr20" "may19"];
+TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct18" "oct25"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
