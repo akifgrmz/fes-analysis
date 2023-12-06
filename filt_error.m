@@ -206,7 +206,7 @@ c=1;
 
 TimeRange=[5 10] ;
 ExpstoAna= ["Occ"];
-TestFolders=["jan7" "jan11" "jan12" "apr20" "may19"];
+TestFolders=["jan7" "jan11" "jan12" ];
 T=[];
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
@@ -252,17 +252,28 @@ for iTest=1:length(TestFolders)
                     
                     
                     MAV_ref=S.(AnaLabel).(ExpLabel).(TrialLabel2).Unfilt.Feats(FrameRangeInd,:).('MAV_vEMG');
-                    rmse=sqrt( sum((MAV_filt-MAV_ref).^2)/mean(MAV_ref));%/length(MAV_filt);
-                    T=[T;rmse  MVC_Voli MVC_Stim iTrial RefIndTrial(iRefTrial) FiltLabel TestFolders(iTest)];
+                    rmse(iRefTrial)=sqrt( sum((MAV_filt-MAV_ref).^2)/mean(MAV_ref));%/length(MAV_filt);
+                    mav_diff(iRefTrial)=mean(MAV_filt-MAV_ref);%/length(MAV_filt);
+                    Error=rmse(iRefTrial);
+                    Error_Type="RMSE";
+                    T=[T; Error Error_Type MVC_Voli MVC_Stim iTrial RefIndTrial(iRefTrial) FiltLabel TestFolders(iTest)];
+                   
+                    Error=mav_diff(iRefTrial);
+                    Error_Type="MAV_Diff";
+                    T=[T; Error Error_Type MVC_Voli MVC_Stim iTrial RefIndTrial(iRefTrial) FiltLabel TestFolders(iTest)];
 
                 end
-            end           
+                
+                S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).RMSE=mean(rmse);
+                S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).mav_diff=mean(mav_diff);
+
+            end  
         end
     end
 end
 
-RMSETable=table(T(:,1),T(:,2),T(:,3),T(:,4),T(:,5),T(:,6),T(:,7),'VariableNames',["RMSE",...
-    "MVC_Voli" "MVC_Stim" "Trial" "Ref_Trial" "Filt" "Test"]);
+RMSETable=table(T(:,1),T(:,2),T(:,3),T(:,4),T(:,5),T(:,6),T(:,7),T(:,8),'VariableNames',["Error",...
+   "Error_Type" "MVC_Voli" "MVC_Stim" "Trial" "Ref_Trial" "Filt" "Test"]);
 S.(AnaLabel).(ExpLabel).RMSETable=RMSETable;
 
 writetable(RMSETable,'rmse.csv')
@@ -272,7 +283,7 @@ VoliLevels=[10 20 30 40];
 StimLevels=[ 0 10 20 30];
 
 % TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" ];
-TestFolders=["jan7" "jan11" "jan12" "apr20" "may19"];
+TestFolders=["jan7" "jan11" "jan12"];
 
 AnaLabel=sprintf("%s_ana",TestFolders{1});
 FiltLabels=string(S.(AnaLabel).AnaPar.FiltLabels);
@@ -298,9 +309,9 @@ for iVoli=1:length(VoliLevels)
                 TrialLabel=sprintf("Trial_%d",TrialsInd(iTrial));
                 
                 NRMSE=[NRMSE; 
-                    [S.(AnaLabel).(ExpLabel).(TrialLabel).RMSE.(FiltLabels(1))'
-                     S.(AnaLabel).(ExpLabel).(TrialLabel).RMSE.(FiltLabels(2))'
-                     S.(AnaLabel).(ExpLabel).(TrialLabel).RMSE.(FiltLabels(3))']'  ];
+                    [S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(1)).mav_diff'
+                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(2)).mav_diff'
+                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(3)).mav_diff']'  ];
             end
         end
         if StimLevel==0
@@ -321,7 +332,7 @@ for iVoli=1:length(VoliLevels)
         er = errorbar(categorical(FiltLabelsPlot),mean(NRMSE),-std(NRMSE),+std(NRMSE));    
         er.Color = [0 0 0];
         er.LineStyle = 'none'; 
-        ylim([ 0 0.3])
+%         ylim([ 0 0.3])
         grid
         subplot(length(StimLevels),length(VoliLevels),iStim)
         title(sprintf("Stim: %d%%, n= %d(each bar)",StimLevel,r),'fontweight','bold','fontsize',14)

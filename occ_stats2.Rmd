@@ -59,6 +59,7 @@ occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
                                 '30' = 'Stim_30'))
 
 occ<-occ%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+#occ<-occ%>%filter(Test!="apr20")
 
 
 droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
@@ -85,7 +86,7 @@ err<-err%>%mutate(Test = as.factor(Test),
                      MVC_Stim = as.integer(StimMVC),
                      MVC_Voli = as.integer(VoliMVC))
 
-err<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+err<-err%>%filter(Test!="apr20")
 
 coef<-coefraw%>%mutate(Test = as.factor(Test),
                        Type = as.factor(Type),
@@ -102,7 +103,7 @@ coef<-coef%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
                                 '20' = 'Stim_20',
                                 '30' = 'Stim_30'))
 
-coef<-coef%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+coef<-coef%>%filter(Test!="apr20")
 
 summary(err)
 summary(occ)
@@ -157,7 +158,19 @@ lm_tibble <- lm_tibble %>%
 tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
+```{r Conf: Force and Occlusion }
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='Force')
 
+g1<-ggplot(plot_tibble, aes(x =  v_mvc , y = Occ_mvc , color = MVC_Stim_Cat)) +
+    geom_point() +
+    geom_smooth(method = "lm")+
+    facet_wrap(~Feat,scales='free')+
+    labs(x = "Volitional Effort: F_v (% MVC)",
+    y = "Occlusion (% MVC)",
+    title = "Occluded force and MAV",
+    subtitle = "4 able-body participants")
+
+```
 
 ```{r Occlusion Heat Map}
 plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
@@ -222,11 +235,11 @@ filter(plot_tibble,Test=="oct18"  )%>% group_by(MVC_Stim_Cat)%>%summarise(count 
 plotibble<-filter(droppedocc, NumofDropped =='1_Drops')
 formula <- y ~ poly(x, 1, raw = TRUE)
 my.format <-"b[0]~`=`~%.3g*\", \"*b[1]~`=`~%.3g"
-ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = StimMVC))+
+ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = MAV_Type))+
   geom_point() +
   geom_smooth(method = "lm",level=0.90)+
   #geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
-  facet_wrap(~MAV_Type)
+  facet_wrap(~StimMVC)
 
 
 #  stat_poly_eq(use_label(c("eq", "adj.R2")),
@@ -300,7 +313,7 @@ p1/p2 -p3
 
 ```{r Individualized vs Avg occ errors}
 filt="GS"
-type='Occ_Dropped_mvc'
+type='Occ_mvc'
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type==type)
 Log=TRUE
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")
@@ -341,7 +354,7 @@ mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log)%>% group_by(MVC_V
 
 mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log) %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_err),2), "RMS"=round(sqrt(mean(Effort_Amp_err^2)),2),"Est"='After Correction',"Log"=Log) )
 
-Log=FALSE
+Log=TRUE
 mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log)%>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_e_Amp_err),2), "RMS"=round(sqrt(mean(Effort_e_Amp_err^2)),2),"Est"='Before Correction',"Log"=Log) )
 
 mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log)%>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_Indv_err),2), "RMS"=round(sqrt(mean(Effort_Amp_Indv_err^2)),2),"Est"='Individualized Correction',"Log"=Log) )
@@ -370,7 +383,7 @@ p1/p2/p3-p4/p5
 
 ```{r Indiv errors of Tests}
 filt="GS"
-type="Occ_mvc"
+type="Occ_Dropped_mvc"
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0" & Filt==filt &  Occ_Type==type)
 Log=FALSE
 
@@ -411,7 +424,7 @@ p1<-ggplot(occ_err, aes(x =  VoliMVC)) +
   geom_smooth(aes( y = 10*Effort_MAV_Indv_err/VoliMVC, color='Indiv. Correction'), method = "lm")+
   geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
   facet_wrap(LogModel~Occ_Type)
-
+p1
 
 ```
 ```{r }
