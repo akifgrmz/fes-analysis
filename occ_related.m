@@ -702,7 +702,7 @@ OccTable=table(Occ(:,1),Occ(:,2),Occ(:,3),Occ(:,4),Occ(:,5), Occ(:,6), Occ(:,7),
     "v_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" ...
     "Target_Level" "Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW" "Done" "Trial"]);
 
-writetable( OccTable,'occlusion_v4.csv')
+% writetable( OccTable,'occlusion_v4.csv')
 
 %% Effort Simulation 
 %linear modeling for individual occ predictions 
@@ -827,7 +827,7 @@ OccCoef2=table(CoefMat2(:,1),CoefMat2(:,2),CoefMat2(:,3),CoefMat2(:,4),CoefMat2(
     CoefMat2(:,8),CoefMat2(:,9),CoefMat2(:,10),CoefMat2(:,11),CoefMat2(:,12),CoefMat2(:,13),...
     'VariableNames',["Coeff1" "Coeff2" "Coeff3" "Test" "Type" "Indiv" "Log" "Effort_o" "Occ" "LogOcc" "MVC_Voli" "MVC_Stim" "Trial"]);
 
-writetable( OccCoef2,'occ_coef.csv')
+% writetable( OccCoef2,'occ_coef.csv')
 %% Plotting fittings 
 
 
@@ -1017,7 +1017,7 @@ Effort_Est=table(ErrMat(:,1),ErrMat(:,2),ErrMat(:,3),ErrMat(:,4),ErrMat(:,5), Er
     "Occ_Type" "Filt" "Trial" "Exp" "Test" "LogModel" "Target_Level" "Stim_Force"...
     "Voli_Force" "VoliMVC" "StimMVC" "PW" "Done"]);
 
-writetable( Effort_Est,'occ_est_error.csv')
+% writetable( Effort_Est,'occ_est_error.csv')
 
 
 %% Plotting Effort
@@ -1161,8 +1161,6 @@ ln=["--" ":" "-."];
 FiltLabel="GS";
 lbl='Occ';
 
-
-
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf('%s_ana',TestFolders(iTest));
     TestLabel=sprintf('%s_test',TestFolders(iTest));
@@ -1193,25 +1191,27 @@ for iTest=1:length(TestFolders)
 
     figure(1)
 %         subplot(length(OccType),length(TestFolders),iTest+(iType*length(TestFolders)-length(TestFolders)))
-    plot(FrameInd/stim_freq,E_f,'DisplayName',sprintf('E_f'),'Color',cm(1,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
-    hold on
     plot(FrameInd/stim_freq,E_e_Amp,'DisplayName',sprintf('E_e'),'Color',cm(2,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
+    hold on
     plot([10 16],E_fv_prime(end)*[1 1],'DisplayName',sprintf('E_{v}^{''}'),'Color',cm(5,:),'LineWidth',2,'LineStyle',ln(1))
 
-    plot(FrameInd/stim_freq,E_Amp_Force,'DisplayName',sprintf('E_e + E^f_o'),'Color',cm(3,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
-    plot(FrameInd/stim_freq,E_Amp_Dropped,'DisplayName',sprintf('E_e + E^d_o'),'Color',cm(4,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
-    plot([0 175 350 525]/stim_freq,(sMVC+vMVC)*[0 0 1 1],'DisplayName',sprintf('Target Line(E_t=70%%)'),'Color',cm(6,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
+    plot(FrameInd/stim_freq,E_Amp_Force,'DisplayName',sprintf('E_e + E_o'),'Color',cm(3,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
+    plot(FrameInd/stim_freq,E_f,'DisplayName',sprintf('E_f'),'Color',cm(1,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
+
+    plot([0 175 350 525]/stim_freq,(sMVC+vMVC)*[0 0 1 1],'DisplayName',sprintf('Target Line'),'Color',cm(6,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
+
+    %     plot(FrameInd/stim_freq,E_Amp_Dropped,'DisplayName',sprintf('E_e + E^d_o'),'Color',cm(4,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
 
 %         plot(FrameInd,mean(E_Amp_Indv,2),'DisplayName',sprintf('E_e+E_{o, indv} ,Trial: %d, %d, %d',IndTrials),'Color',cm(5,:))%,'LineStyle',ln(iTrial))
-    title(TestFolders(iTest),'FontSize', 16);
-    ylabel('Effort (%)','FontSize', 16);
-    xlabel('Time (s)','FontSize', 16);
+    title(TestFolders(iTest),'FontSize', 12);
+    ylabel('Effort (%)','FontSize', 12);
+    xlabel('Time (s)','FontSize', 12);
     grid on
 
 
 end
 figure(1)
-legend('Location','NorthWest','FontSize', 16);
+legend('Location','NorthWest','FontSize', 12);
 
 
 %% PLotting Effort Estimation Error 
@@ -1525,7 +1525,7 @@ writetable( Dropped_stats, 'dropped_stats2.csv')
 
 %% Dropped Frames based Occlusion Estimation 
 % Occ = 0-stim - avg(dropped frames)
-TestFolders=["jan7" "jan11" "apr20" "mar16"];
+% TestFolders=["jan7" "jan11" "apr20" "mar16"];
 
 
 TimeRange=[10 15] ;

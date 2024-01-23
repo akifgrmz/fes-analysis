@@ -470,7 +470,7 @@ S = load_test(TestFolders,TestFiles);
 close all
 iTest=1;  % pick a test to plot 
 FolderName='jan7';  %% Folders to be loaded 
-Trials=[1 10];  % Trial
+Trials=[1 5];  % Trial
 TimeRange=[1 35];  % in seconds
 Exp= ["Fat"];
 FiltLabel="Unfilt";

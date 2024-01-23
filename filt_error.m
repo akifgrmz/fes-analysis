@@ -204,7 +204,7 @@ title("M-Wave MAV (No Voli. Effort )",'fontweight','bold','fontsize',14)
 
 c=1;
 
-TimeRange=[5 10] ;
+TimeRange=[1 5] ;
 ExpstoAna= ["Occ"];
 TestFolders=["jan7" "jan11" "jan12" ];
 T=[];
@@ -266,7 +266,7 @@ for iTest=1:length(TestFolders)
                 
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).RMSE=mean(rmse);
                 S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).mav_diff=mean(mav_diff);
-
+                
             end  
         end
     end
@@ -309,9 +309,9 @@ for iVoli=1:length(VoliLevels)
                 TrialLabel=sprintf("Trial_%d",TrialsInd(iTrial));
                 
                 NRMSE=[NRMSE; 
-                    [S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(1)).mav_diff'
-                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(2)).mav_diff'
-                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(3)).mav_diff']'  ];
+                    [S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(1)).RMSE'
+                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(2)).RMSE'
+                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabels(3)).RMSE']'  ];
             end
         end
         if StimLevel==0

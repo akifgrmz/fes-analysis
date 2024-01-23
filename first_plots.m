@@ -3,8 +3,8 @@
 clear all
 close all
 iTestPlot=1;  % pick a test to plot 
-FolderNames={'aug29'};  %% Folders to be loaded 
-FileNames={'aug29_test'};  %% Files to be loaded 
+FolderNames={'jan7'};  %% Folders to be loaded 
+FileNames={'jan7_test'};  %% Files to be loaded 
 
 % TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
 TimeRange=[4 22];  % in seconds
