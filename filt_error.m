@@ -2,7 +2,8 @@
 % # Data Inject
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "apr20" "may19"];
+% TestFolders=["jan7" "jan11" "jan12" "apr20" "may19"];
+TestFolders=["apr20" "may19"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -54,6 +55,7 @@ for iTest=1:length(TestFolders)
     ylabel('% Amp modul')
     xlabel('% Voli. MVC')
     xlim([0 50])
+
 
 
 end
@@ -276,7 +278,7 @@ RMSETable=table(T(:,1),T(:,2),T(:,3),T(:,4),T(:,5),T(:,6),T(:,7),T(:,8),'Variabl
    "Error_Type" "MVC_Voli" "MVC_Stim" "Trial" "Ref_Trial" "Filt" "Test"]);
 S.(AnaLabel).(ExpLabel).RMSETable=RMSETable;
 
-writetable(RMSETable,'rmse.csv')
+% writetable(RMSETable,'rmse.csv')
 %% Plotting NRMSE
 clc
 VoliLevels=[10 20 30 40];

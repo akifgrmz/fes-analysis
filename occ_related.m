@@ -293,8 +293,8 @@ clear all
 % TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
 % TestFolder=["dec5","nov28_2","nov27","nov8"];
 
-% TestFolders=["jan7" "jan11" "jan12"  "mar7" "mar16" "apr20"];
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
+TestFolders=["jan7" "jan11" "jan12"];
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
 % TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
 
 for iTest=1:length(TestFolders)
@@ -1143,7 +1143,7 @@ for iType=1:length(OccType)
 
     
 end
-%% Plotting for Conf Paper
+%% Plotting for Conf Paper:EMBC
 close all
 clc
 
@@ -1193,7 +1193,7 @@ for iTest=1:length(TestFolders)
 %         subplot(length(OccType),length(TestFolders),iTest+(iType*length(TestFolders)-length(TestFolders)))
     plot(FrameInd/stim_freq,E_e_Amp,'DisplayName',sprintf('E_e'),'Color',cm(2,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
     hold on
-    plot([10 16],E_fv_prime(end)*[1 1],'DisplayName',sprintf('E_{v}^{''}'),'Color',cm(5,:),'LineWidth',2,'LineStyle',ln(1))
+    plot([10 16],E_fv_prime(end)*[1 1],'DisplayName',sprintf('V^{''}'),'Color',cm(5,:),'LineWidth',2,'LineStyle',ln(1))
 
     plot(FrameInd/stim_freq,E_Amp_Force,'DisplayName',sprintf('E_e + E_o'),'Color',cm(3,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
     plot(FrameInd/stim_freq,E_f,'DisplayName',sprintf('E_f'),'Color',cm(1,:),'LineWidth',2)%,'LineStyle',ln(iTrial))
@@ -1519,9 +1519,9 @@ for iFeat=1:1
 end
 
 Dropped_stats=array2table([[x ;x_dropped] [g(2:end,:); g_dropped(2:end,:)] ],'VariableNames',[VarNames]);
-
+asdsa
 S.(AnaStruct).(ExpLabel).Dropped_stats=Dropped_stats;
-writetable( Dropped_stats, 'dropped_stats2.csv')
+% writetable( Dropped_stats, 'dropped_stats2.csv')
 
 %% Dropped Frames based Occlusion Estimation 
 % Occ = 0-stim - avg(dropped frames)
