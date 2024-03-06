@@ -294,7 +294,7 @@ clear all
 % TestFolder=["dec5","nov28_2","nov27","nov8"];
 
 TestFolders=["jan7" "jan11" "jan12"];
-% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
 % TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
 
 for iTest=1:length(TestFolders)
@@ -1026,7 +1026,7 @@ clc
 lbl='Occ';
 PlotVoli=4;
 PlotStim=4;
-TestFolders=["jan7" "jan11" "jan12"];
+% TestFolders=["jan7" "jan11" "jan12"];
 TimeRange=[1 15];
 VoliMVCLevels=[10 20 30 40 ];
 StimMVCLevels=[ 0 10 20 30 ];
@@ -1519,9 +1519,9 @@ for iFeat=1:1
 end
 
 Dropped_stats=array2table([[x ;x_dropped] [g(2:end,:); g_dropped(2:end,:)] ],'VariableNames',[VarNames]);
-asdsa
+
 S.(AnaStruct).(ExpLabel).Dropped_stats=Dropped_stats;
-% writetable( Dropped_stats, 'dropped_stats2.csv')
+writetable( Dropped_stats, 'dropped_stats2.csv')
 
 %% Dropped Frames based Occlusion Estimation 
 % Occ = 0-stim - avg(dropped frames)

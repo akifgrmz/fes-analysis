@@ -304,7 +304,7 @@ filter(plot_tibble,Test=="oct18"  )%>% group_by(MVC_Stim_Cat)%>%summarise(count 
 
 
 ```{r Plotting: dropped frames occlusion}
-plotibble<-filter(droppedocc, NumofDropped =='1_Drops')
+plotibble<-filter(droppedocc, NumofDropped =='4_Drops')
 formula <- y ~ poly(x, 1, raw = TRUE)
 my.format <-"b[0]~`=`~%.3g*\", \"*b[1]~`=`~%.3g"
 p1<-ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = MAV_Type))+
@@ -313,11 +313,11 @@ p1<-ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = MAV_Type))+
   #geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
   facet_wrap(~StimMVC)
 
-pdf("MAV_levels.pdf") 
+#pdf("MAV_levels.pdf") 
 
 suppressWarnings(print(p1))
 
-dev.off()
+#dev.off()
 
 #  stat_poly_eq(use_label(c("eq", "adj.R2")),
 #              formula = x ~ poly(y, 1, raw = TRUE))

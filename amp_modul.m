@@ -55,7 +55,7 @@ for iSamp=2:length(ClippedSig)
     step=min(mag,asf(asf_index))*dir;
     OutSig(iSamp)=OutSig(iSamp-1)+step;
     
-    OutSig=clip(OutSig,0,.15);
+    OutSig=clip(OutSig,0,0.15);
 end
 
 function[clipped]=clip(input,low,high)

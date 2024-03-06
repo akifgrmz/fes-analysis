@@ -240,13 +240,15 @@ DtInd=S.(ExpStruct).ExpPar.DataInd;
 iPW=table2array(DtInd(:,"PW"));
 iTrigger=table2array(DtInd(:,"Trigger"));
 
+ExpLabels=["RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
 
 for iExp=1:length(ExpLabels)
-    ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
+%     ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
     ExpLabel=ExpLabels{iExp};
     NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
     for iTrial=1:NumofTrials
         TrialLabel=sprintf('Trial_%d',iTrial);
+        
         
         x=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW);
         y=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger);

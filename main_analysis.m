@@ -6,7 +6,7 @@
 %
 
 clear all
-TestFolders=["oct25" ];
+TestFolders=["feb29_24" ];
 for iTest=1:length(TestFolders)
     tidy_data(TestFolders(iTest));
 end
@@ -17,12 +17,10 @@ end
 
 clc
 clear all
-% TestFolders=["jan7"];
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
+TestFolders=["feb29_24"];
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
 % TestFolders=[ "apr20" "oct11" "oct18"];
-TestFolders=["oct25"];
-
-
+% TestFolders=["oct25"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
@@ -72,15 +70,15 @@ for iTest=1:length(TestFolders)
     %Incorporate the redo trials at the begginning 
     %Design 10-500Hz 20th order butterworth for filtfilt
 
-%     fvtool(d2)
     
     BPOrder=20;
     fcutlow = 10;
     fcuthigh = 500;
-
-    d1 = designfilt('bandpassiir','FilterOrder',BPOrder, ...
+    
+    d1=designfilt('bandpassiir','FilterOrder',BPOrder, ...
              'HalfPowerFrequency1',fcutlow,'HalfPowerFrequency2',fcuthigh, ...
              'SampleRate',fs,'DesignMethod',"butter");
+%     fvtool(d1)
 
     LPPass = 20;
     LPStop = 40;
@@ -633,7 +631,7 @@ end
 
 %% Plotting, Debugging 
 close all
-Lbl='RC';
+Lbl='Occ';
 PlotTrial=[ 7 7];
 PlotTime=[ 14 15];
 % PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
@@ -911,7 +909,7 @@ clc
 AnaLabel=sprintf('%s_ana',TestFolders(1));
 ExpLabel=S.(AnaLabel).AnaPar.ExpTable.('Occ');
 TimeRange=[0.1 15];
-TrialNum=[  35 ];
+TrialNum=[  15 ];
 cm=lines(3);
 FiltLabel="GS";
 for iTest=1:length(TestFolders)

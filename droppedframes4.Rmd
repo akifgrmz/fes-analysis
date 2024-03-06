@@ -81,8 +81,8 @@ for (iTest in 1:length(reps))
 }
 
 SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
-
-plot_df<-filter(df, Test==tests  & Repeat==reps & Filt_Type==filt |Filt_Type=='Dropped' )
+plot_df<-filter(df, Test==tests )
+plot_df<-filter(plot_df,  Repeat==reps & Filt_Type==filt |Filt_Type=='Dropped' )
 
 summary(plot_df)
 
@@ -90,7 +90,7 @@ summary(plot_df)
 
 plt<-ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Drp_Order)) +
     geom_point() + #size = 1.2, alpha = 0.6
-    geom_line(data= filter(df,Test==tests & Repeat=="Rep_1" & Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
+    geom_line(data= filter(df,Repeat=="Rep_1" & Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5, color = "Target (a.u.)")) +
     geom_segment(aes(x = 350, y = 1, xend = 525, yend = 1, color='Avg. 0-Stim Level'))+
     geom_segment(aes(x = 525, y = 0.01, xend = 525, yend = 4, color='Stim Turn Off'))+
     geom_smooth(method = "loess", se=F)+
@@ -99,7 +99,7 @@ plt<-ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Drp_Order)) +
        y = "Normalized MAV",
        title = "Droping 4 Consecutive Frames",
        subtitle = SubTitleString)+
-    ylim(0,6)
+    ylim(0,1)
 plt
 #dev.off()
 
@@ -159,7 +159,7 @@ ggplot(plot_df, aes(x = Frame, y = Norm_Val, color = Divide_Cat)) +
 
 
 ```{r Non Normalized values }
-tests <- c('mar7','mar16','feb27')
+tests <- c("mar7","mar16")
 filt<-c('GS')
 reps<-c('Rep_1','Rep_2','Rep_3')
 
@@ -176,14 +176,14 @@ for (iTest in 1:length(reps))
 }
 
 SubTitleString<-sprintf("Tests: %s | Repeats: %s | Filter: %s | Dropped Frames are not Filtered" ,TestString,RepString,filt)
-
-plot_df<-filter(df, Test==tests  & Repeat==reps & Filt_Type==filt |Filt_Type=='Dropped' )
+plot_df<-filter(df, Test==tests)
+plot_df<-filter(plot_df, Repeat==reps & Filt_Type==filt | Filt_Type=='Dropped' )
 
 summary(plot_df)
 
 ggplot(plot_df, aes(x = Frame, y = Frame_Val, color = Divide_Cat)) +
     geom_point() + #size = 1.2, alpha = 0.6
-    geom_line(data= filter(df,Test==tests & Repeat=="Rep_1" & Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5/35000, color = "Target (a.u.)")) +
+    geom_line(data= filter(df,Test==tests & Filt_Type==c("Unfilt")), aes(x = Frame, y = Target*5/35000, color = "Target (a.u.)")) +
     geom_segment(aes(x = 350, y = 1/35000, xend = 525, yend = 1/35000, color='Avg. 0-Stim Level'))+
     geom_segment(aes(x = 525, y = 0.01/35000, xend = 525, yend = 4/35000, color='Stim Turn Off'))+
     geom_smooth(method = "loess", se=F)+
