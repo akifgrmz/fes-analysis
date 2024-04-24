@@ -5,6 +5,8 @@ clc
 clear all
 TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
 % TestFolders=["jan7" "jan11" "jan12" "apr20" ];
+TestFolders=["feb29_24"];
+
 
 
 for iTest=1:length(TestFolders)
@@ -19,9 +21,9 @@ close all
 clc
 lbl='Occ';
 PlotVoli=3;
-PlotStim=4;
+PlotStim=2;
 VoliMVCLevels=[10 20 30 40 ];
-StimMVCLevels=[ 0 10 20 30 ];
+StimMVCLevels=[ 0 10 12 15 ];
 sMVC=StimMVCLevels(PlotStim);
 vMVC=VoliMVCLevels(PlotVoli);
 

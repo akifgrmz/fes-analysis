@@ -6,7 +6,7 @@
 %
 
 clear all
-TestFolders=["feb29_24" ];
+TestFolders=["mar20_24" ];
 for iTest=1:length(TestFolders)
     tidy_data(TestFolders(iTest));
 end
@@ -17,7 +17,7 @@ end
 
 clc
 clear all
-TestFolders=["feb29_24"];
+TestFolders=["mar20_24"];
 % TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
 % TestFolders=[ "apr20" "oct11" "oct18"];
 % TestFolders=["oct25"];
@@ -145,13 +145,13 @@ for iTest=1:length(TestFolders)
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
     AmpGain=S.(TestStruct).ExpPar.AmpGain;
 
-    for iExp=1:length(ExpLabels)
-        ExpLabel=ExpLabels{iExp};
+    for iExp=1:length(ExpstoAna)
+        ExpLabel=ExpstoAna{iExp};
 
         NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
 
         for iTrial=1:NumofTrials
-            TrialLabel=sprintf('Trial_%d',iTrial);
+            TrialLabel=sprintf('Trial_%d',iTrial)
   
             EMG=S.(TestStruct).(ExpLabel).(TrialLabel).data.('EMG')/AmpGain;
             Force=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Force');
@@ -632,7 +632,7 @@ end
 %% Plotting, Debugging 
 close all
 Lbl='Occ';
-PlotTrial=[ 7 7];
+PlotTrial=[ 10 12];
 PlotTime=[ 14 15];
 % PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
 PlotFrame=floor([ 300 305]);
@@ -909,7 +909,7 @@ clc
 AnaLabel=sprintf('%s_ana',TestFolders(1));
 ExpLabel=S.(AnaLabel).AnaPar.ExpTable.('Occ');
 TimeRange=[0.1 15];
-TrialNum=[  15 ];
+TrialNum=[  12 ];
 cm=lines(3);
 FiltLabel="GS";
 for iTest=1:length(TestFolders)
@@ -1054,7 +1054,7 @@ clc
 clear MAVDropped
 exp_lbl='Occ';
 VoliLevels=[10 20 30 40];
-StimLevels=[ 10 20 30 0];
+StimLevels=[ 10 12 15 0];
 MeanTime=[ 10 15];
 % Calculating the means at time [10 15]
 for iTest=1:length(TestFolders)

@@ -240,7 +240,7 @@ DtInd=S.(ExpStruct).ExpPar.DataInd;
 iPW=table2array(DtInd(:,"PW"));
 iTrigger=table2array(DtInd(:,"Trigger"));
 
-ExpLabels=["RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
+ExpLabels=["MVCTrials" "RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
 
 for iExp=1:length(ExpLabels)
 %     ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
