@@ -27,42 +27,136 @@ S.(ExpStruct).ExpPar.fs=1/temp.handles.sample_t;
 S.(ExpStruct).ExpPar.TrialsFreq=temp.handles.ExpTrials.TrialsFreq;
 S.(ExpStruct).ExpPar.stim_freq=temp.handles.freq_list(temp.handles.ExpTrials.TrialsFreq(1));
 
+TestExpNames=["MVCTrials","RCCurveTrials","CustomTrials","ExpTrials","FatigueTrials", "RCRampTrials"];
+AnaExpNames=["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials", "RCRampTrials"];
 
-S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
-S.(ExpStruct).FatigueTrials=temp.handles.FatigueTrials;
-S.(ExpStruct).CustomTrials=temp.handles.CustomTrials;
-S.(ExpStruct).OccTrials=temp.handles.ExpTrials;
-S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
+ExpID=field_exist(temp.handles,TestExpNames);
+
+for iField=1:length(ExpID)
+    AnaExpName=AnaExpNames(iField);
+    TestExpName=TestExpNames(iField);
+    if ExpID(iField)
+        S.(ExpStruct).(AnaExpName)=temp.handles.(TestExpName); % if Exp exist then bring it to S structure
+       
+        if ~isfield(S.(ExpStruct).(AnaExpName), 'NumofTrials') % if NumofTrials does not exist then define it 
+            S.(ExpStruct).(AnaExpName).NumofTrials=S.(ExpStruct).(AnaExpName).iTrial-1;
+        end
+        
+        if S.(ExpStruct).(AnaExpName).NumofTrials==0 % if NumofTrials equal to 0 then Exp is never run thus ExpRun is false otherwise true
+            S.(ExpStruct).(AnaExpName).ExpRun=false;
+        else
+            S.(ExpStruct).(AnaExpName).ExpRun=true;
+        end
+    else
+        S.(ExpStruct).(AnaExpName).ExpRun=false;
+        S.(ExpStruct).(AnaExpName).NumofTrials=0;
+        S.(ExpStruct).(AnaExpName).iTrial=1;
+    end
+    
+    ExpRuns(iField)=S.(ExpStruct).(AnaExpName).ExpRun;
+end
+S.(ExpStruct).ExpRuns=ExpRuns;
+% S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
+% S.(ExpStruct).FatigueTrials=temp.handles.FatigueTrials;
+% S.(ExpStruct).CustomTrials=temp.handles.CustomTrials;
+% S.(ExpStruct).OccTrials=temp.handles.ExpTrials;
+% S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
+
+% if isfield(temp.handles, 'RCRampTrials')
+%     S.(ExpStruct).RCRampTrials=temp.handles.RCRampTrials;
+% end
 
 
 if isfield(temp.handles, 'AmpGain')
     S.(ExpStruct).ExpPar.AmpGain=str2double(temp.handles.AmpGain);
 end
 
+if isfield(temp.handles, 'model')
+    S.(ExpStruct).ExpPar.model=temp.handles.model;
+else 
+    S.(ExpStruct).ExpPar.model='EMGModel_test2';
+end
+% 
 
-% S.(ExpStruct).OccTrials.NumofTrials=48;
-% S.(ExpStruct).OccTrials.NumofTrials=49;
-% S.(ExpStruct).OccTrials.RedoTrials=[5 48];
-% S.(ExpStruct).OccTrials.NumofRedos=[2];
+
+%
+% Voli and Stim MVC 
+%
+
+AnaExpName= AnaExpNames(4); %% Occ Trials
+% Only the test at feb29 has a non def stim vec
+
+if ExpStruct=="feb29_24"
+    DefStimMVCVec=[0 10 12 15 ];
+else
+    DefStimMVCVec=[0 10 20 30 ];
+end
+DefVoliMVCVec=[10 20 30 40];
+
+if isfield(temp.handles.ExpTrials, 'StimMVCVec')
+    S.(ExpStruct).(AnaExpName).StimMVCVec=temp.handles.ExpTrials.StimMVCVec;
+else 
+    S.(ExpStruct).(AnaExpName).StimMVCVec=DefStimMVCVec;
+end
+
+if isfield(temp.handles.ExpTrials, 'VoliMVCVec')
+    S.(ExpStruct).(AnaExpName).VoliMVCVec=temp.handles.ExpTrials.VoliMVCVec;
+else 
+    S.(ExpStruct).(AnaExpName).VoliMVCVec=DefVoliMVCVec;
+end
+
 
 %
 % Labeling
 %
 
-DataInd=["EMG","Trigger","Force","PW","Time", "Torque"];
-ExpLabels=["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
-S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
-S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,6,'VariableNames',DataInd);
+if isfield(temp.handles, 'DataInd')
+    S.(ExpStruct).ExpPar.DataInd=temp.handles.DataInd;
+
+else 
+    S.(ExpStruct).ExpPar.DataInd=["EMG","Trigger","Force","PW","Time", "Torque"];
+
+end
+S.(ExpStruct).ExpPar.DataIndTable=table(1,2,3,4,5,6,'VariableNames',S.(ExpStruct).ExpPar.DataInd);
+
+S.(ExpStruct).ExpPar.ExpLabels=AnaExpNames;
+S.(ExpStruct).ExpPar.ExpLabelsTable=table(1,2,3,4,5,6,'VariableNames',AnaExpNames);
+    
+% 
+% if isfield(temp.handles, 'ExpLabels')
+%     S.(ExpStruct).ExpPar.ExpLabels=temp.handles.ExpLabels;
+%     S.(ExpStruct).ExpPar.ExpLabelsTable=table(1,2,3,4,5,6,'VariableNames',S.(ExpStruct).ExpPar.ExpLabels);
+% 
+% else 
+%     S.(ExpStruct).ExpPar.ExpLabels= ["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials"];
+%     S.(ExpStruct).ExpPar.ExpLabelsTable=table(1,2,3,4,5,'VariableNames',S.(ExpStruct).ExpPar.ExpLabels);
+% end
+% 
+% if isfield(temp.handles, 'RCRampTrials')
+%     S.(ExpStruct).ExpPar.ExpLabels(end+1)="RCRampTrials";
+%     S.(ExpStruct).ExpPar.ExpLabelsTable=table(1,2,3,4,5,6,'VariableNames',S.(ExpStruct).ExpPar.ExpLabels);
+% 
+% end
+% ExpLabels=["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
+% S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
+% S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,6,'VariableNames',DataInd);
 
 % 
 % Num of Trials might not be needed anymore
 %
-for iExp=1:length(ExpLabels)
-    ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
-    ExpLabel=ExpLabels{iExp};
+
+ExptoAna=S.(ExpStruct).ExpPar.ExpLabels;
+
+for iExp=1:length(ExptoAna)
+    ExpLabel=ExptoAna(iExp);
     
-    NumofTrials=S.(ExpStruct).(ExpLabel).iTrial-1;
-    S.(ExpStruct).(ExpLabel).NumofTrials=NumofTrials;
+    if ExpLabel=="OccTrials"
+        NumofTrials=length(S.(ExpStruct).(ExpLabel).RepTableMat(:,6));
+        S.(ExpStruct).(AnaExpName).ListedNumofTrials=NumofTrials;
+
+    else
+        NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
+    end
     c=1;
     TrialNums=[];
     S.(ExpStruct).(ExpLabel).RedoTrials=TrialNums;
@@ -79,6 +173,8 @@ for iExp=1:length(ExpLabels)
     S.(ExpStruct).ExpPar.NumofTrialsTable{iExp,1}=ExpLabel;
     S.(ExpStruct).ExpPar.NumofTrialsTable{iExp,2}=S.(ExpStruct).(ExpLabel).NumofTrials;
 end
+
+
 
 %
 % Here, check if certain variables exist and add if does not
@@ -222,7 +318,6 @@ for iExp=1:length(Lbl)
     end
     
     S.(ExpStruct).ExpPar.lgt(iExp)=lgt;
-
 end
 
 S.(ExpStruct).ExpPar.fs_calc=fs;
@@ -230,83 +325,12 @@ S.(ExpStruct).ExpPar.sample_t_calc=sample_t;
 
 
 
-%
-%Fixing PW invalid values issue (-inf)
-%
 
-TrigThres=1;
-S.(ExpStruct).ExpPar.TrigThres=TrigThres;
-DtInd=S.(ExpStruct).ExpPar.DataInd;
-iPW=table2array(DtInd(:,"PW"));
-iTrigger=table2array(DtInd(:,"Trigger"));
-
-ExpLabels=["MVCTrials" "RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
-
-for iExp=1:length(ExpLabels)
-%     ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;
-    ExpLabel=ExpLabels{iExp};
-    NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
-    for iTrial=1:NumofTrials
-        TrialLabel=sprintf('Trial_%d',iTrial);
-        
-        
-        x=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW);
-        y=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger);
-            % # PW
-        x(x<0)=0;
-        x(isnan(x))=0;
-       
-        S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW)=x;
-                    % # trigger
-        y(y>TrigThres)=1;
-        y(y<TrigThres)=0;
-        S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger)=y;
-
-        T=table([]);
-        %% Making "data" a table
-            dt=S.(ExpStruct).(ExpLabel).(TrialLabel).data;
-            [r,~]=size(dt);
-            T=array2table(dt,'VariableNames',DataInd);
-        
-        S.(ExpStruct).(ExpLabel).(TrialLabel).data=T;
-        
-        
-    end
-    
-    RedoTrials=S.(ExpStruct).(ExpLabel).RedoTrials;
-    if ~isempty(RedoTrials)
-        for iTrial=1:length(RedoTrials)
-            TrialLabel=sprintf('RedoTrial_%d',RedoTrials(iTrial));
-
-            x=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW);
-            y=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger);
-                % # PW
-            x(x<0)=0;
-            x(isnan(x))=0;
-
-            S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iPW)=x;
-                        % # trigger
-            y(y>TrigThres)=1;
-            y(y<TrigThres)=0;
-            S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTrigger)=y;
-
-            dt=S.(ExpStruct).(ExpLabel).(TrialLabel).data;
-            [r,~]=size(dt);
-            T=array2table(dt,'VariableNames',DataInd);
-
-            S.(ExpStruct).(ExpLabel).(TrialLabel).data=T;
-        end
-    end 
-end
 
 
 %---------------------
 
 % S.(ExpStruct).OccTrials.Trial_48=temp.handles.ExpTrials.Trial_16;
-
-
-
-
 
 %---------------------
 %        for iRedo=1:NumofRedos

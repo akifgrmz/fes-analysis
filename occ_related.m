@@ -3,11 +3,9 @@
 %% Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
+% TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
 % TestFolders=["jan7" "jan11" "jan12" "apr20" ];
-TestFolders=["feb29_24"];
-
-
+TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -22,10 +20,6 @@ clc
 lbl='Occ';
 PlotVoli=3;
 PlotStim=2;
-VoliMVCLevels=[10 20 30 40 ];
-StimMVCLevels=[ 0 10 12 15 ];
-sMVC=StimMVCLevels(PlotStim);
-vMVC=VoliMVCLevels(PlotVoli);
 
 for iTest=1:length(TestFolders)
     AnaStruct=sprintf('%s_ana',TestFolders(iTest));
@@ -33,9 +27,12 @@ for iTest=1:length(TestFolders)
     
     ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(lbl);
     RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
-    
+    StimMVCLevels=S.(TestStruct).(ExpLabel).StimMVCVec;
+    VoliMVCLevels=S.(TestStruct).(ExpLabel).VoliMVCVec;
+    sMVC=StimMVCLevels(PlotStim);
+    vMVC=VoliMVCLevels(PlotVoli);
     IndTrials=find_trialnum(vMVC,sMVC,RepTableMat);
-    
+
     StimOff=S.(TestStruct).(ExpLabel).StimProfile;
     PlotRange=[ StimOff-10 StimOff+1];
     PreStimOffRange= [StimOff-1 StimOff ];
@@ -117,10 +114,10 @@ for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders(iTest));
 
     NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
-    DataInd= S.(TestLabel).ExpPar.DataInd;
-    DataVars=string(DataInd.Properties.VariableNames);
-    iForce=(S.(TestLabel).ExpPar.DataInd.("Force"));
-    iTime=(S.(TestLabel).ExpPar.DataInd.("Time"));
+    DataIndTable= S.(TestLabel).ExpPar.DataIndTable;
+    DataVars=string(DataIndTable.Properties.VariableNames);
+    iForce=(S.(TestLabel).ExpPar.DataIndTable.("Force"));
+    iTime=(S.(TestLabel).ExpPar.DataIndTable.("Time"));
     
     PWVal=S.(TestLabel).(ExpLabel).PWTrials;
     TurnOffTime=S.(TestLabel).(ExpLabel).StimProfile;
@@ -137,8 +134,8 @@ for iTest=1:length(TestFolders)
     for iTrial=1:NumofTrials
         TrialLabel=sprintf("Trial_%d",iTrial);
 
-        F=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Force');
-        T=S.(TestLabel).(ExpLabel).(TrialLabel).data.('Time');
+        F=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Force');
+        T=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Time');
          %% 
          %There is no need for this 
          %%
@@ -295,9 +292,10 @@ clear all
 % TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
 % TestFolder=["dec5","nov28_2","nov27","nov8"];
 
-TestFolders=["jan7" "jan11" "jan12"];
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
+% TestFolders=["jan7" "jan11" "jan12"];
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
 % TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
+TestFolders=["feb28_24" "feb29_24"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_tau_test",TestFolders{iTest});
