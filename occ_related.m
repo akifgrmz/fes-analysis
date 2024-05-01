@@ -25,7 +25,7 @@ for iTest=1:length(TestFolders)
     AnaStruct=sprintf('%s_ana',TestFolders(iTest));
     TestStruct=sprintf('%s_test',TestFolders(iTest));
     
-    ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(lbl);
+    ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).(lbl);
     RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
     StimMVCLevels=S.(TestStruct).(ExpLabel).StimMVCVec;
     VoliMVCLevels=S.(TestStruct).(ExpLabel).VoliMVCVec;
@@ -108,10 +108,16 @@ ExpLabel=["RCCurveTrials"];
 Featlabels=["Force" ];
 % for iFeat =1:length(FeatLabels)
 %     FeatLabel=Featlabels(iFeat);
-    
+
+
 for iTest=1:length(TestFolders) 
     TestLabel=sprintf("%s_test",TestFolders(iTest));
     AnaLabel=sprintf("%s_ana",TestFolders(iTest));
+    
+    ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
+    ExpRuns=S.(TestStruct).ExpRuns;
+    if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
+        ExpLabel=ExpLabels(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')));
 
     NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
     DataIndTable= S.(TestLabel).ExpPar.DataIndTable;
@@ -193,17 +199,19 @@ for iTest=1:length(TestFolders)
     Tau.(TestLabel).(ExpLabel).TimeCons.F_filtered=F_table;
     Tau.(TestLabel).(ExpLabel).Tau_table=Tau_table;
     Tau.(TestLabel).(ExpLabel).F_table=F_table;
-
+    end
 end
 
 % # Describe with Stats
-% Mean, std
+%% Mean, std
  
 clear MeanTau StdTau
 % Incorporate redos
 
 for iTest= 1:length(TestFolders)
     TestLabel= sprintf("%s_test",TestFolders{iTest});
+        if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
+        ExpLabel=ExpLabels(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')));
     
     Tau_table=Tau.(TestLabel).(ExpLabel).Tau_table;
     RedoInd=table2array(Tau_table(:,"Redo"));
@@ -211,16 +219,20 @@ for iTest= 1:length(TestFolders)
     Tau_table(table2array(Redo_table),:)=Tau_table(table2array(Tau_table(:,"Redo")),:);
     Tau_table(RedoInd,:)=[];
     Tau.(TestLabel).(ExpLabel).Tau_incorp=Tau_table;
+        end
 end
 
 Tau_stats=table([],[],[],[],'VariableNames',["PW","mean_TimeConst","std_TimeConst","Test"]);
 % Finding groups
 for iTest=1:length(TestFolders)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
-    Tau_{iTest}=Tau.(TestLabel).(ExpLabel).Tau_incorp;
-    [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau_{iTest}(:,1));
-%     PWPoints{iTest} = renamevars(PWPoints{iTest},["PW"],[sprintf('%s PW',TestFolders{iTest})]);
-    PWPoints{iTest}
+    if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
+        ExpLabel=ExpLabels(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')));
+        Tau_{iTest}=Tau.(TestLabel).(ExpLabel).Tau_incorp;
+        [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau_{iTest}(:,1));
+        %     PWPoints{iTest} = renamevars(PWPoints{iTest},["PW"],[sprintf('%s PW',TestFolders{iTest})]);
+        PWPoints{iTest}
+    end
 end
 
 PWInd{iTest}=ID_PW{iTest} == Ind(iTest);
@@ -238,7 +250,6 @@ for iTest=1:length(TestFolders)
         PWInd{iTest}=ID_PW{iTest} == PWPointsInd;
         MeanTau{iTest}(PWPointsInd,:) = varfun(@mean, Tau_{iTest}(PWInd{iTest},'TimeConst'), 'InputVariables', @isnumeric);
         StdTau{iTest}(PWPointsInd,:) = varfun(@std, Tau_{iTest}(PWInd{iTest},'TimeConst'), 'InputVariables', @isnumeric);
-
     end
     Tau_stats=[Tau_stats; PWPoints{iTest} MeanTau{iTest} StdTau{iTest}...
         table([TestLabel+strings(height(PWPoints{iTest}),1)],'VariableNames',"Test")];
