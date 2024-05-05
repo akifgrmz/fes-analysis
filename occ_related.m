@@ -3,9 +3,9 @@
 %% Data Inject 
 clc
 clear all
-% TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
+TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
 % TestFolders=["jan7" "jan11" "jan12" "apr20" ];
-TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
+% TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -18,22 +18,22 @@ S = load_test(TestFolders,TestFiles);
 close all
 clc
 lbl='Occ';
-PlotVoli=3;
-PlotStim=2;
+PlotVoli=4;
+PlotStim=3;
 
 for iTest=1:length(TestFolders)
-    AnaStruct=sprintf('%s_ana',TestFolders(iTest));
-    TestStruct=sprintf('%s_test',TestFolders(iTest));
+    AnaLabel=sprintf('%s_ana',TestFolders(iTest));
+    TestLabel=sprintf('%s_test',TestFolders(iTest));
     
-    ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).(lbl);
-    RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
-    StimMVCLevels=S.(TestStruct).(ExpLabel).StimMVCVec;
-    VoliMVCLevels=S.(TestStruct).(ExpLabel).VoliMVCVec;
+    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).(lbl);
+    RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
+    StimMVCLevels=S.(TestLabel).(ExpLabel).StimMVCVec;
+    VoliMVCLevels=S.(TestLabel).(ExpLabel).VoliMVCVec;
     sMVC=StimMVCLevels(PlotStim);
     vMVC=VoliMVCLevels(PlotVoli);
     IndTrials=find_trialnum(vMVC,sMVC,RepTableMat);
 
-    StimOff=S.(TestStruct).(ExpLabel).StimProfile;
+    StimOff=S.(TestLabel).(ExpLabel).StimProfile;
     PlotRange=[ StimOff-10 StimOff+1];
     PreStimOffRange= [StimOff-1 StimOff ];
     PostStimOffRange=[StimOff+.2 StimOff+.3];
@@ -42,8 +42,8 @@ for iTest=1:length(TestFolders)
     for iTrial=1:length(IndTrials)
     
         TrialLabel=sprintf('Trial_%d',IndTrials(iTrial));
-        FiltForce=S.(AnaStruct).(ExpLabel).(TrialLabel).data.('Filt_Force');
-        Time=S.(AnaStruct).(ExpLabel).(TrialLabel).data.('Time');        
+        FiltForce=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Filt_Force');
+        Time=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Time');        
 %         
 %         PreStimOffInd=PreStimOffRange(1)<=Time & Time<=PreStimOffRange(2);
 %         PostStimOffInd=PostStimOffRange(1)<=Time & Time<=PostStimOffRange(2);
@@ -73,6 +73,7 @@ end
 % 5- make this part of main analysis
 % 6- EMG t
 % # Filter Design
+
 d1 = designfilt("lowpassiir",'FilterOrder',3, ...
     'HalfPowerFrequency',0.01,'DesignMethod',"butter"); %,'SampleRate',fs
 
@@ -81,44 +82,21 @@ d1 = designfilt("lowpassiir",'FilterOrder',3, ...
 LPPass = 30;
 LPStop = 100;
 Ap = .1;
-ExpLabel=["RCCurveTrials"];
-
-% for iTest=1:length(TestFolders)
-%     TestLabel=sprintf('%s_test',TestFolders(iTest));
-%     AnaLabel=sprintf('%s_ana',TestFolders(iTest));
-% 
-%     fs=S.(TestLabel).ExpPar.fs;  
-% 
-%     d1 = designfilt('lowpassfir','PassbandFrequency',LPPass,...
-%       'StopbandFrequency',LPStop,'PassbandRipple',Ap,...
-%       'DesignMethod', 'kaiserwin','SampleRate',fs);
-%     
-%     Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign=d1;
-% 
-% end
-
-% # Time Constant Estimation 
-% This code will execute the estimation of the time constant 
-% Redo Trials must be incorporated 
-
+%%
 clc
-TauTime=.37;
-clear F_mat IndTau
-ExpLabel=["RCCurveTrials"];
-Featlabels=["Force" ];
-% for iFeat =1:length(FeatLabels)
-%     FeatLabel=Featlabels(iFeat);
-
-
+clear F_mat IndTau PWPoints ID_PW 
+Tau_stats=[];
+Tau=[];
 for iTest=1:length(TestFolders) 
     TestLabel=sprintf("%s_test",TestFolders(iTest));
     AnaLabel=sprintf("%s_ana",TestFolders(iTest));
     
-    ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
-    ExpRuns=S.(TestStruct).ExpRuns;
-    if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
-        ExpLabel=ExpLabels(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')));
-
+    ExpLabels=S.(TestLabel).ExpPar.ExpLabels;
+    ExpLabel=ExpLabels(str2double(S.(AnaLabel).AnaPar.ExpTable(2,:).('RC')));
+    Tau_stats_test=[];
+    Tau_test=[];
+    if ~S.(TestLabel).(ExpLabel).ExpRun; continue; end
+    
     NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
     DataIndTable= S.(TestLabel).ExpPar.DataIndTable;
     DataVars=string(DataIndTable.Properties.VariableNames);
@@ -126,7 +104,10 @@ for iTest=1:length(TestFolders)
     iTime=(S.(TestLabel).ExpPar.DataIndTable.("Time"));
     
     PWVal=S.(TestLabel).(ExpLabel).PWTrials;
+    RCVar=S.(TestLabel).(ExpLabel).RCVar;
+    MVC=S.(TestLabel).(S.(AnaLabel).AnaPar.ExpTable(1,:).('MVC')).MVC;
     TurnOffTime=S.(TestLabel).(ExpLabel).StimProfile;
+    
     AvgRangePostOff=[TurnOffTime+.5 TurnOffTime+.8];
     AvgRangePreOff=[TurnOffTime-1.5 TurnOffTime]; 
     
@@ -136,165 +117,83 @@ for iTest=1:length(TestFolders)
     PreOffFrameRange=round([AvgRangePreOff(1)*stim_freq AvgRangePreOff(2)*stim_freq]);
     PreOffFrameRangeInd=[PreOffFrameRange(1): PreOffFrameRange(2)];
     fs=S.(TestLabel).ExpPar.fs;
-
+    clear Taus
     for iTrial=1:NumofTrials
         TrialLabel=sprintf("Trial_%d",iTrial);
 
         F=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Force');
         T=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Time');
-         %% 
-         %There is no need for this 
-         %%
-%         FiltDesign=Tau.(TestLabel).(ExpLabel).TimeCons.FiltDesign;
-%         F_filtered = filtfilt(FiltDesign,F);
+
         F_filtered=F;
         
         Ind= T> AvgRangePreOff(1) & T<AvgRangePreOff(2);
         PreAvgForce= mean(F_filtered(Ind));
         Ind= T> AvgRangePostOff(1) & T<AvgRangePostOff(2);
         PostAvgForce=mean(F_filtered(Ind));
-%         t_end=10.1-TurnOffTime;
 
         tau=est_tau(F_filtered(T> TurnOffTime & T<AvgRangePostOff(1))-PostAvgForce,-TurnOffTime+T(T> TurnOffTime & T<AvgRangePostOff(1)),PreAvgForce-PostAvgForce);
-%         tau=-t_end/log((PreAvgForce-PostAvgForce)/PreAvgForce);
-
-%         F_tau=TauTime*abs(PreAvgForce-PostAvgForce)+PostAvgForce;
-%         Ind=T> TurnOffTime & T<AvgRangePostOff(1); % Ind for Force Drop region 
-%         [~,IndTau]=min(abs(F_tau-F_filtered(Ind)));
         
         IndTau=round((TurnOffTime+tau)*fs);
-%         IndTau=max((find(abs(PreAvgForce-F_filtered)<=0.63*(PreAvgForce-PostAvgForce))));
-%         tau=T(IndTau)-TurnOffTime;
         
-        Taus(iTrial,7)= PostAvgForce;
-        Taus(iTrial,6)= PreAvgForce;
-        Taus(iTrial,5)= iTrial;
-        Taus(iTrial,4)= iTest;
-%         Taus(iTrial,4)= [TurnOffTime AvgRangePostOff];
+        MVCValofPWs=gompertz(RCVar,PWVal(iTrial))/MVC*100+0.00001;
 
-        Taus(iTrial,3)= tau;
-        Taus(iTrial,2)= IndTau;
-        Taus(iTrial,1)= PWVal(iTrial);
-        
+        Tau_test=[Tau_test; tau IndTau PWVal(iTrial) MVCValofPWs PreAvgForce PostAvgForce iTrial TestFolders(iTest)  S.(AnaLabel).(ExpLabel).(TrialLabel).Redo ] ;
+        Tau=[Tau; Tau_test ] ;
+
         F_mat(:,1)=T';
-        VarNames(1)={'Time'};
+        VarNms(1)={'Time'};
         F_mat(:,iTrial+1)=F_filtered()';
-        VarNames{iTrial+1}=char(TrialLabel);
+        VarNms{iTrial+1}=char(TrialLabel);
 
     end
     
-    TauVars={'PW','TauInd','TimeConst' ,'Test','TrialNum','PreAvgForce','PostAvgForce'};
-    Tau_table=array2table(Taus,'VariableNames',TauVars);
-    Redo= false(height(Tau_table),1);
-    T_redo = table(Redo,'VariableNames',"Redo");
-    Tau_table= [Tau_table T_redo];
-    Tau.(TestLabel).(ExpLabel).TimeCons.TurnOffTime=TurnOffTime;
-    Tau.(TestLabel).(ExpLabel).TimeCons.AvgRangePostOff=AvgRangePostOff;
-    Tau.(TestLabel).(ExpLabel).TimeCons.AvgRangePreOff=AvgRangePreOff;
-    Tau.(TestLabel).(ExpLabel).TimeCons.Taus=Taus;
-    Tau.(TestLabel).(ExpLabel).TimeCons.Tau_table=Tau_table;
     
-    F_table=array2table(F_mat,'VariableNames',VarNames);
+    VarNames={'TimeConst','TauInd','PW','StimMVC','PreAvgForce','PostAvgForce','TrialNum','Test','Redo'};
+    Tau_table_test=array2table(Tau_test,'VariableNames',VarNames);
+
+
+    S.(AnaLabel).(ExpLabel).TimeCons.TurnOffTime=TurnOffTime;
+    S.(AnaLabel).(ExpLabel).TimeCons.AvgRangePostOff=AvgRangePostOff;
+    S.(AnaLabel).(ExpLabel).TimeCons.AvgRangePreOff=AvgRangePreOff;
+    S.(AnaLabel).(ExpLabel).TimeCons.Tau_test=Tau_test;
+    
+    F_table=array2table(F_mat,'VariableNames',VarNms);
     clear F_mat
-    Tau.(TestLabel).(ExpLabel).TimeCons.F_filtered=F_table;
-    Tau.(TestLabel).(ExpLabel).Tau_table=Tau_table;
-    Tau.(TestLabel).(ExpLabel).F_table=F_table;
-    end
-end
-
-% # Describe with Stats
-%% Mean, std
- 
-clear MeanTau StdTau
-% Incorporate redos
-
-for iTest= 1:length(TestFolders)
-    TestLabel= sprintf("%s_test",TestFolders{iTest});
-        if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
-        ExpLabel=ExpLabels(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')));
+    S.(AnaLabel).(ExpLabel).TimeCons.F_filtered=F_table;
+    S.(AnaLabel).(ExpLabel).Tau_table_test=Tau_table_test;
+    S.(AnaLabel).(ExpLabel).F_table=F_table;
     
-    Tau_table=Tau.(TestLabel).(ExpLabel).Tau_table;
-    RedoInd=table2array(Tau_table(:,"Redo"));
-    Redo_table=Tau_table(RedoInd,"TrialNum");
-    Tau_table(table2array(Redo_table),:)=Tau_table(table2array(Tau_table(:,"Redo")),:);
-    Tau_table(RedoInd,:)=[];
-    Tau.(TestLabel).(ExpLabel).Tau_incorp=Tau_table;
-        end
-end
-
-Tau_stats=table([],[],[],[],'VariableNames',["PW","mean_TimeConst","std_TimeConst","Test"]);
-% Finding groups
-for iTest=1:length(TestFolders)
-    TestLabel=sprintf("%s_test",TestFolders{iTest});
-    if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
-        ExpLabel=ExpLabels(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')));
-        Tau_{iTest}=Tau.(TestLabel).(ExpLabel).Tau_incorp;
-        [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau_{iTest}(:,1));
-        %     PWPoints{iTest} = renamevars(PWPoints{iTest},["PW"],[sprintf('%s PW',TestFolders{iTest})]);
-        PWPoints{iTest}
-    end
-end
-
-PWInd{iTest}=ID_PW{iTest} == Ind(iTest);
-
-for iTest=1:length(TestFolders)
-    TestLabel=sprintf("%s",TestFolders{iTest});
-
+    [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau_table_test(:,3));
     for PWPointsInd=1:height(PWPoints{iTest})
 
         if isempty( PWPointsInd)
            disp('PW value was not found') 
            return
         end
+        
+        PWInd(:,iTest)=ID_PW{iTest}== PWPointsInd;
+        TauVals=str2double(Tau_table_test(PWInd(:,iTest),:).('TimeConst'));
+        MVCVals=str2double(Tau_table_test(PWInd(:,iTest),:).('StimMVC'));
 
-        PWInd{iTest}=ID_PW{iTest} == PWPointsInd;
-        MeanTau{iTest}(PWPointsInd,:) = varfun(@mean, Tau_{iTest}(PWInd{iTest},'TimeConst'), 'InputVariables', @isnumeric);
-        StdTau{iTest}(PWPointsInd,:) = varfun(@std, Tau_{iTest}(PWInd{iTest},'TimeConst'), 'InputVariables', @isnumeric);
+        Tau_stats_test=[Tau_stats_test; mean(TauVals)  std(TauVals) PWPoints{iTest}(PWPointsInd,:).('PW') mean(MVCVals) TestFolders(iTest)];
+        Tau_stats=[Tau_stats; Tau_stats_test];
     end
-    Tau_stats=[Tau_stats; PWPoints{iTest} MeanTau{iTest} StdTau{iTest}...
-        table([TestLabel+strings(height(PWPoints{iTest}),1)],'VariableNames',"Test")];
+    VarNames2=["Mean" "Std" "PW" "StimMVC" "Test"];
+    Tau_stats_test=array2table(Tau_stats_test,'VariableNames',VarNames2);
+    
+    DirLabelCSV=sprintf('%s/%s_test_tau.csv',TestFolders(iTest),TestFolders(iTest));
+    writetable(Tau_table_test, DirLabelCSV)
+    DirLabelCSV=sprintf('%s/%s_taustats.csv',TestFolders(iTest),TestFolders(iTest));
+    writetable( Tau_stats_test, DirLabelCSV)
 end
 
-MTau = array2table(ones(1,length(TauVars)+1),'VariableNames',[TauVars "Redo"]);
+%%
+Tau=array2table(Tau,'VariableNames',VarNames);
+writetable( Tau,'tau_estimates3.csv')
 
-for iTest=1:length(TestFolders)
-    
-    MTau=[MTau; Tau_{iTest}];
-end
- 
-MTau(1,:)=[];
+Tau_stats=array2table(Tau_stats,'VariableNames',VarNames2);
+writetable( Tau_stats,'tau_est_stats.csv')
 
-
-% # Change Variable Types of the Tau Table
-    MTau = convertvars(MTau,{'Test'},'categorical');
-    MTau.('Test')= renamecats(MTau.('Test'),TestFolders);
-    Tau_stats
-    
-% # Export Add to Original File
-% Export as a mat file, and table
-
-FileNameExtension="_tau";
-for iTest=1:length(TestFolders)
-    TestFile=sprintf('%s_test',TestFolders(iTest));
-    ChrTest=char(TestFile);
-    TestLabel=sprintf("%s",ChrTest(1:end-5));
-
-    FoldLabel=TestFolders{iTest};
-    DirLabel=sprintf('%s/%s%s_test',FoldLabel,FoldLabel,FileNameExtension);
-    save(DirLabel,'-struct','Tau',string(ChrTest))
-    %%
-    %Tau table ".csv" save
-    DirLabelCSV=sprintf('%s/%s_test%s.csv',FoldLabel,FoldLabel,FileNameExtension);
-    writetable( Tau.(ChrTest).(ExpLabel).Tau_incorp, DirLabelCSV)
-    %%
-    %Tau stats ".csv" save
-    DirLabelCSV=sprintf('%s/%s_taustats.csv',FoldLabel,FoldLabel);
-    writetable( Tau_stats(Tau_stats.Test==FoldLabel,:), DirLabelCSV)
-
-    
-end
-%%all the results in one file
-writetable( MTau,'tau_estimates2.csv')
 
 %%
 % # ---------------LoaD-------------------
@@ -306,38 +205,18 @@ clear all
 % TestFolders=["jan7" "jan11" "jan12"];
 % TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
 % TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
-TestFolders=["feb28_24" "feb29_24"];
-
-for iTest=1:length(TestFolders)
-    TestFiles(iTest)=sprintf("%s_tau_test",TestFolders{iTest});
-end
-ExpLabel=["RCCurveTrials"];
-
-K = load_test(TestFolders,TestFiles);
-
-for iTest=1:length(TestFiles)
-    TestLabel=sprintf("%s_test",TestFolders{iTest});
-    Tau{iTest}=K.(TestLabel).(ExpLabel).Tau_table;
-    [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau{iTest}(:,1));
-    PWPoints{iTest} = renamevars(PWPoints{iTest},["PW"],[sprintf('%s PW',TestFolders{iTest})]);
-    PWPoints{iTest};
-    
-    %load tables 
-    DirLabelCSV=sprintf('%s/%s_taustats.csv',TestFolders{iTest},TestFolders{iTest});
-    Tau_Cell{iTest}= readtable(DirLabelCSV);
-
-end
-
-DirLabelCSV=['tau_estimates2.csv'];
-
-Tau_table= readtable(DirLabelCSV);
-
+TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 	% load the main analysis  
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders(iTest));
 end
 
 S = load_test(TestFolders,TestFiles);
+
+%%
+
+Tau= readtable('tau_estimates3.csv');
+Tau_stats= readtable('tau_est_stats.csv');
 
 %% # Plotting 
 clc
@@ -360,8 +239,8 @@ for iTest=1:length(TestFolders)
 
     PWInd_F=logical([1 PWInd{iTest}']');
     F_PW=K.(TestLabel).(ExpLabel).F_table(:,PWInd_F);
-    taus=Tau_table.('TimeConst')(PWInd{iTest});
-    trialnum=Tau_table.('TrialNum')(PWInd{iTest});
+    taus=Tau_table_test.('TimeConst')(PWInd{iTest});
+    trialnum=Tau_table_test.('TrialNum')(PWInd{iTest});
 
     %%
     %Plotting here
@@ -474,7 +353,6 @@ for iTest=1:length(TestFolders)
 end
 
 
-
 %% Occlusion Analysis
 % # Determining Force, MAV Occlusion 
 % Occ eqn F_o= Fs-Fs'   
@@ -487,7 +365,7 @@ end
 % 3- what to do with mav target
 % 4- Time const. for MAV drop
 % 5- Combine other ways of calculating occ with this one
-tau = mean(Tau_table.('TimeConst')); % average time constant to be used 
+tau = mean(Tau_table_test.('TimeConst')); % average time constant to be used 
 OccRefs = [3*tau 4*tau 5*tau]; % referance time for occlusion to be calculated
 TauLabels=["3*tau" "4*tau" "5*tau"];
 % TestFolders=["jan7" "jan11" "jan12"];% "apr20"];
@@ -1056,7 +934,7 @@ for iType=1:length(OccType)
         stim_freq=S.(TestLabel).ExpPar.stim_freq;
         FrameInd=[stim_freq*TimeRange(1): stim_freq*TimeRange(2)];
 
-        ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(lbl);
+        ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).(lbl);
         RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
 
         IndTrials=find_trialnum(vMVC,sMVC,RepTableMat);

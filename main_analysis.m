@@ -6,7 +6,9 @@
 %
 
 clear all
-TestFolders=["mar20_24" ];
+TestFolders=["feb28_24" ];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
+
 for iTest=1:length(TestFolders)
     tidy_data(TestFolders(iTest));
 end
@@ -16,8 +18,8 @@ end
 
 clc
 clear all
-TestFolders=["mar20_24"];
-% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
+% TestFolders=["mar20_24"];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
 % TestFolders=[ "apr20" "oct11" "oct18"];
 % TestFolders=["oct25"];
 
@@ -110,7 +112,7 @@ end
 
 
 %
-%%Fixing PW invalid values issue (-inf)
+%% Fixing PW invalid values issue (-inf)
 %
 
 clc
@@ -136,6 +138,8 @@ for iTest=1:length(TestFolders)
                     RedoLabel=sprintf('RedoTrial_%d',RedoTrials(iRedo));
 
                     S.(TestStruct).(ExpLabel).(TrialLabel).data=S.(TestStruct).(ExpLabel).(RedoLabel).data; %% Incorporate redo trials
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).Redo=true;
+                    
                     x=S.(TestStruct).(ExpLabel).(TrialLabel).data(:,iPW);
                     y=S.(TestStruct).(ExpLabel).(TrialLabel).data(:,iTrigger);
                         % # PW
@@ -164,6 +168,7 @@ for iTest=1:length(TestFolders)
                 TrialLabel=sprintf('Trial_%d',iTrial);
 
                 S.(AnaStruct).(ExpLabel).(TrialLabel).data=S.(TestStruct).(ExpLabel).(TrialLabel).data;
+                
                 x=S.(AnaStruct).(ExpLabel).(TrialLabel).data(:,iPW);
                 y=S.(AnaStruct).(ExpLabel).(TrialLabel).data(:,iTrigger);
                     % # PW
@@ -182,6 +187,9 @@ for iTest=1:length(TestFolders)
                     T=array2table(dt,'VariableNames',S.(TestStruct).ExpPar.DataInd);
                  
                 S.(AnaStruct).(ExpLabel).(TrialLabel).data=T;
+                if ~isfield(S.(AnaStruct).(ExpLabel).(TrialLabel), 'Redo')
+                    S.(AnaStruct).(ExpLabel).(TrialLabel).Redo=false;
+                end
             end
         end
     end
@@ -236,7 +244,7 @@ for iTest=1:length(TestFolders)
         ExpLabel=ExpstoAna(iExp);
 
         NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
-        NumofTrials(ExpLabel=="OccTrials")=S.(TestStruct).(ExpLabel).ListedNumofTrials;
+%         NumofTrials(ExpLabel=="OccTrials")=S.(TestStruct).(ExpLabel).ListedNumofTrials;
         
         if ExpLabel=="OccTrials"
             NumofTrials=S.(TestStruct).(ExpLabel).ListedNumofTrials;
@@ -1112,7 +1120,7 @@ for iExp =1:length(ExpstoAna)
 end
 
 
-%%Mean MAV of Stim Only Trials 
+%% Mean MAV of Stim Only Trials 
 clear MAV_Mean
 RCMeanTime=[8 10]; % Calculating the means at time [8 10]
 FiltLabel="Unfilt";
@@ -1128,7 +1136,7 @@ for iTest=1:length(TestFolders)
 
     
     if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
-        ExpLabel=ExpLabels(S.(AnaStruct).AnaPar.ExpTable.('RC'));
+        ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).('RC');
 
         stim_freq=S.(TestStruct).ExpPar.stim_freq;
         MeanFrame=[RCMeanTime(1)*stim_freq RCMeanTime(2)*stim_freq];
@@ -1160,7 +1168,6 @@ for iTest=1:length(TestFolders)
             'VariableName',TestFolders(iTest));
     end
     
-
     if  ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('Ramp')))
         ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).('Ramp');   
         
@@ -1222,12 +1229,11 @@ for iTest=1:length(TestFolders)
                 'VariableNames',["MeanRampMAV","SDRampMAV","MeanRampForceVals","StdRampForceVals","MeanRampPWVals","Frame"]);
             S.(AnaStruct).(ExpLabel).(TrialLabel).RampMAVTable=RampMAVTrialTable;
         end
-    end 
     
     RampMAVTable=table(RampMAV(:,1),RampMAV(:,2),RampMAV(:,3),RampMAV(:,4),RampMAV(:,5),RampMAV(:,6),RampMAV(:,7),RampMAV(:,8),...
     'VariableNames',["MeanRampMAV","SDRampMAV","MeanRampForceVals","StdRampForceVals","MeanRampPWVals","Frame", "Trial", "Test"]);
     S.(AnaStruct).(ExpLabel).RampMAVTable=RampMAVTable;
-
+    end 
 end
 
 % Update this to more general
