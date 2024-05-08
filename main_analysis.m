@@ -7,7 +7,9 @@
 
 clear all
 TestFolders=["feb28_24" ];
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
+TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25" "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
+TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
+
 
 for iTest=1:length(TestFolders)
     tidy_data(TestFolders(iTest));
@@ -19,9 +21,10 @@ end
 clc
 clear all
 % TestFolders=["mar20_24"];
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"];
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25" "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 % TestFolders=[ "apr20" "oct11" "oct18"];
 % TestFolders=["oct25"];
+TestFolders=[ "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
@@ -29,7 +32,7 @@ end
 
 S = load_test(TestFolders,TestFiles);
 
-%%Defining Initial Parameters
+%% Defining Initial Parameters
 
 for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
@@ -47,7 +50,6 @@ for iTest=1:length(TestFolders)
     iTime=table2array(DataIndTable(:,"Time"));
     iPW=table2array(DataIndTable(:,"PW"));
     
-%     ExpID=field_exist(S.(AnaStruct),ExpLabels);
     
     S.(AnaStruct).AnaPar.ExpTable=table([ExpLabels(1);1],[ExpLabels(2);2],...
         [ExpLabels(3); 3], [ExpLabels(4); 4], [ExpLabels(5);5], [ExpLabels(6);6],'VariableNames',["MVC","RC","Cus","Occ","Fat","Ramp"]);
@@ -112,7 +114,7 @@ end
 
 
 %
-%% Fixing PW invalid values issue (-inf)
+%%Fixing PW invalid values issue (-inf)
 %
 
 clc
@@ -182,9 +184,9 @@ for iTest=1:length(TestFolders)
                 S.(AnaStruct).(ExpLabel).(TrialLabel).data(:,iTrigger)=y;
         
                 %% Making "data" a table
-                    dt=S.(AnaStruct).(ExpLabel).(TrialLabel).data;
-                    [r,~]=size(dt);
-                    T=array2table(dt,'VariableNames',S.(TestStruct).ExpPar.DataInd);
+                    data=S.(AnaStruct).(ExpLabel).(TrialLabel).data;
+                    [r,c]=size(data);
+                    T=array2table(data,'VariableNames',S.(TestStruct).ExpPar.DataInd(:,1:c));
                  
                 S.(AnaStruct).(ExpLabel).(TrialLabel).data=T;
                 if ~isfield(S.(AnaStruct).(ExpLabel).(TrialLabel), 'Redo')
@@ -194,37 +196,6 @@ for iTest=1:length(TestFolders)
         end
     end
 end
-
-
-% %% Incorporate Redo Trials 
-% % this is currently a simple solution but must be updated later
-% for iTest=1:length(TestFolders)
-%     TestStruct=sprintf("%s_test",TestFolders{iTest});
-%     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
-%     
-%     ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
-%     ExpstoAna=ExpLabels([2,4,5]);
-%     
-%     for iExp=1:length(ExpstoAna)
-%         ExpLabel=ExpstoAna{iExp};
-%         
-%         RedoTrials=S.(TestStruct).(ExpLabel).RedoTrials;
-%         
-%         if ~isempty(RedoTrials)
-%             NumofRedos=length(RedoTrials);
-%            
-%             for iRedo=1:NumofRedos
-% 
-%                 RedoLabel=sprintf('RedoTrial_%d',RedoTrials(iRedo));
-%                 TrialLabel=sprintf('Trial_%d',RedoTrials(iRedo));
-%                 %                 S.(AnaStruct).(ExpLabel).(TrialLabel)=S.(TestStruct).(ExpLabel).(RedoLabel);
-%                 %                 S.(AnaStruct).(ExpLabel).(TrialLabel).Redo=boolean(1);
-%                 S.(AnaStruct).(ExpLabel).(TrialLabel)=S.(TestStruct).(ExpLabel).(RedoLabel);
-%                 S.(AnaStruct).(ExpLabel).(TrialLabel).Redo=boolean(1);
-%             end
-%         end
-%     end
-% end
 
 %%EMG and Force Filtering 
 % ExpLabels=S.(TestStruct).ExpPar.ExpLabels.()
@@ -322,67 +293,8 @@ for iTest=1:length(TestFolders)
     end
 end
 
-%% Plotting dropped frames
 
-S = load_test ; 
-%%
-close all
-Lbl='Occ';
-PlotTrial=[ 14 14];
-PlotFrame=floor([ 488 488]);
-
-for iTest=1:length(TestFolders)
-    TestStruct=sprintf("%s_test",TestFolders{iTest});
-    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
-
-    ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
-    ExpLabel=ExpTable{1};
-    DataLabels=S.(AnaStruct).AnaPar.DataLabels;
-    AmpGain=S.(TestStruct).ExpPar.AmpGain;
-
-    for iTrial=PlotTrial(1):PlotTrial(2)
-        TrialLabel=sprintf('Trial_%d',iTrial);
-        DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
-        
-        if isempty(DroppedFrames)
-            subplot(length(TestFolders),1,iTest)
-            ttl=sprintf('BP Filtered %s at %s,Test: %s, TrialNum: %d, Frame: %d-%d,'...
-            ,DataLabels{1},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2));
-            title(ttl);
-            text(0.3,0.5,'No Dropped Frames for This Trial')
-
-            continue 
-        end
-        
-        FrameLength=S.(AnaStruct).(ExpLabel).(TrialLabel).FrameLength;
-        BegofFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
-    %     Ind=[BlankLength+PlotFrame(1)*FrameLength BlankLength+(PlotFrame(2))*FrameLength];
-        Ind= [BegofFrames(PlotFrame(1)) BegofFrames(PlotFrame(2)+1)];
-
-        BPFilt_EMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('BPFilt_EMG');
-        BlankEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('BlankedEMG');
-        Trig=S.(TestStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('Trigger');
-        EMG=S.(TestStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('EMG');
-        Time=S.(TestStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('Time');
-
-        figure(1)
-        subplot(length(TestFolders),1,iTest)
-        plot(Time,Trig/1000,'b','LineWidth',2)
-        hold on
-        plot(Time,EMG/AmpGain,'k','LineWidth',2)
-        plot(Time,BlankEMG,'r','LineWidth',2)
-        legend({'Trigger','Before Blanking and Filtering', 'After Blanking and Filtering'})
-        ttl=sprintf('BP Filtered %s at %s,Test: %s, TrialNum: %d, Frame: %d-%d,'...
-            ,DataLabels{1},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2));
-        title(ttl);
-        xlabel(DataLabels{5})
-        ylabel(DataLabels{1})
-        ylim([1.5*min(BPFilt_EMG) 1.5*max(BPFilt_EMG)])
-
-    end
-end
-
-%% Frames Matrix for Force and EMG
+%%Frames Matrix for Force and EMG
 % (also remove blanked periods)
 % (Add unfilt as a filter and add e m-wave as zero matrix)
 % Identify Zero stim trials -> Done
@@ -459,7 +371,6 @@ for iTest=1:length(TestFolders)
                 % # Trigger Frames
                 tg(:,iFrame)= Trigger(BegofFrames(iFrame+1)+1-FrameLength:BegofFrames(iFrame+1));
 
-
             end
 
             S.(AnaStruct).(ExpLabel).(TrialLabel).BlankEMGFrames=y;
@@ -479,12 +390,14 @@ for iTest=1:length(TestFolders)
     Target=S.(AnaStruct).(ExpLabel).Target;    
     BegofFrames= S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
     NumofFrames=length(BegofFrames);
+    TargetFrames=[];
     for iFrame=1:NumofFrames-1
         % # Target Line Frames
-        k(:,iFrame)=Target(BegofFrames(iFrame+1)+1-FrameLength:BegofFrames(iFrame+1));
+        TargetFrames(:,iFrame)=Target(BegofFrames(iFrame+1)+1-FrameLength:BegofFrames(iFrame+1));
     end
-    S.(AnaStruct).(ExpLabel).TargetFrames=k;
+    S.(AnaStruct).(ExpLabel).TargetFrames=TargetFrames;
 end
+
 
 
 %%Extracting Dropped Frames 
@@ -534,6 +447,65 @@ for iExp=1:length(VarNames)
     end
 end
 
+%% Plotting dropped frames
+
+S = load_test ; 
+%%
+close all
+Lbl='Occ';
+PlotTrial=[ 14 14];
+PlotFrame=floor([ 488 488]);
+
+for iTest=1:length(TestFolders)
+    TestStruct=sprintf("%s_test",TestFolders{iTest});
+    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+
+    ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
+    ExpLabel=ExpTable{1};
+    DataLabels=S.(AnaStruct).AnaPar.DataLabels;
+    AmpGain=S.(TestStruct).ExpPar.AmpGain;
+
+    for iTrial=PlotTrial(1):PlotTrial(2)
+        TrialLabel=sprintf('Trial_%d',iTrial);
+        DroppedFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
+        
+        if isempty(DroppedFrames)
+            subplot(length(TestFolders),1,iTest)
+            ttl=sprintf('BP Filtered %s at %s,Test: %s, TrialNum: %d, Frame: %d-%d,'...
+            ,DataLabels{1},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2));
+            title(ttl);
+            text(0.3,0.5,'No Dropped Frames for This Trial')
+
+            continue 
+        end
+        
+        FrameLength=S.(AnaStruct).(ExpLabel).(TrialLabel).FrameLength;
+        BegofFrames=S.(AnaStruct).(ExpLabel).(TrialLabel).BegofFrames;
+    %     Ind=[BlankLength+PlotFrame(1)*FrameLength BlankLength+(PlotFrame(2))*FrameLength];
+        Ind= [BegofFrames(PlotFrame(1)) BegofFrames(PlotFrame(2)+1)];
+
+        BPFilt_EMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('BPFilt_EMG');
+        BlankEMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('BlankedEMG');
+        Trig=S.(TestStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('Trigger');
+        EMG=S.(TestStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('EMG');
+        Time=S.(TestStruct).(ExpLabel).(TrialLabel).data(Ind(1):Ind(2),:).('Time');
+
+        figure(1)
+        subplot(length(TestFolders),1,iTest)
+        plot(Time,Trig/1000,'b','LineWidth',2)
+        hold on
+        plot(Time,EMG/AmpGain,'k','LineWidth',2)
+        plot(Time,BlankEMG,'r','LineWidth',2)
+        legend({'Trigger','Before Blanking and Filtering', 'After Blanking and Filtering'})
+        ttl=sprintf('BP Filtered %s at %s,Test: %s, TrialNum: %d, Frame: %d-%d,'...
+            ,DataLabels{1},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2));
+        title(ttl);
+        xlabel(DataLabels{5})
+        ylabel(DataLabels{1})
+        ylim([1.5*min(BPFilt_EMG) 1.5*max(BPFilt_EMG)])
+
+    end
+end
 
 
 %% Plotting the dropped frames 
@@ -755,13 +727,14 @@ PlotTime=[ 14 15];
 % PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
 PlotFrame=floor([ 300 305]);
 
+TeststoPlot=TestFolders([1]);
 
-for iTest=1:length(TestFolders)
-    TestStruct=sprintf("%s_test",TestFolders{iTest});
-    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+for iTest=1:length(TeststoPlot)
+    TestStruct=sprintf("%s_test",TeststoPlot(iTest));
+    AnaStruct=sprintf("%s_ana",TeststoPlot(iTest));
     DataLabels=S.(AnaStruct).AnaPar.DataLabels;
 
-    ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(Lbl));
+    ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable(1,:).(Lbl));
 
     % PlotFrame=floor([ 300 305]); % first frame is skipped
 
@@ -793,7 +766,7 @@ for iTest=1:length(TestFolders)
         Time=reshape(TimeFrames,1,FrameLength*length(PlotFrame(1):PlotFrame(2)));
         Trig=reshape(TriggerFrames,1,FrameLength*length(PlotFrame(1):PlotFrame(2)));
 
-        figure('Name',sprintf('%s Results, Test: %s',FiltLabels{2},TestFolders{iTest}),'NumberTitle','off')
+        figure('Name',sprintf('%s Results, Test: %s',FiltLabels{2},TeststoPlot(iTest)),'NumberTitle','off')
         subplot(2,1,1)
         plot(Time,Trig/10000,'b','LineWidth',2)
         hold on
@@ -802,7 +775,7 @@ for iTest=1:length(TestFolders)
         plot(Time,vEMG(:,2),'r','LineWidth',2)
         legend({'Trigger(a.u)', 'Unfiltered', 'Comb vEMG'})
         ttl=sprintf('%s at %s, Test: %s, TrialNum: %d, Frame: %d-%d'...
-            ,DataLabels{8},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2)+1);
+            ,DataLabels{8},ExpLabel,TeststoPlot(iTest),iTrial,PlotFrame(1),PlotFrame(2)+1);
         title(ttl);
         xlabel(DataLabels{5})
         ylabel(DataLabels{1})
@@ -813,12 +786,12 @@ for iTest=1:length(TestFolders)
         plot(Time,MWave(:,2),'r','LineWidth',2)
         legend({'Unfiltered', 'Comb MWaves'})
         ttl=sprintf(' %s at %s, Test: %s, TrialNum: %d, Frame: %d-%d',...
-            DataLabels{9},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2)+1);
+            DataLabels{9},ExpLabel,TeststoPlot(iTest),iTrial,PlotFrame(1),PlotFrame(2)+1);
         title(ttl);
         xlabel(DataLabels{5})
         ylabel(DataLabels{1})
     
-        figure('Name',sprintf('%s Results, Test: %s',FiltLabels{3},TestFolders{iTest}),'NumberTitle','off')
+        figure('Name',sprintf('%s Results, Test: %s',FiltLabels{3},TeststoPlot(iTest)),'NumberTitle','off')
         subplot(2,1,1)
         plot(Time,Trig/10000,'b','LineWidth',2)
         hold on
@@ -827,11 +800,10 @@ for iTest=1:length(TestFolders)
         plot(Time,vEMG(:,3),'r','LineWidth',2)
         legend({'Trigger(a.u)', 'Unfiltered', 'GS vEMG'})
         ttl=sprintf('%s at %s, Test: %s, TrialNum: %d, Frame: %d-%d',...
-            DataLabels{10},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2)+1);
+            DataLabels{10},ExpLabel,TeststoPlot(iTest),iTrial,PlotFrame(1),PlotFrame(2)+1);
         title(ttl);
         xlabel(DataLabels{5})
         ylabel(DataLabels{1})
-        
         
         subplot(2,1,2)
         plot(Time,vEMG(:,1),'k','LineWidth',2)
@@ -839,7 +811,7 @@ for iTest=1:length(TestFolders)
         plot(Time,MWave(:,3),'r','LineWidth',2)
         legend({'Unfiltered', 'GS MWaves'})
         ttl=sprintf(' %s at %s, Test: %s, TrialNum: %d, Frame: %d-%d',...
-            DataLabels{11},ExpLabel,TestFolders{iTest},iTrial,PlotFrame(1),PlotFrame(2)+1);
+            DataLabels{11},ExpLabel,TeststoPlot(iTest),iTrial,PlotFrame(1),PlotFrame(2)+1);
         title(ttl);
         xlabel(DataLabels{5})
         ylabel(DataLabels{1})
@@ -1125,16 +1097,17 @@ clear MAV_Mean
 RCMeanTime=[8 10]; % Calculating the means at time [8 10]
 FiltLabel="Unfilt";
 RampTimeRange=[2 20];
-
+MAV_Mean_tests=[];
 for iTest=1:length(TestFolders)
     TestStruct=sprintf("%s_test",TestFolders{iTest});
     AnaStruct=sprintf("%s_ana",TestFolders{iTest});
 
     ExpLabels=S.(TestStruct).ExpPar.ExpLabels;
     ExpRuns=S.(TestStruct).ExpRuns;
-    RampMAV=[[],[],[],[],[],[]];
+    RampMAV=[];
+    MAVVal=[];
+    MAVVal_reps=[];
 
-    
     if ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('RC')))
         ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).('RC');
 
@@ -1146,6 +1119,7 @@ for iTest=1:length(TestFolders)
         PercentMVCVals=S.(TestStruct).(ExpLabel).PercentMVC';
         PWPoints=S.(TestStruct).(ExpLabel).PWPoints';
         PWofTrials=S.(TestStruct).(ExpLabel).PWTrials';
+        IndTrials=[];
 
         for iPW=1:length(PWPoints)
 
@@ -1154,21 +1128,25 @@ for iTest=1:length(TestFolders)
 
             for iTrial=1:length(IndTrials(:,iPW))
                 TrialLabel=sprintf('Trial_%d',IndTrials(iTrial,iPW));
-                MAV_Vals(iTrial,iPW)=mean(S.(AnaStruct).(ExpLabel).(TrialLabel)...
+                MAV_mean_reps(iTrial)=mean(S.(AnaStruct).(ExpLabel).(TrialLabel)...
                     .(FiltLabel).Feats.('MAV_vEMG')(MeanRangeInd));
+                MAV_std_reps(iTrial)=std(S.(AnaStruct).(ExpLabel).(TrialLabel)...
+                    .(FiltLabel).Feats.('MAV_vEMG')(MeanRangeInd));
+                
+               MAVVal_reps=[MAVVal_reps; MAV_mean_reps(iTrial) MAV_std_reps(iTrial) PWPoints(iPW)  "RC" TestFolders(iTest) ];
+
             end
+            
+           MAVVal=[MAVVal; mean(MAV_mean_reps) std(MAV_mean_reps) PWPoints(iPW)  "RC" TestFolders(iTest) ];
+
         end
+        S.(AnaStruct).(ExpLabel).MAV_Mean_Reps=array2table(MAVVal_reps,...
+            'VariableNames',["Mean" "Std" "PW" "Exp" "Test"] );
+        MAV_Mean_tests=[MAV_Mean_tests; MAVVal];
 
-        MAV_Mean(:,iTest)=mean(MAV_Vals)';
-        S.(AnaStruct).(ExpLabel).MAV_Vals=table(PWPoints, MAV_Vals(1,:)',...
-            MAV_Vals(2,:)',MAV_Vals(3,:)',mean(MAV_Vals)',std(MAV_Vals)',...
-            'VariableNames',["PW" "Rep_1" "Rep_2" "Rep_3" "Mean" "Std"]);
-
-        S.(AnaStruct).(ExpLabel).MAV_Mean=array2table(MAV_Mean(:,iTest),...
-            'VariableName',TestFolders(iTest));
     end
     
-    if  ExpRuns(str2double(S.(AnaStruct).AnaPar.ExpTable(2,:).('Ramp')))
+    if  ExpRuns(double(S.(AnaStruct).AnaPar.ExpTable(2,:).('Ramp')))
         ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).('Ramp');   
         
         NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
@@ -1191,8 +1169,7 @@ for iTest=1:length(TestFolders)
             MAV=S.(AnaStruct).(ExpLabel).(TrialLabel).(FiltLabel).FatFeats.('Filt_MAV_vEMG')(FrameRangeInd);
             PWLevels=S.(AnaStruct).(ExpLabel).(TrialLabel).PWofFrames(FrameRangeInd);
             Force=S.(AnaStruct).(ExpLabel).(TrialLabel).FiltForceFrames(FrameRangeInd);
-            
-                 
+                             
             RampMAVTrial=[[],[],[],[],[],[]];
             for iVal=1:length(PercentMVCVals)
                 
@@ -1208,8 +1185,9 @@ for iTest=1:length(TestFolders)
                 MeanRampForceVals(iVal)=mean(Force(RangeInd));
                 StdRampForceVals(iVal)=std(Force(RangeInd));
                 MeanRampPWVals(iVal)=mean(PWLevels(RangeInd));
-                RampMAV=[RampMAV; MeanRampMAVVals(iVal) StdRampMAVVals(iVal) MeanRampForceVals(iVal) StdRampForceVals(iVal) MeanRampPWVals(iVal)...
-                    IndMin(iVal)+RampTimeRange(1)*stim_freq, TrialLabel, TestFolders(iTest)];
+                RampMAV=[RampMAV; MeanRampMAVVals(iVal) StdRampMAVVals(iVal) MeanRampForceVals(iVal)...
+                    StdRampForceVals(iVal) MeanRampPWVals(iVal) IndMin(iVal)+RampTimeRange(1)*stim_freq,...
+                    TrialLabel, TestFolders(iTest)];
 
             end
                         
@@ -1219,27 +1197,38 @@ for iTest=1:length(TestFolders)
             S.(AnaStruct).(ExpLabel).(TrialLabel).MeanRampMAV=MeanRampMAVVals;
             S.(AnaStruct).(ExpLabel).(TrialLabel).StdRampMAV=StdRampMAVVals;
             S.(AnaStruct).(ExpLabel).(TrialLabel).MeanRampForceVals=MeanRampForceVals;
-            S.(AnaStruct).(ExpLabel).(TrialLabel).StdRampForceVals=StdRampForceVals;            
+            S.(AnaStruct).(ExpLabel).(TrialLabel).StdRampForceVals=StdRampForceVals;     
             S.(AnaStruct).(ExpLabel).(TrialLabel).MeanRampPWVals=MeanRampPWVals;
             
             RampMAVTrial=[RampMAVTrial; MeanRampMAVVals' StdRampMAVVals' MeanRampForceVals'...
                 StdRampForceVals' MeanRampPWVals' IndMin'+RampTimeRange(1)*stim_freq];
                 
-            RampMAVTrialTable=table(RampMAVTrial(:,1),RampMAVTrial(:,2),RampMAVTrial(:,3),RampMAVTrial(:,4),RampMAVTrial(:,5),RampMAVTrial(:,6),...
-                'VariableNames',["MeanRampMAV","SDRampMAV","MeanRampForceVals","StdRampForceVals","MeanRampPWVals","Frame"]);
+            RampMAVTrialTable=array2table(RampMAVTrial,'VariableNames',["MeanRampMAV","SDRampMAV",...
+                "MeanRampForceVals","StdRampForceVals","MeanRampPWVals","Frame"]);
+            
             S.(AnaStruct).(ExpLabel).(TrialLabel).RampMAVTable=RampMAVTrialTable;
         end
     
     RampMAVTable=table(RampMAV(:,1),RampMAV(:,2),RampMAV(:,3),RampMAV(:,4),RampMAV(:,5),RampMAV(:,6),RampMAV(:,7),RampMAV(:,8),...
     'VariableNames',["MeanRampMAV","SDRampMAV","MeanRampForceVals","StdRampForceVals","MeanRampPWVals","Frame", "Trial", "Test"]);
     S.(AnaStruct).(ExpLabel).RampMAVTable=RampMAVTable;
+
+    MAVVal=[MAVVal; MeanRampMAVVals' StdRampMAVVals' round(MeanRampPWVals)' strings(length(MeanRampMAVVals),1)+"Ramp" strings(length(MeanRampMAVVals),1)+TestFolders(iTest) ]; % Use the last trial
+    
+    MAV_Mean_tests=[MAV_Mean_tests; MAVVal];
+
+    clear MeanRampMAVVals StdRampMAVVals MeanRampPWVals
     end 
+    MAV_Mean=array2table(MAVVal,'VariableNames',["Mean" "Std" "PW" "Exp" "Test"] );
+    S.(AnaStruct).(ExpLabel).MAV_Mean=MAV_Mean;
+    ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).('RC');
+    S.(AnaStruct).(ExpLabel).MAV_Mean=MAV_Mean;
 end
 
 % Update this to more general
-% RC_MAV=array2table(MAV_Mean,'VariableNames',TestFolders);
-%
-%%Mean MAV of Occ Trials 
+MAV_Mean_tests=array2table(MAV_Mean_tests,'VariableNames',["Mean" "Std" "PW" "Exp" "Test"] );
+
+%% Mean MAV of Occ Trials 
 clc
 clear MAVDropped
 exp_lbl='Occ';
@@ -1382,7 +1371,140 @@ for iFeat=1:1
         end
     end
 end
-%%Saving the results
+
+
+%% Time Constants of RCCurve Trials
+
+%To Do List
+% 1- remove filtering of force^
+% 2- indicing simplifications ^
+% 3- Saving fixes: dont save the averages, save all the coefficients ^
+% 4- Plotting presentations^
+% 5- make this part of main analysis
+% 6- EMG t
+% # Filter Design
+
+% d1 = designfilt("lowpassiir",'FilterOrder',3, ...
+%     'HalfPowerFrequency',0.01,'DesignMethod',"butter"); %,'SampleRate',fs
+% 
+% % fvtool(d1)
+% 
+% LPPass = 30;
+% LPStop = 100;
+% Ap = .1;
+
+clc
+clear F_mat IndTau PWPoints ID_PW 
+Tau_stats=[];
+Tau=[];
+for iTest=1:length(TestFolders) 
+    TestLabel=sprintf("%s_test",TestFolders(iTest));
+    AnaLabel=sprintf("%s_ana",TestFolders(iTest));
+    
+    ExpLabels=S.(TestLabel).ExpPar.ExpLabels;
+    ExpLabel=ExpLabels(str2double(S.(AnaLabel).AnaPar.ExpTable(2,:).('RC')));
+    Tau_stats_test=[];
+    Tau_test=[];
+    if ~S.(TestLabel).(ExpLabel).ExpRun; continue; end
+    
+    NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
+    DataIndTable= S.(TestLabel).ExpPar.DataIndTable;
+    DataVars=string(DataIndTable.Properties.VariableNames);
+    iForce=(S.(TestLabel).ExpPar.DataIndTable.("Force"));
+    iTime=(S.(TestLabel).ExpPar.DataIndTable.("Time"));
+    
+    PWVal=S.(TestLabel).(ExpLabel).PWTrials;
+    RCVar=S.(TestLabel).(ExpLabel).RCVar;
+    MVC=S.(TestLabel).(S.(AnaLabel).AnaPar.ExpTable(1,:).('MVC')).MVC;
+    TurnOffTime=S.(TestLabel).(ExpLabel).StimProfile;
+    
+    AvgRangePostOff=[TurnOffTime+.5 TurnOffTime+.8];
+    AvgRangePreOff=[TurnOffTime-1.5 TurnOffTime]; 
+    
+    stim_freq=S.(TestLabel).ExpPar.stim_freq;
+    PostOffFrameRange=round([AvgRangePostOff(1)*stim_freq AvgRangePostOff(2)*stim_freq]);
+    PostOffFrameRangeInd=[PostOffFrameRange(1): PostOffFrameRange(2)];
+    PreOffFrameRange=round([AvgRangePreOff(1)*stim_freq AvgRangePreOff(2)*stim_freq]);
+    PreOffFrameRangeInd=[PreOffFrameRange(1): PreOffFrameRange(2)];
+    fs=S.(TestLabel).ExpPar.fs;
+    clear Taus
+    for iTrial=1:NumofTrials
+        TrialLabel=sprintf("Trial_%d",iTrial);
+
+        F=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Force');
+        T=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Time');
+
+        F_filtered=F;
+        
+        Ind= T> AvgRangePreOff(1) & T<AvgRangePreOff(2);
+        PreAvgForce= mean(F_filtered(Ind));
+        Ind= T> AvgRangePostOff(1) & T<AvgRangePostOff(2);
+        PostAvgForce=mean(F_filtered(Ind));
+
+        tau=est_tau(F_filtered(T> TurnOffTime & T<AvgRangePostOff(1))-PostAvgForce,-TurnOffTime+T(T> TurnOffTime & T<AvgRangePostOff(1)),PreAvgForce-PostAvgForce);
+        
+        IndTau=round((TurnOffTime+tau)*fs);
+        
+        MVCValofPWs=gompertz(RCVar,PWVal(iTrial))/MVC*100+0.00001;
+
+        Tau_test=[Tau_test; tau IndTau PWVal(iTrial) MVCValofPWs PreAvgForce PostAvgForce iTrial TestFolders(iTest)  S.(AnaLabel).(ExpLabel).(TrialLabel).Redo ] ;
+        Tau=[Tau; Tau_test ] ;
+
+        F_mat(:,1)=T';
+        VarNms(1)={'Time'};
+        F_mat(:,iTrial+1)=F_filtered()';
+        VarNms{iTrial+1}=char(TrialLabel);
+
+    end
+    
+    
+    VarNames={'TimeConst','TauInd','PW','StimMVC','PreAvgForce','PostAvgForce','TrialNum','Test','Redo'};
+    Tau_table_test=array2table(Tau_test,'VariableNames',VarNames);
+
+
+    S.(AnaLabel).(ExpLabel).TimeCons.TurnOffTime=TurnOffTime;
+    S.(AnaLabel).(ExpLabel).TimeCons.AvgRangePostOff=AvgRangePostOff;
+    S.(AnaLabel).(ExpLabel).TimeCons.AvgRangePreOff=AvgRangePreOff;
+    S.(AnaLabel).(ExpLabel).TimeCons.Tau_test=Tau_test;
+    
+    F_table=array2table(F_mat,'VariableNames',VarNms);
+    clear F_mat
+    S.(AnaLabel).(ExpLabel).TimeCons.F_filtered=F_table;
+    S.(AnaLabel).(ExpLabel).Tau_table_test=Tau_table_test;
+    S.(AnaLabel).(ExpLabel).F_table=F_table;
+    
+    [ID_PW{iTest},PWPoints{iTest}]=findgroups(Tau_table_test(:,3));
+    for PWPointsInd=1:height(PWPoints{iTest})
+
+        if isempty( PWPointsInd)
+           disp('PW value was not found') 
+           return
+        end
+        
+        PWInd(:,iTest)=ID_PW{iTest}== PWPointsInd;
+        TauVals=str2double(Tau_table_test(PWInd(:,iTest),:).('TimeConst'));
+        MVCVals=str2double(Tau_table_test(PWInd(:,iTest),:).('StimMVC'));
+
+        Tau_stats_test=[Tau_stats_test; mean(TauVals)  std(TauVals) PWPoints{iTest}(PWPointsInd,:).('PW') mean(MVCVals) TestFolders(iTest)];
+        Tau_stats=[Tau_stats; Tau_stats_test];
+    end
+    VarNames2=["Mean" "Std" "PW" "StimMVC" "Test"];
+    Tau_stats_test=array2table(Tau_stats_test,'VariableNames',VarNames2);
+    
+    DirLabelCSV=sprintf('%s/%s_test_tau.csv',TestFolders(iTest),TestFolders(iTest));
+    writetable(Tau_table_test, DirLabelCSV)
+    DirLabelCSV=sprintf('%s/%s_taustats.csv',TestFolders(iTest),TestFolders(iTest));
+    writetable( Tau_stats_test, DirLabelCSV)
+end
+
+Tau=array2table(Tau,'VariableNames',VarNames);
+writetable( Tau,'tau_estimates3.csv')
+
+Tau_stats=array2table(Tau_stats,'VariableNames',VarNames2);
+writetable( Tau_stats,'tau_est_stats.csv')
+
+
+%% Saving the results
 
 save_test(TestFolders,S)
 

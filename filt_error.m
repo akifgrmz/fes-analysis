@@ -3,7 +3,7 @@
 clc
 clear all
 % TestFolders=["jan7" "jan11" "jan12" "apr20" "may19"];
-TestFolders=["apr20" "may19"];
+TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -17,7 +17,7 @@ cm = lines(length(TestFolders));
 sMVC=0;
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable.('Occ');
+    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
     
     sMVCzero_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('sMVC');
     MAVMean_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('Mean');
@@ -56,8 +56,6 @@ for iTest=1:length(TestFolders)
     xlabel('% Voli. MVC')
     xlim([0 50])
 
-
-
 end
 
 % ylabel('Avg MAV')
@@ -93,6 +91,7 @@ for iTest=1:length(TestFolders)
         Clip_vEMG=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(FrameInd,:).('Clip_MAV_vEMG');
         TrialNum=IndTrials(iTrial);
         cm=lines(length(IndTrials));
+        
 
         MAV_vEMG=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).('MAV_vEMG');
 
@@ -126,12 +125,6 @@ for iTest=1:length(TestFolders)
 %         ylim([0  mean(Adap_vEMG(end-150:end))*1.5])
         xlim([FrameInd(1) FrameInd(end)])
         grid on
-
-        figure(2)    
-        
-
-        
-
     end
 end
 
@@ -159,16 +152,16 @@ for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     TestLabel=sprintf("%s_test",TestFolders{iTest});
 
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable.('Occ');
+    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
     sMVC=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('sMVC');
     OccMeans=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(sMVC==0,:).('Mean');    
     OccStds=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(sMVC==0,:).('Std');
     MVCRange=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(sMVC==0,:).('vMVC');
     
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable.('RC');
-    RCMeans=S.(AnaLabel).(ExpLabel).MAV_Vals.('Mean');
-    RCStds=S.(AnaLabel).(ExpLabel).MAV_Vals.('Std');
-    PWPoints=S.(AnaLabel).(ExpLabel).MAV_Vals.('PW');
+    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('RC');
+    RCMeans=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('Mean'));
+    RCStds=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('Std'));
+    PWPoints=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('PW'));
 
     figure(1)
     subplot(length(TestFolders),2,2*iTest-1)
@@ -205,7 +198,6 @@ title("M-Wave MAV (No Voli. Effort )",'fontweight','bold','fontsize',14)
 % NRMSE_v= sqrt(sum((MAV_voli_1-MAV_voli_2)^2)/T)/std(MAV_voli_1)
 
 c=1;
-
 TimeRange=[1 5] ;
 ExpstoAna= ["Occ"];
 TestFolders=["jan7" "jan11" "jan12" ];

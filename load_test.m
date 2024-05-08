@@ -17,6 +17,8 @@ function M=load_test(FolderNames,FileName,StructNames)
             for iField=1:length(FldNames)
                 M.(FldNames{iField})=S.(FldNames{iField});
             end
+            fprintf("%s is Loaded\n",FolderNames{iFile})
+
         end
 
     elseif nargin ==3
@@ -30,6 +32,8 @@ function M=load_test(FolderNames,FileName,StructNames)
                 StructLabel=StructNames{iStruct};
                 M.(ExpStruct).(StructLabel)=S.(ExpStruct).(StructLabel);
             end
+            fprintf("%s is Loaded\n",FolderNames{iFile})
+
         end
 
     elseif nargin == 1
@@ -46,6 +50,8 @@ function M=load_test(FolderNames,FileName,StructNames)
             for iField=1:length(FldNames)
                 M.(FldNames{iField})=S.(FldNames{iField});
             end
+            fprintf("%s is Loaded\n",FolderNames{iFile})
+
         end
     end
 end

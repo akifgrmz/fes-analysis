@@ -86,7 +86,7 @@ end
 AnaExpName= AnaExpNames(4); %% Occ Trials
 % Only the test at feb29 has a non def stim vec
 
-if ExpStruct=="feb29_24"
+if FolderName=="feb29_24"
     DefStimMVCVec=[0 10 12 15 ];
 else
     DefStimMVCVec=[0 10 20 30 ];
@@ -94,7 +94,11 @@ end
 DefVoliMVCVec=[10 20 30 40];
 
 if isfield(temp.handles.ExpTrials, 'StimMVCVec')
-    S.(ExpStruct).(AnaExpName).StimMVCVec=temp.handles.ExpTrials.StimMVCVec;
+    if any(FolderName==["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25"])
+        S.(ExpStruct).(AnaExpName).StimMVCVec=DefStimMVCVec;
+    else
+        S.(ExpStruct).(AnaExpName).StimMVCVec=temp.handles.ExpTrials.StimMVCVec;
+    end
 else 
     S.(ExpStruct).(AnaExpName).StimMVCVec=DefStimMVCVec;
 end
