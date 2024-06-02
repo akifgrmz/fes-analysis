@@ -92,7 +92,6 @@ for iTest=1:length(TestFolders)
         TrialNum=IndTrials(iTrial);
         cm=lines(length(IndTrials));
         
-
         MAV_vEMG=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameInd,:).('MAV_vEMG');
 
         figure(1)    
@@ -147,22 +146,22 @@ legend()
 
 %%
 % # Comparing MWave and Voli MAV
-
+TestFolders= "feb29_24";
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     TestLabel=sprintf("%s_test",TestFolders{iTest});
 
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
-    sMVC=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('sMVC');
-    OccMeans=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(sMVC==0,:).('Mean');    
-    OccStds=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(sMVC==0,:).('Std');
-    MVCRange=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps(sMVC==0,:).('vMVC');
+    sMVC=S.(AnaLabel).(ExpLabel).MAV_Mean.('sMVC');
+    OccMeans=S.(AnaLabel).(ExpLabel).MAV_Mean(sMVC==0,:).('Mean');    
+    OccStds=S.(AnaLabel).(ExpLabel).MAV_Mean(sMVC==0,:).('Mean_Std');
+    MVCRange=S.(AnaLabel).(ExpLabel).MAV_Mean(sMVC==0,:).('vMVC');
     
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('RC');
     RCMeans=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('Mean'));
     RCStds=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('Std'));
     PWPoints=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('PW'));
-
+    PWPoints(end)=PWPoints(end);
     figure(1)
     subplot(length(TestFolders),2,2*iTest-1)
     bar(MVCRange,OccMeans)
@@ -243,7 +242,6 @@ for iTest=1:length(TestFolders)
                 clear MAV_ref
                 for iRefTrial=1:length(RefIndTrial)
                     TrialLabel2=sprintf("Trial_%d",RefIndTrial(iRefTrial));
-                    
                     
                     MAV_ref=S.(AnaLabel).(ExpLabel).(TrialLabel2).Unfilt.Feats(FrameRangeInd,:).('MAV_vEMG');
                     rmse(iRefTrial)=sqrt( sum((MAV_filt-MAV_ref).^2)/mean(MAV_ref));%/length(MAV_filt);

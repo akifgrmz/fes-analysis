@@ -56,12 +56,12 @@ for iField=1:length(ExpID)
     ExpRuns(iField)=S.(ExpStruct).(AnaExpName).ExpRun;
 end
 S.(ExpStruct).ExpRuns=ExpRuns;
+
 % S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
 % S.(ExpStruct).FatigueTrials=temp.handles.FatigueTrials;
 % S.(ExpStruct).CustomTrials=temp.handles.CustomTrials;
 % S.(ExpStruct).OccTrials=temp.handles.ExpTrials;
 % S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
-
 % if isfield(temp.handles, 'RCRampTrials')
 %     S.(ExpStruct).RCRampTrials=temp.handles.RCRampTrials;
 % end
@@ -121,6 +121,7 @@ else
     S.(ExpStruct).ExpPar.DataInd=["EMG","Trigger","Force","PW","Time", "Torque"];
 
 end
+
 S.(ExpStruct).ExpPar.DataIndTable=table(1,2,3,4,5,6,'VariableNames',S.(ExpStruct).ExpPar.DataInd);
 
 S.(ExpStruct).ExpPar.ExpLabels=AnaExpNames;
@@ -285,6 +286,7 @@ mrg=[1.8 2 1];
 sample_t=S.(ExpStruct).ExpPar.sample_t;
 fs=1/sample_t;
 TurnOffInd=4;
+
 S.(ExpStruct).RCCurveTrials.StimProfile=10; % Stim turn off time 
 S.(ExpStruct).OccTrials.StimProfile=15; % Stim turn off time 
 S.(ExpStruct).FatigueTrials.StimProfile=35;
@@ -326,28 +328,6 @@ end
 
 S.(ExpStruct).ExpPar.fs_calc=fs;
 S.(ExpStruct).ExpPar.sample_t_calc=sample_t;
-
-
-
-
-
-
-%---------------------
-
-% S.(ExpStruct).OccTrials.Trial_48=temp.handles.ExpTrials.Trial_16;
-
-%---------------------
-%        for iRedo=1:NumofRedos
-% 
-%             RedoLabel=sprintf('RedoTrial_%d',RedoTrials(iRedo));
-%             
-%             dt=S.(ExpStruct).(ExpLabel).(RedoLabel).data;
-%             [r,~]=size(dt);
-%             T=array2table(dt,'VariableNames',DataInd);
-%         
-%             S.(ExpStruct).(ExpLabel).(RedoLabel).data=T;
-%        end
-
 
 %
 % Saving as struc

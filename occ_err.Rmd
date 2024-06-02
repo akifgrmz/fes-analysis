@@ -290,6 +290,7 @@ p3<-ggplot(dropped_err, aes(x =  VoliMVC , y = Occ_MAV, color = StimMVC))+
 #  geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
 #      facet_wrap(~Test)
 p3
+
 ```
 
 

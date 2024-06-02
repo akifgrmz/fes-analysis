@@ -7,37 +7,41 @@ FolderNames={'jan7'};  %% Folders to be loaded
 FileNames={'jan7_test'};  %% Files to be loaded 
 
 % TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
-TimeRange=[4 22];  % in seconds
-PlotRange=[ 41 44 ];  % Trial
 iExp=4;    % pick an exp to plot 
 
 M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);
 ExpStruct=Fields{iTestPlot};
 ExpLabels=M.(ExpStruct).ExpPar.ExpLabels;
-ExpLabel=ExpLabels{iExp};
-DataInd= M.(ExpStruct).ExpPar.DataInd;
+%%
+FolderNames=['mar20_24'];  %% Folders to be loaded 
 
-iForce=table2array(DataInd(:,"Force"));
-iTrigger=table2array(DataInd(:,"Trigger"));
-iEMG=table2array(DataInd(:,"EMG"));
-iTime=table2array(DataInd(:,"Time"));
-iPW=table2array(DataInd(:,"PW"));
+PlotRange=[ 13 14 ];  % Trial
+TimeRange=[4 22];  % in seconds
+ExpStruct=sprintf('%s_test',FolderNames);
+DataInd= S.(ExpStruct).ExpPar.DataIndTable;
+iForce=DataInd.("Force");
+iTrigger=(DataInd.("Trigger"));
+iEMG=(DataInd.("EMG"));
+iTime=(DataInd.("Time"));
+iPW=(DataInd.("PW"));
 TableInd=DataInd.Properties.VariableNames;
 
+close all
 for iTrial=PlotRange(1):PlotRange(2)
     TrialLabel=sprintf('Trial_%d',iTrial);
-    
-    Time=M.(ExpStruct).(ExpLabel).(TrialLabel).data.(TableInd{iTime});
+    ExpLabel=S.(ExpStruct).ExpPar.ExpLabels(4);
+
+    Time=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTime);
     TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
     
-    EMG=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iEMG});
-    Trigger=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iTrigger});
-    Force=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iForce});
-    PW=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iPW});
+    EMG=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iEMG);
+    Trigger=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iTrigger);
+    Force=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iForce);
+    PW=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iPW);
     figure(iTrial)
     subplot(2,1,1)
-    plot(Time(TimeInd),Trigger/5,'r','LineWidth',1)
+    plot(Time(TimeInd),Trigger/2,'r','LineWidth',1)
     hold
     plot(Time(TimeInd),EMG,'b','LineWidth',2)
     legend({'Trigger(a.u.)','Raw EMG (mV)'})
@@ -45,7 +49,7 @@ for iTrial=PlotRange(1):PlotRange(2)
     xlabel('Time (s)')
     
     subplot(2,1,2)
-    plot(Time(TimeInd),PW/20,'r','LineWidth',1)
+    plot(Time(TimeInd),PW,'r','LineWidth',1)
     hold
     plot(Time(TimeInd),Force,'b','LineWidth',2)
     legend({'PW (a.u.)','Force(N)'})
@@ -60,5 +64,5 @@ for iTrial=PlotRange(1):PlotRange(2)
 %     ylabel(DataLabels{iEMG})
 
 end
-OccTable=M.(ExpStruct).OccTrials.RepTableMat;
+OccTable=S.(ExpStruct).OccTrials.RepTableMat;
 OccTable=[[1:length(OccTable)]' OccTable]
