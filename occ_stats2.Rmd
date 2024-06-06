@@ -267,7 +267,7 @@ g2<-ggplot(plot_tibble, aes(x =  MVC_Voli, y = Occ_Dropped_mvc, color = MVC_Stim
   geom_point()+
   geom_smooth(method = "lm")+
   facet_wrap(~Test)
-g3<-ggplot(plot_tibble, aes(x =  MVC_Voli, y = Occ_Hybrid_mvc, color = MVC_Stim_Cat))+
+g3<-ggplot(plot_tibble, aes(x =  MVC_Voli, y = Occ_Hybrid_mvc, color = MVC_Stim_Cat))+ 
   geom_point()+
   geom_smooth(method = "lm")+
   facet_wrap(~Test)
