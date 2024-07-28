@@ -208,7 +208,7 @@ suppressWarnings(print(p1))
 
 
 ```{r }
-simp_tipple<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='Hand')%>%select(Occ_mvc,Occ_Dropped_mvc,MVC_Stim_Cat,MVC_Voli,MVC_Stim,v_mvc,Feat)
+simp_tipple<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='Force')%>%select(Occ_mvc,Occ_Dropped_mvc,MVC_Stim_Cat,MVC_Voli,MVC_Stim,v_mvc,Feat)
 
 simp_tipple$Occ_Dropped_mvc<-simp_tipple$Occ_Dropped_mvc*-1
 
@@ -392,9 +392,9 @@ p1/p2 -p3
 ```{r Individualized vs Avg occ errors}
 
 filt="GS"
-type='Occ_mvc'
+type='Occ_Dropped_mvc'
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type==type)
-Log=TRUE
+Log=FALSE
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")
 
 p1<-ggplot(filter(occ_err,LogModel==Log), aes(x =  VoliMVC , y = Effort_e_Amp_err , color = MVC_Stim_Cat)) +
@@ -464,7 +464,7 @@ p1/p2/p3-p4/p5
 
 ```{r }
 filt="GS"
-type='Occ_Hybrid_mvc'
+type='Occ_mvc'
 Log=TRUE
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type!=type,LogModel==Log)%>%
   select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC)
@@ -543,9 +543,10 @@ mean_err_type<-occ_err_long %>% group_by(Occ_Error_Type)  %>% summarise( "Mean"=
 ```{r }
 filt="GS"
 type='Occ_Hybrid_mvc'
-Log=TRUE
+Log=FALSE
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type!=type,LogModel==Log)%>%
   select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC)
+
 occ_err_wide<-occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
 
 occ_err_long<-occ_err_wide%>%pivot_longer(cols=c('Occ_mvc','Occ_Dropped_mvc','Effort_e_Amp_err'),
@@ -593,6 +594,7 @@ p2<-ggplot(occ_err_long, aes(x =  Occ_Error_Type , y = Error,color=Occ_Error_Typ
      subtitle = "                                 (c)  ")+
     scale_color_hue(labels=c('Occlusion Corrected', 'Uncorrected', 'Force Based'),name="Correction")+
     theme(legend.position = c(0.7, 0.2))
+
 
 p3<-ggplot(occ_err1, aes(x =  Filt , y = Effort_Amp_err , color = Filt)) +
     geom_boxplot(notch=TRUE)+

@@ -32,7 +32,7 @@ clear all
 % TestFolders=["oct25"];
 % TestFolders=[ "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 TestFolders=["jan7" "jan11" "jan12" ];
-TestFolders=["jun20_24" "jul9_24" "jul21_24"  ]
+% TestFolders=["jun20_24" "jul9_24" "jul21_24"  ]
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
@@ -146,7 +146,7 @@ for iTest=1:length(TestFolders)
 
     
     BPOrder=20;
-    fcutlow = 20;
+    fcutlow = 10;
     fcuthigh = 500;
     
     d1=designfilt('bandpassiir','FilterOrder',BPOrder, ...
@@ -235,7 +235,7 @@ end
 
 
 %
-%% Fixing PW invalid values issue (-inf)
+%%Fixing PW invalid values issue (-inf)
 %
 
 clc
@@ -531,7 +531,7 @@ for iTest=1:length(TestFolders)
             BegofFrames= S.(AnaLabel).(ExpLabel).(TrialLabel).BegofFrames;
             NumofFrames=length(BegofFrames);
 
-            clear y x f t tg FrameLengths PWFrames TmFrames
+            clear y x f t tg FrameLengths PWFrames TmFrames h
             for iFrame=1:NumofFrames-1
                 FrameLengths(iFrame)=-BegofFrames(iFrame)+BegofFrames(iFrame+1);
                 % # BP filt EMG
@@ -575,7 +575,7 @@ for iTest=1:length(TestFolders)
 end
 
 
-%% Extracting Dropped Frames 
+%%Extracting Dropped Frames 
 clc
 ExpTable=S.(AnaLabel).AnaPar.ExpTable;
 VarNames=string(ExpTable.Properties.VariableNames);
@@ -1487,7 +1487,7 @@ for iTest=1:length(TestFolders)
 %         'VariableNames',["Rep1" "Rep2" "Rep3"]) Amp_Modul_Mean_Reps(:,'sMVC') Amp_Modul_Mean_Reps(:,'vMVC')];
 end
 
-%% Normalize the Features over zero stim trials
+%%Normalize the Features over zero stim trials
 FeatLabels=string(S.(AnaLabel).AnaPar.FeatLabels);
 % VoliMVCLevels=[10 20 30 40 ];
 % StimMVCLevels=[0 10 20 30 ];
@@ -1543,7 +1543,7 @@ for iFeat=1:1
     end
 end
 
-%% Theoretical and Actual MVC MAV 
+%%Theoretical and Actual MVC MAV 
 
 NumofUpdate=4; % table mvc_table is updated 4 times inside loop below
 NumofVariables=4;
@@ -1608,6 +1608,7 @@ for iTest=1:length(TestFolders)
     S.(AnaLabel).(ExpLabel).MVCTable= array2table(mvc_table,'VariableNames',["MVC" "Type" "Theo" "Test"]);
 
 end       
+
 
 %% Saving the results
 

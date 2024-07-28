@@ -12,9 +12,9 @@ TestFolders=["jan7" "jan11" "jan12" "feb28_24"  ];
 TestFolders=["jun20_24" "jul9_24" "jul21_24"];
 TestFolders=["jan7" "jan11" "jan12"];
 
-suffix=[];
+suffix="new";
 for iTest=1:length(TestFolders)
-    TestFiles(iTest)=sprintf("%s_ana%s",TestFolders{iTest},suffix);
+    TestFiles(iTest)=sprintf("%s_ana%s",TestFolders{iTest},suffix)
 end
 
 S = load_test(TestFolders,TestFiles);
@@ -53,11 +53,11 @@ for iTest=1:length(TestFolders)
     PreStimOffRange= [StimOff-1 StimOff ];
     PostStimOffRange=[StimOff+.2 StimOff+.3];
     ttl=sprintf('Stim: %d%%, Voli: %d%%',sMVC,vMVC);
-    
+    EffortLabel=S.(TestLabel).ExpPar.EffortType;
     for iTrial=1:length(IndTrials)
     
         TrialLabel=sprintf('Trial_%d',IndTrials(iTrial));
-        EffortMea=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Hand');
+        EffortMea=S.(AnaLabel).(ExpLabel).(TrialLabel).data.(EffortLabel);
         MAV=S.(AnaLabel).(ExpLabel).(TrialLabel).Unfilt.Feats.('MAV_vEMG');
 
         FiltMAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).FiltFeats.('Filt_MAV_vEMG');
@@ -127,7 +127,7 @@ subplot(3,1,3)
 grid on
 ylabel("Norm. MAV")
 legend()
-ylim([0 .3])
+% ylim([0 .3])
 
 
 %% Plotting Dropped Frames with Voli only trials
