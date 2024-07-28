@@ -1,4 +1,4 @@
-function []=save_test(Tests,S)
+function []=save_test(Tests,S,suffix)
 % Type: save_test(TestFolders,S) to save the analysis.
 %This function saves the analysis results to their corresponding test
 % folders 
@@ -9,9 +9,15 @@ for iTest=1:length(Tests)
     TestStruct=sprintf("%s_test",Tests{iTest});
     AnaStruct=sprintf("%s_ana",Tests{iTest});
 
-    str=sprintf('%s/%s',Tests{iTest},AnaStruct);
+    if nargin==3
+        FileName=sprintf("%s_ana%s",Tests{iTest},suffix);
+    else
+        FileName=sprintf("%s_ana",Tests{iTest});
+    end
+
+    str=sprintf('%s/%s',Tests{iTest},FileName);
     save(str,'-struct','S',TestStruct,AnaStruct)
-    fprintf("%s is Saved (%d/%d)\n",Tests{iTest},iTest,length(Tests))
+    fprintf("%s is Saved (%d/%d)\n",AnaStruct,iTest,length(Tests))
 end
     
 end

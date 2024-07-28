@@ -1,4 +1,4 @@
-function S=tidy_data(FolderNames)
+function S=tidy_data(FolderName,save)
 %% This script is for tidying the data after a test with a participant
 % Enter a string or char of the folder name where raw data is located. raw file
 % name must be "expsave.mat"
@@ -9,10 +9,10 @@ function S=tidy_data(FolderNames)
 % FolderNames=["nov8", "nov28_2","dec5"];  % Foldername to be loaded
 % FolderNames=["dec5","nov28_2","nov27","nov8","nov7"]; 
 
-FolderName=string(FolderNames);
+FolderName=string(FolderName);
 
-FileName='expsave';     % File name
-ExpStruct=sprintf('%s_test',FolderName);
+FileName='expsave';    
+ExpStruct=sprintf("%s_test",FolderName);
 AnaStruct=sprintf('%s_ana',FolderName);
 
 str=sprintf('%s/%s.mat',FolderName,FileName);
@@ -122,8 +122,8 @@ else
 
 end
 
-S.(ExpStruct).ExpPar.DataIndTable=table(1,2,3,4,5,6,'VariableNames',S.(ExpStruct).ExpPar.DataInd);
 
+S.(ExpStruct).ExpPar.DataIndTable=array2table(1:length(S.(ExpStruct).ExpPar.DataInd),'VariableNames',S.(ExpStruct).ExpPar.DataInd);
 S.(ExpStruct).ExpPar.ExpLabels=AnaExpNames;
 S.(ExpStruct).ExpPar.ExpLabelsTable=table(1,2,3,4,5,6,'VariableNames',AnaExpNames);
     
@@ -265,6 +265,18 @@ if isfield(S.(ExpStruct).RCCurveTrials, 'PWTrials')
 end
    
 
+if isfield(temp.handles, 'EffortType')
+    
+    S.(ExpStruct).ExpPar.EffortType=temp.handles.EffortType;
+else
+    S.(ExpStruct).ExpPar.EffortType="Force"; 
+end
+
+if isfield(temp.handles, 'ExpLabels')
+    S.(ExpStruct).ExpPar.ExpLabels=temp.handles.ExpLabels;
+
+end
+
 % Stim Range for trials : might change for future trials
 
 S.(ExpStruct).OccTrials.StimRange=[5 15];
@@ -332,10 +344,12 @@ S.(ExpStruct).ExpPar.sample_t_calc=sample_t;
 %
 % Saving as struc
 %
+% 
+% if nargin==2 & save==true
+%     str=sprintf('%s/%s',FolderName,ExpStruct)
+%     save(str,'-struct','S',ExpStruct)
+%     str=sprintf("%s.mat is created",ExpStruct);
+%     disp(str)
+% end
 
-str=sprintf('%s/%s',FolderName,ExpStruct);
-save(str,'-struct','S',ExpStruct)
-
-str=sprintf("%s.mat is created",ExpStruct);
-disp(str)
 end

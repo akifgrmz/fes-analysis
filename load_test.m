@@ -8,50 +8,54 @@ function M=load_test(FolderNames,FileName,StructNames)
 %----> Modify so that it does load the tests already loaded
 
 
-    if nargin ==2
+    if nargin ==3
         for iFile=1:length(FolderNames)
             ExpStruct=sprintf('%s',char(FileName{iFile}));
             str=sprintf('%s/%s',char(FolderNames{iFile}),ExpStruct);
             S=load (str);
             FldNames = fieldnames(S);
-            for iField=1:length(FldNames)
-                M.(FldNames{iField})=S.(FldNames{iField});
+
+            for iStruct=1:length(StructNames)
+                StructLabel=StructNames{iStruct};
+                M.(ExpStruct).(StructLabel)=S.(ExpStruct).(StructLabel);
             end
+
             fprintf("%s is Loaded (%d/%d)\n",FolderNames{iFile},iFile,length(FolderNames))
 
         end
 
-    elseif nargin ==3
-        
+    elseif nargin ==2
         for iFile=1:length(FolderNames)
             ExpStruct=sprintf('%s',char(FileName{iFile}));
             str=sprintf('%s/%s',char(FolderNames{iFile}),ExpStruct);
             S=load (str);
             FldNames = fieldnames(S);
-            for iStruct=1:length(StructNames)
-                StructLabel=StructNames{iStruct};
-                M.(ExpStruct).(StructLabel)=S.(ExpStruct).(StructLabel);
+
+            for iField=1:length(FldNames)
+                M.(FldNames{iField})=S.(FldNames{iField});
             end
             fprintf("%s is Loaded (%d/%d)\n",FolderNames{iFile},iFile,length(FolderNames))
 
         end
 
     elseif nargin == 1
+            for iFile=1:length(FolderNames)
+                FileName=sprintf('%s_ana',char(FolderNames{iFile}));
+                str=sprintf('%s/%s',char(FolderNames{iFile}),FileName);
+                S=load (str);
+                FldNames = fieldnames(S);
 
-        error('Enter a cell of strings that has at least length of 1 ')
-    
+                for iField=1:length(FldNames)
+                    M.(FldNames{iField})=S.(FldNames{iField});
+                end
+
+                fprintf("%s is Loaded (%d/%d)\n",FolderNames{iFile},iFile,length(FolderNames))
+
+            end
+
     elseif nargin == 0
         
-        for iFile=1:length(FolderNames)
-            FileName=sprintf('%s_ana',char(FolderNames{iFile}));
-            str=sprintf('%s/%s',char(FolderNames{iFile}),FileName);
-            S=load (str);
-            FldNames = fieldnames(S);
-            for iField=1:length(FldNames)
-                M.(FldNames{iField})=S.(FldNames{iField});
-            end
-            fprintf("%s is Loaded (%d/%d)\n",FolderNames{iFile},iFile,length(FolderNames))
+        error('Enter a cell of strings that has at least length of 1 ')
 
-        end
     end
 end
