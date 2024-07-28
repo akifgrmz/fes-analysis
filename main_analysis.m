@@ -4,7 +4,7 @@
 %% Run tidy_data once for each experiment 
 % 
 %
-
+ %% DENEME
 clear all
 %TestFolders=["feb28_24" ];
 %TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25" "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
