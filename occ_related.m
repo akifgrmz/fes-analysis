@@ -10,7 +10,7 @@ TestFolders=[  "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 TestFolders=[ "feb28_24" "feb29_24" "mar20_24"  ];
 TestFolders=["jan7" "jan11" "jan12" "feb28_24"  ];
 TestFolders=["jun20_24" "jul9_24" "jul21_24"];
-TestFolders=["jan7" "jan11" "jan12"];
+TestFolders=["jan7" "jan11" "jan12" "oct25" ];
 
 suffix="new";
 for iTest=1:length(TestFolders)
@@ -85,7 +85,7 @@ for iTest=1:length(TestFolders)
         
         figure(2)
         subplot(3,1,1)
-        plot(MAVInd,MAV,'-o','Color',cm(iTest,:),'DisplayName',TestName)
+        plot(MAVInd,MAV,'o','Color',cm(iTest,:),'DisplayName',TestName)
         hold on
         plot(DroppedInd,DroppedMAV,'*','Color',cm(iTest,:),'LineWidth',2,'DisplayName',TestName)
         
@@ -239,11 +239,11 @@ for iTau=1:length(OccRefs)
 
         EffortType=S.(TestLabel).ExpPar.EffortType;
 
-        % MAV_max=S.(AnaLabel).(ExpLabel).MAV_MAX_theo;            %% MAV_MAX replacement 
-        % AmpModul_MAV_max=S.(AnaLabel).(ExpLabel).AmpModul_max_theo;
+        MAV_max=S.(AnaLabel).(ExpLabel).MAV_MAX_theo;           %% MAV_MAX replacement 
+        AmpModul_MAV_max=S.(AnaLabel).(ExpLabel).AmpModul_max_theo;
         
-        MAV_max=S.(AnaLabel).(ExpLabel).MAV_MAX;
-        AmpModul_MAV_max=S.(AnaLabel).(ExpLabel).AmpModul_MAV_MAX;
+%         MAV_max=S.(AnaLabel).(ExpLabel).MAV_MAX
+%         AmpModul_MAV_max=S.(AnaLabel).(ExpLabel).AmpModul_MAV_MAX;
 
         MVC=S.(TestLabel).(ExpLabel).MVC;
         stim_freq=S.(TestLabel).ExpPar.stim_freq;
@@ -693,12 +693,11 @@ plot([1 3],[.05 .05 ],'LineWidth',2,'Color','r','DisplayName','Alpha')
 % Implementing the correction for occlusion
 
 OccKickOffLevel=0.3;  % Percent effort
-
 ErrMat=[];
 LogModel= "false" ;
 FeattoAna="Filt_MAV_vEMG";
 RampTime=[5 10];
-ConstTime=[6 11];
+ConstTime=[10 15];
 TurnOffTime=[11 12];
 RampInd=stim_freq*RampTime(1):stim_freq*RampTime(2);
 ConstInd=stim_freq*ConstTime(1):stim_freq*ConstTime(2);
@@ -804,8 +803,8 @@ for iModel=1:length(LogModel)
                     Filt_Feats=Filt_Feats(1:end-1);                                              %% ---_Fix This 
                         % Need error against dropped frames 
                     % 2-MAV
-    %                     Effort_e_MAV=(Filt_Feats-MAV_Noise)/(MAV_MAX-MAV_Noise)*100;
-                    Effort_e_MAV=Filt_Feats/MAV_MAX;
+                        Effort_e_MAV=(Filt_Feats-MAV_Noise)/(MAV_MAX-MAV_Noise)*100;
+%                     Effort_e_MAV=Filt_Feats/MAV_MAX;
                     Effort_MAV=Effort_e_MAV+Effort_o;
                     Effort_MAV_Indv=Effort_e_MAV+Effort_o_Indv;
 
@@ -1052,7 +1051,7 @@ for iTest=1:length(TestFolders)
     NormCoef=polyval(p,100); %% --- >>> Update based on mainanalysis
     % NormCoef=S.(AnaLabel).(ExpLabel).AmpModul_MAV_MAX;
 
-    % NormCoef=S.(AnaLabel).(ExpLabel).MAV_MAX;
+    NormCoef=S.(AnaLabel).(ExpLabel).MAV_MAX;
 
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
 

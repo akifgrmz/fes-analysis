@@ -17,7 +17,7 @@ for iTest=1:length(Tests)
 
     str=sprintf('%s/%s',Tests{iTest},FileName);
     save(str,'-struct','S',TestStruct,AnaStruct)
-    fprintf("%s is Saved (%d/%d)\n",AnaStruct,iTest,length(Tests))
+    fprintf("%s is Saved (%d/%d)\n",FileName,iTest,length(Tests))
 end
     
 end

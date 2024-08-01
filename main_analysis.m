@@ -4,12 +4,12 @@
 %% Run tidy_data once for each experiment 
 % 
 %
- %% DENEME
+
 clear all
 %TestFolders=["feb28_24" ];
 %TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25" "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 % TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
-TestFolders=["jan7" "jan11" "jan12" ];
+TestFolders=["jan7" "jan11" "jan12"  "oct25" ];
 % TestFolders=["jun20_24" ]
 
 for iTest=1:length(TestFolders)
@@ -31,7 +31,7 @@ clear all
 % TestFolders=[ "apr20" "oct11" "oct18"];
 % TestFolders=["oct25"];
 % TestFolders=[ "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
-TestFolders=["jan7" "jan11" "jan12" ];
+TestFolders=["jan7" "jan11" "jan12" "oct25" ];
 % TestFolders=["jun20_24" "jul9_24" "jul21_24"  ]
 
 for iTest=1:length(TestFolders)
@@ -902,7 +902,7 @@ PlotTime=[ 12 13];
 % PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
 PlotFrame=floor([ 333 337]);
 
-TeststoPlot=TestFolders([2]);
+TeststoPlot=TestFolders([4]);
 
 for iTest=1:length(TeststoPlot)
     TestLabel=sprintf("%s_test",TeststoPlot(iTest));
@@ -1153,7 +1153,7 @@ end
 
 %% Plotting EMG Features 
 clc
-AnaLabel=sprintf('%s_ana',TestFolders(1));
+AnaLabel=sprintf('%s_ana',TestFolders(4));
 ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
 TimeRange=[0.1 13];
 TrialNum=[  4];
@@ -1543,12 +1543,15 @@ for iFeat=1:1
     end
 end
 
-%%Theoretical and Actual MVC MAV 
+%% Theoretical and Actual MVC MAV 
 
 NumofUpdate=4; % table mvc_table is updated 4 times inside loop below
 NumofVariables=4;
 mvc_table=strings(NumofUpdate*length(TestFolders),NumofVariables);
 MVC_Percent=100;
+sMVC_Ref=0;
+AvgTimeMVC=2;
+
 for iTest=1:length(TestFolders)
     
     % MAV_MAX = avg MAV at the last 2 seconds
@@ -1557,9 +1560,7 @@ for iTest=1:length(TestFolders)
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('MVC');
     stim_freq=S.(TestLabel).ExpPar.stim_freq;
 
-    AvgTimeMVC=2;
-    AvgInd=stim_freq*AvgTimeMVC-5;
-    sMVC_Ref=0;
+    AvgInd=stim_freq*AvgTimeMVC-10;
 
     FiltLabel="Unfilt";
     TrialsMAV=zeros(1,S.(TestLabel).(ExpLabel).NumofTrials);
@@ -1569,14 +1570,15 @@ for iTest=1:length(TestFolders)
 
         TrialsMAV(iTrial) = mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel)...
             .Feats(end-AvgInd:end,:).('MAV_vEMG'));
+        
         TrialsAmp_MAV(iTrial) = mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel)...
             .AmpModulFeats(end-AvgInd:end,:).('Amp_MAV_vEMG'));
     end
     
-    MAV_max=mean(TrialsMAV);
+    MAV_max=max(TrialsMAV);
     S.(AnaLabel).(ExpLabel).MAV_MAX=MAV_max;
 
-    AmpModul_MAV_max=mean(TrialsAmp_MAV);
+    AmpModul_MAV_max=max(TrialsAmp_MAV);
     S.(AnaLabel).(ExpLabel).AmpModul_MAV_MAX=AmpModul_MAV_max;
     
     mvc_table(iTest*NumofUpdate-3,:)=[ MAV_max "MAV" false TestFolders(iTest) ];        

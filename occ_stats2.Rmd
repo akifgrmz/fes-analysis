@@ -358,7 +358,7 @@ occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type=="Occ_mvc", Log
 
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")
 
-p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_e_Amp_err , color = MVC_Stim_Cat)) +
+p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_e_MAV_err , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
@@ -367,7 +367,7 @@ p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_e_Amp_err , color = MVC_Stim_C
     title = "Effort Estimation Error before Occlusion Correction",
     subtitle = sprintf('%s filtered results',filt))
 
-p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_Amp_err , color = MVC_Stim_Cat)) +
+p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_MAV_err , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
@@ -376,7 +376,7 @@ p2<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_Amp_err , color = MVC_Stim_Cat
     title = "Effort Estimation Error after Occlusion Correction",
     subtitle = sprintf(' %s filtered results',filt))
 
-p3<-ggplot(occ_err1, aes(x =  VoliMVC , y = Effort_Amp_err , color = Filt)) +
+p3<-ggplot(occ_err1, aes(x =  VoliMVC , y = Effort_MAV_err , color = Filt)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
