@@ -3,47 +3,53 @@
 clear all
 close all
 iTestPlot=1;  % pick a test to plot 
+FolderNames={'jan7'};  %% Folders to be loaded 
+FileNames={'jan7_test'};  %% Files to be loaded 
+
+% TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
 iExp=4;    % pick an exp to plot 
-FolderNames={'feb27'};  %% Folders to be loaded 
-FileNames={'feb27_test'};  %% Files to be loaded 
 
 M = load_test(FolderNames,FileNames);
 Fields = fieldnames(M);
 ExpStruct=Fields{iTestPlot};
 ExpLabels=M.(ExpStruct).ExpPar.ExpLabels;
-ExpLabel=ExpLabels{iExp};
-DataInd= M.(ExpStruct).ExpPar.DataInd;
-TimeRange=[4 22];  % in seconds
-PlotRange=[ 35 35 ]; 
+%%
+FolderNames=['mar20_24'];  %% Folders to be loaded 
 
-iForce=table2array(DataInd(:,"Force"));
-iTrigger=table2array(DataInd(:,"Trigger"));
-iEMG=table2array(DataInd(:,"EMG"));
-iTime=table2array(DataInd(:,"Time"));
-iPW=table2array(DataInd(:,"PW"));
+PlotRange=[ 13 14 ];  % Trial
+TimeRange=[4 22];  % in seconds
+ExpStruct=sprintf('%s_test',FolderNames);
+DataInd= S.(ExpStruct).ExpPar.DataIndTable;
+iForce=DataInd.("Force");
+iTrigger=(DataInd.("Trigger"));
+iEMG=(DataInd.("EMG"));
+iTime=(DataInd.("Time"));
+iPW=(DataInd.("PW"));
 TableInd=DataInd.Properties.VariableNames;
 
+close all
 for iTrial=PlotRange(1):PlotRange(2)
     TrialLabel=sprintf('Trial_%d',iTrial);
-    
-    Time=M.(ExpStruct).(ExpLabel).(TrialLabel).data.(TableInd{iTime});
+    ExpLabel=S.(ExpStruct).ExpPar.ExpLabels(4);
+
+    Time=S.(ExpStruct).(ExpLabel).(TrialLabel).data(:,iTime);
     TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
     
-    EMG=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iEMG});
-    Trigger=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iTrigger});
-    Force=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iForce});
-    PW=M.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).(TableInd{iPW});
+    EMG=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iEMG);
+    Trigger=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iTrigger);
+    Force=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iForce);
+    PW=S.(ExpStruct).(ExpLabel).(TrialLabel).data(TimeInd,iPW);
     figure(iTrial)
     subplot(2,1,1)
-    plot(Time(TimeInd),Trigger/5,'r','LineWidth',1)
+    plot(Time(TimeInd),Trigger/2,'r','LineWidth',1)
     hold
     plot(Time(TimeInd),EMG,'b','LineWidth',2)
-    legend({'Trigger(a.u.)','Raw EMG (a.u.)'})
+    legend({'Trigger(a.u.)','Raw EMG (mV)'})
     title('Trigger and EMG Signal')
     xlabel('Time (s)')
     
     subplot(2,1,2)
-    plot(Time(TimeInd),PW/20,'r','LineWidth',1)
+    plot(Time(TimeInd),PW,'r','LineWidth',1)
     hold
     plot(Time(TimeInd),Force,'b','LineWidth',2)
     legend({'PW (a.u.)','Force(N)'})
@@ -58,45 +64,5 @@ for iTrial=PlotRange(1):PlotRange(2)
 %     ylabel(DataLabels{iEMG})
 
 end
-OccTable=M.(ExpStruct).OccTrials.RepTableMat;
+OccTable=S.(ExpStruct).OccTrials.RepTableMat;
 OccTable=[[1:length(OccTable)]' OccTable]
-%% Checking the recruitment curves
-% NOT READY
-iTestPlot=2;  % pick a test to plot 
-FolderNames={'nov28_2','dec5'};  %% Folders to be loaded 
-iExp=2;
-TimeRange=[4 22];  % in seconds
-PlotRange=[ 10   15 ]; 
-iForce=3;
-iTrigger=2;
-iEMG=1;
-iTime=5;
-iPW=4;
-
-for iFile=1:length(FolderNames)
-    ExpStruct=sprintf('%s_test',char(FolderNames{iFile}));
-    str=sprintf('%s/%s',char(FolderNames{iFile}),ExpStruct);
-    load (str);
-    fields = fieldnames(S);
-    M.(fields{1})=S.(fields{1});
-end
-
-% works only with dec5 for now 
-ExpStruct=sprintf('%s_test',char(FolderNames{iTestPlot}));
-ExpLabels=M.(ExpStruct).ExpLabels;
-y=M.(ExpStruct).(ExpLabels{iTestPlot}).MeanForce;
-RedoTrials=M.(ExpStruct).(ExpLabels{iTestPlot}).RedoTrials;
-for iRedo=1:length(RedoTrials)
-    RedoLabel=sprintf('RedoTrial_%d',iRedo);
-    y(iRedo)=M.(ExpStruct).(ExpLabels{iTestPlot}).(RedoLabel).AvgForce;
-end
-
-%  gompertz
-
-
-
-function Vars = gompertz(a, PW)
-
-Vars = a(1)*exp(a(2)*exp(a(3)*PW));
-
-end

@@ -1,0 +1,96 @@
+---
+title: "time_constant_stats"
+output: html_document
+date: "2023-03-18"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE  }
+library(magrittr); 
+library(here); 
+library(janitor)
+library(readxl);
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+library(ggpmisc)
+```
+
+
+```{r Data Inject } 
+
+df <- read_csv("tau_estimates2.csv",show_col_types = FALSE)
+
+df<-df%>%mutate(PW = as.integer(PW),
+                     TrialNum = as.integer(TrialNum),
+                     Test = as.factor(Test),
+                     Redo = as.logical(Redo))
+summary(df)
+df
+df <-group_by(df,Test )%>% mutate( MVC_Percent = (PW-min(PW))/max(PW-min(PW))*30 ) 
+
+```
+
+```{r MVC Values Dist.}
+
+ggplot(data = df, aes(x = MVC_Percent, fill = Test)) + geom_histogram(color = "white", bins = 20) +
+labs(title = "",
+x = "%MVC") + guides(fill = FALSE) + facet_grid( ~ Test)
+ 
+```
+
+```{r Plot the time constants}
+
+
+ggplot(df ,aes(x = MVC_Percent, y = TimeConst, color = Test)) +
+  geom_point(stat = "identity", position=position_dodge()) +
+    geom_smooth(method = "lm", se=F)+
+  labs(x = "Percent MVC",
+       y = "Time Const (s)",
+       title = "Time constants of RC Trials",
+       subtitle = " ")+
+  theme_bw()
+
+df %>% group_by(Test) %>% summarise("Pearson r" = round(cor(TimeConst, MVC_Percent, use="complete"),2), "Spearman r" = round(cor(TimeConst, MVC_Percent, method="spearman",use="complete"),2), "Mean"= round(mean(TimeConst),2)) 
+ 
+m1 <- lm(TimeConst ~ Test, data = df) 
+
+tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+```
+
+
+```{r 10 percent and up}
+df_10percent <- df%>% filter (MVC_Percent >= 10)
+
+ggplot(df ,aes(x = MVC_Percent, y = TimeConst)) +
+  geom_point(stat = "identity", position=position_dodge()) +
+    geom_smooth(method = "lm")+
+  labs(x = "Percent MVC",
+       y = "Time Constant (s)",
+       title = "Time Constants of RC Trials",
+       subtitle = "  ") +
+  annotate("text", x = 20, y = 0.5, col = "purple", size = 6,
+label = paste("Pearson r = ", signif(cor(df$MVC_Percent, df$TimeConst),3))) +
+  annotate("text", x = 20, y = 0.6, col = "red", size = 6,
+label = paste("y = ", signif(coef(lm(df$TimeConst ~ df$MVC_Percent))[1],3), signif(coef(lm(df$TimeConst ~ df$MVC_Percent))[2],2), "x"))
+
+
+```
+
+
+
+```{r}
+df-> filter
+ m1 <- lm(TimeConst ~ MVC_Percent, data = df) 
+tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+round(mean(df$TimeConst),3)
+```

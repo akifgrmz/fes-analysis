@@ -12,7 +12,7 @@ fun = @(x) sum((y -y0 * exp(-t/x(1))).^2);
 options = optimoptions('fmincon','Display','off');
 
 % Set the initial guess for the time constant
-x0 = [0.1];
+x0 = [0.01];
 
 % Set the lower and upper bounds for the time constant
 lb = [0 ];

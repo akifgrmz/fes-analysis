@@ -1,7 +1,9 @@
+%% stats_dropped2
+
 %% Stats with dropped frames
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7"];
+TestFolders=["feb27" "mar7" "mar16"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders(iTest));
@@ -17,8 +19,7 @@ TestStruct=sprintf("%s_test",TestFolders{iTest});
 VoliMVCLevels=[10 20 30 40 ];
 StimMVCLevels=[ 0 10 20 30];
 stim_freq=S.(TestStruct).ExpPar.stim_freq;
-TimeRange=[5 15];
-FrameRange=TimeRange*stim_freq;  
+
 boolean DroppedFrameInd;
 TrialColor={'r', 'b', 'k'};
 exp_lbl='Occ';
@@ -34,12 +35,14 @@ x_dropped=ones(0,4);
 x_feat=[];
 
 % Normalization coeffs for the occ trials
+
 sMVC=0;
 vMVC=30;
 MeanRange=[11 14];
 MeanRangeInd=MeanRange*stim_freq;
+S.(TestStruct).(ExpLabel).RepTableMat;
+
 for iTest=1:length(TestFolders)
-    AnaStruct=sprintf("%s_ana",TestFolders(iTest));
     TestStruct=sprintf("%s_test",TestFolders(iTest));
     ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(exp_lbl);
     RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
@@ -56,8 +59,34 @@ for iTest=1:length(TestFolders)
     end 
 end
 
+%%
+clc
+MarginFromDropped=5;  % frames
+TestStruct=sprintf("%s_test",TestFolders{iTest});
+
+VoliMVCLevels=[10 20 30 40 ];
+StimMVCLevels=[ 0 10 20 30];
+stim_freq=S.(TestStruct).ExpPar.stim_freq;
+
+boolean DroppedFrameInd;
+TrialColor={'r', 'b', 'k'};
+exp_lbl='Occ';
+VarNames=["Frame_Val" "Norm_Val" "Target" "Frame" "Filt_Type" "MVC_Voli"...
+    "MVC_Stim"  "Test"  "Feat" "Repeat" "Trial" "Drp_Order"];
+
+NormVoliMVC=20;
+g=strings(1,length(VarNames)-4)+NaN;
+x=ones(0,4);
+
+g_dropped=strings(1,length(VarNames)-4)+NaN;
+x_dropped=ones(0,4);
+x_feat=[];
+
+AnaStruct=sprintf("%s_ana",TestFolders(1));
 
 FeatLabels=string(S.(AnaStruct).AnaPar.FeatLabels);
+ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(exp_lbl);
+sMVCNormLevel=0; % %MVC value for normalization coefficient
 for iFeat=1:1
     FeatLabel=FeatLabels(iFeat);
     
@@ -66,9 +95,14 @@ for iFeat=1:1
         AnaStruct=sprintf("%s_ana",TestFolders{iTest});
 
         RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
-        Voli_NormCoeff(:,iTest)=S.(AnaStruct).(ExpLabel).Voli_NormCoeff;
 
         for iVoli=1:length(VoliMVCLevels)
+            sMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('sMVC');
+            vMVC_Vec=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('vMVC');
+
+            Voli_NormCoeff=S.(AnaStruct).(ExpLabel).MAV_Mean_Reps.('Mean')...
+                (sMVC_Vec==0 & vMVC_Vec==VoliMVCLevels(iVoli));
+
             for iStim=1:length(StimMVCLevels)
                 sMVC=StimMVCLevels(iStim);
                 vMVC=VoliMVCLevels(iVoli);
@@ -82,7 +116,7 @@ for iFeat=1:1
                         FiltLabel=S.(AnaStruct).AnaPar.FiltLabels{iFilt};
                         vEMGLabel=sprintf('%s_vEMG',FeatLabel);
                         
-                        DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
+                        DroppedFeatLabel=sprintf('%s',FeatLabel);
                         DroppedFeat=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel);
                         DroppedFrameNum=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;                        
                         
@@ -93,7 +127,7 @@ for iFeat=1:1
 
                         x_feat=Feat;
                         x_target= Target(setdiff([1:length(Feat)+length(DroppedFeat)]',DroppedFrameNum));   
-                        x_norm=x_feat/Voli_NormCoeff(:,iTest);
+                        x_norm=x_feat/Voli_NormCoeff;
                         x_framenum=FrameNum';
 
                         lg=length(x_feat);
@@ -108,21 +142,20 @@ for iFeat=1:1
 
 
                         g_filt(:)=string(FiltLabel);
-                        g_voli(:)=sprintf("%d%%",(VoliMVCLevels(iVoli)));
-                        g_stim(:)=sprintf("%d%%",(StimMVCLevels(iStim)));
+                        g_voli(:)=sprintf("Voli_%d%%",(VoliMVCLevels(iVoli)));
+                        g_stim(:)=sprintf("Stim_%d%%",(StimMVCLevels(iStim)));
                         g_test(:)=string(TestFolders(iTest));
                         g_feattype(:)=string(FeatLabel);
                         g_rep(:)=sprintf("Rep_%d",iRep);
                         g_trial(:)=string(TrialLabel);
                         g_order(:)=NaN;
                         
-
                         g=[g; g_filt' g_voli' g_stim' g_test' g_feattype' g_rep' g_trial' g_order' ];
                         x=[x ;x_feat x_norm x_target x_framenum ];
                         
                     end
                     
-                    DroppedFeatLabel=sprintf('%s_vEMG',FeatLabel);
+                    DroppedFeatLabel=sprintf('%s',FeatLabel);
                     num_of_dropped=S.(TestStruct).(ExpLabel).num_of_dropped;
                     DroppedFeat=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFeat.(DroppedFeatLabel);
                     DroppedFrameNum=S.(AnaStruct).(ExpLabel).(TrialLabel).DroppedFrames;
@@ -130,7 +163,7 @@ for iFeat=1:1
 
                     x_droppedfeat=DroppedFeat;
                     x_droppedtarget=Target(DroppedFrameNum);
-                    x_droppednorm=x_droppedfeat/Voli_NormCoeff(:,iTest);
+                    x_droppednorm=x_droppedfeat/Voli_NormCoeff;
                     x_droppedframenum=DroppedFrameNum;
 
                     lg_dropped=length(x_droppedfeat);
@@ -145,8 +178,8 @@ for iFeat=1:1
                     g_droppedorder=strings(1,lg_dropped);
 
                     g_droppedfilt(:)="Dropped";
-                    g_droppedvoli(:)=sprintf("%d%%",(VoliMVCLevels(iVoli)));
-                    g_droppedstim(:)=sprintf("%d%%",(StimMVCLevels(iStim)));
+                    g_droppedvoli(:)=sprintf("Voli_%d%%",(VoliMVCLevels(iVoli)));
+                    g_droppedstim(:)=sprintf("Stim_%d%%",(StimMVCLevels(iStim)));
                     g_droppedtest(:)=string(TestFolders(iTest));
                     g_droppedfeattype(:)=string(FeatLabel);
                     g_droppedrep(:)=sprintf("Rep_%d",iRep);
@@ -167,22 +200,6 @@ S.(AnaStruct).(ExpLabel).Dropped_stats=Dropped_stats;
 % % DirLabelCSV=sprintf('%s/%s_dropped.csv',TestFolders{iTest},TestFolders{iTest});
 writetable( Dropped_stats, 'dropped_stats2.csv')
 % save_test(TestFolders,S)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

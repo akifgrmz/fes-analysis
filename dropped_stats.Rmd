@@ -2,7 +2,7 @@
 title: "Dropped_Stats"
 output: html_document
 date: "2023-01-27"
-desc: This file is created for analysis of dropped frames versus vEMG for EMBC2023
+desc: This file is created for analysis of dropped frames for EMBC2023
 # theme: darkly
 ---
 
@@ -75,6 +75,7 @@ dt_means<- dt_means%>%group_by(Filt_Type ) %>% mutate(percent_diff = percent_dif
 dt_means
 
 ```
+
 ```{r boxplots}
 
 dt_mn <- aggregate(dt_means$Filt_Mean_Val, by = list( Test = dt_means$Test, Filt_Type = dt_means$Filt_Type, MVC_Voli = dt_means$MVC_Voli, MVC_Stim =
@@ -91,6 +92,7 @@ ggplot(filter(dt_means,Filt_Type!='Dropped'),aes(x = Test, y = percent_diff, fil
 
 
 ```
+
 ```{r Quick Look}
 
  ggplot(dt, aes(x = "", y = Norm_Val)) + geom_violin() + geom_boxplot(width = 0.4) + coord_flip() + labs(x = "")

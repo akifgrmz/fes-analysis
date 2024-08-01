@@ -1,0 +1,204 @@
+---
+title: "fat_stats"
+output: html_document
+date: "2023-04-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE}
+library(here); 
+library(janitor)
+library(readxl);
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+library(plyr)
+
+```
+
+
+```{r Data Inject } 
+
+fat_stats<- read_csv("fatigue_stats.csv",show_col_types = FALSE) # stats for data inside frames
+fat_byframe<- read_csv("fat_stimonly_force.csv",show_col_types = FALSE) # stats for comparing feats to force reduction among frames
+fat_byframe_data<- read_csv("fat_stimonly_frame.csv",show_col_types = FALSE) # force and feat data for fat_byframe
+fat_stats
+
+```
+
+```{r dataframe modifications}
+
+fat<-fat_stats%>%mutate(Test = as.factor(Test),
+                     Exp = as.factor(Exp),
+                     Filt = as.factor(Filt),
+                     Trial = as.factor(Trial),
+                     Feat = as.factor(Feat),
+                     Segment = as.factor(Segment),
+                     EMG = as.factor(EMG),
+                     LPFilt = as.factor(LPFilt))
+
+fat_byframe<-fat_byframe%>%mutate(Test = as.factor(Test),
+                                  Exp = as.factor(Exp),
+                                  Filt = as.factor(Filt),
+                                  Feat = as.factor(Feat),
+                                  Segment = as.factor(Segment),
+                                  EMG = as.factor(EMG))
+
+fat_byframe_data<-fat_byframe_data%>%mutate(Test = as.factor(Test),
+                                  Exp = as.factor(Exp),
+                                  Filt = as.factor(Filt),
+                                  Feat = as.factor(Feat),
+                                  Segment = as.factor(Segment),
+                                  EMG = as.factor(EMG))
+summary(fat_byframe_data)
+
+```
+
+
+```{r Trial Numbers Distribution}
+
+ggplot(data = fat_byframe, aes(x = R_sqr, fill = Test)) + geom_histogram(color = "white", bins = 20) +
+labs(title = "", x = "%MVC") + guides(fill = FALSE) + facet_grid( ~ Test)
+ 
+```
+
+```{r }
+
+
+
+p1<-ggplot(filter(fat_byframe_data, EMG=='MWave', Filt=='GS', Feat=='MedFreq'),
+           aes(x = Trial, y = Feat_Val, color = Test)) +
+  geom_point(stat = "identity", position=position_dodge()) +
+  geom_smooth(method = "lm", se=F)+
+  facet_grid( ~factor(Segment, levels=c('Voli', 'Stim', 'Stim+Voli')))+
+  labs(x = "Trials",
+  y = "Med. Freq. (Hz)",
+  subtitle = "Filtered MWave Median Frequency")
+
+p2<-ggplot(filter(fat_byframe_data, EMG=='vEMG', Filt=='GS', Feat=='MedFreq'),
+           aes(x = Trial, y = Feat_Val, color = Test)) +
+  geom_point(stat = "identity", position=position_dodge())+
+  geom_smooth(method = "lm", se=F)+
+  facet_grid( ~ factor(Segment, levels=c('Voli', 'Stim', 'Stim+Voli')))+
+  labs(x = "Trials",
+  y = "Med. Freq. (Hz)",
+  subtitle = "Filtered vEMG Median Frequency")
+
+p3<-ggplot(filter(fat_byframe_data, EMG=='vEMG', Filt=='GS', Feat=='MAV'),
+           aes(x = Trial, y = Feat_Val, color = Test)) +
+  geom_point(stat = "identity", position=position_dodge())+
+  geom_smooth(method = "lm", se=F)+
+  facet_grid( ~ factor(Segment, levels=c('Voli', 'Stim', 'Stim+Voli')))+
+  labs(x = "Trials",
+  y = "MAV",
+  subtitle = "Filtered vEMG Median Frequency")
+
+p4<-ggplot(fat_byframe_data, aes(x = Trial, y = Force, color = Test)) +
+  geom_point(stat = "identity", position=position_dodge()) +
+  geom_smooth(method = "lm", se=F)+
+  labs(x = "Trials",
+  y = "Force(N)",
+  subtitle = "Stim. Only Mean Force")
+
+p1/p2
+p3
+p4
+#m1 <- lm(TimeConst ~ Test, data = df) 
+
+#tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+
+```
+
+```{r}
+plot_tibble<-filter(fat_byframe_data, EMG=='MWave',Feat== 'MedFreq', Filt=='GS',Segment=='Stim+Voli')
+ggplot(plot_tibble,
+           aes(x = Feat_Norm, y = Force_Norm, color=Test)) +
+  geom_point(stat = "identity", position=position_dodge()) +
+  geom_smooth(method = "lm", se=F)+
+  facet_grid( ~ Segment)+
+  labs(x = "Trials",
+  y = "Norm. Median Freq.",
+  subtitle = "Filtered MWave Median Frequency")
+
+  m1<- lm(Force_Norm ~ Feat_Norm*Test, data = plot_tibble) 
+tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+
+
+```
+
+
+```{r}
+ggplot(filter(fat_byframe_data, EMG=='MWave', Filt=='GS', Feat=='MedFreq'),
+           aes(x = Feat_Norm, y = Force_Norm, color=Test)) +
+  geom_point(stat = "identity", position=position_dodge()) +
+  geom_smooth(method = "lm", se=F)+
+  facet_grid( ~ factor(Segment, levels=c('Voli', 'Stim', 'Stim+Voli')))+
+  labs(x = "Norm. Med Freq",
+  y = "Norm. Force",
+  subtitle = "Filtered MWave Median Frequency")
+
+```
+
+
+
+```{r}
+
+stim_force<-filter(fat_byframe_data, EMG=='MWave', Filt=='GS', Feat=='MedFreq',Segment=="Stim+Voli")
+
+foo <- function(z) {
+   mr <- data.frame(coef(summary(lm(Force_Norm~Feat_Norm,data=z))))
+   mr$predictor <- rownames(mr)
+   mr
+}
+
+
+
+## see that it works
+ res <- ddply(stim_force,"Test",foo)
+ res
+ 
+```
+
+
+
+```{r}
+
+m1<-filter(fat_byframe_data, EMG=='MWave', Filt=='GS', Feat=='MedFreq',Segment=='Voli')%>%lm(Force_Norm~Feat_Norm,data=.)
+
+tidy(m1,conf.int = TRUE, conf.level = 0.95) %>%knitr::kable(digits = 3) 
+
+#fitted_models <- stim_force %>% group_by(Segment) %>% do(lmodel = lm(Force_Norm ~ Feat_Norm, data = .))
+
+fitted_models<-stim_force %>% 
+  group_by(Segment) %>% 
+  nest() %>% 
+  mutate(model = map(data, ~lm(Force_Norm ~ Feat_Norm, data = .)))
+
+
+```
+
+
+
+```{r}
+
+stim_force_lm<-filter(fat_byframe_data, EMG=='MWave', Filt=='GS', Feat=='MedFreq')
+
+
+df <- group_by(stim_force_lm, Segment) %>%
+do(m1 = lm(Force_Norm ~ Feat_Val, data = .))
+
+
+
+```
+
+
+

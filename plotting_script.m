@@ -1,7 +1,7 @@
 %% Plotting for EMBC 
 clc
 clear all
-TestFolders=[ "jan7"];
+TestFolders=[ "jan7" "apr20"];
 
 for iTest=1:length(TestFolders)
     TestFiles{iTest}=sprintf("%s_ana",TestFolders{iTest});
@@ -9,14 +9,17 @@ end
 
 AnaStruct=sprintf("%s_ana",TestFolders);
 S = load_test(TestFolders,TestFiles);
+
 %% 
 close all
-TestStruct=sprintf("%s_test",TestFolders);
+PlotTrial=[ 18 18];
+PlotFrame=floor([ 489 491]);
+TestFolder="apr20";
+TestStruct=sprintf("%s_test",TestFolder);
+AnaStruct=sprintf("%s_ana",TestFolder);
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='Occ';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
-PlotTrial=[15 19];
-PlotFrame=floor([ 486 490]);
 ExpLabel=ExpTable{1};
 DataLabels=S.(AnaStruct).AnaPar.DataLabels;
 BlankLength=S.(AnaStruct).AnaPar.BlankLength;
@@ -37,7 +40,7 @@ for iTrial=PlotTrial(1):PlotTrial(2)
 
     figure
     subplot(2,1,1)
-    plot(Time,Trig/2000,'b','LineWidth',2)
+    plot(Time,Trig/10000,'b','LineWidth',2)
     hold on
     plot(Time,EMG/AmpGain,'k','LineWidth',2)
     plot(Time,BlankEMG,'r','LineWidth',2)
@@ -75,7 +78,9 @@ for iTrial=PlotTrial(1):PlotTrial(2)
 end
 
 %%
-TestStruct=sprintf("%s_test",TestFolders);
+TestFolder="apr20";
+TestStruct=sprintf("%s_test",TestFolder);
+AnaStruct=sprintf("%s_ana",TestFolder);
 AmpGain=S.(TestStruct).ExpPar.AmpGain;
 Lbl='Occ';
 ExpTable=S.(AnaStruct).AnaPar.ExpTable.(Lbl);
@@ -122,7 +127,7 @@ for iTrial=PlotTrial(1):PlotTrial(2)
     end
 
     grid on 
-    text(13.65,4*10^-4,'Dropped Frame')
+%     text(13.65,4*10^-4,'Dropped Frame')
 
     S.(TestStruct).(ExpLabel).TrialsPW
     DataLabels=S.(AnaStruct).AnaPar.DataLabels;
@@ -153,7 +158,7 @@ close all
 PlotTime=[0 10];
 exp_lbl='RC';
 ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
-stim_freq=S.(TestStruct).ExpPar.freq_list(1);
+stim_freq=S.(TestStruct).ExpPar.stim_freq;
 fs=S.(TestStruct).ExpPar.fs;
 st=1/fs;
 for iTest=1:1
@@ -197,7 +202,7 @@ for iTest=1:1
         xlim([0 10])
     end
 end
-
+%%
 PlotTime=[0 15];
 vMVC = 1;
 sMVC = 2;
@@ -207,7 +212,7 @@ RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
 VoliLevels=[10 20 30 40]; VoliLevel=VoliLevels(vMVC);
 StimLevels=[ 0 10 20 30]; StimLevel=StimLevels(sMVC);
 
-stim_freq=S.(TestStruct).ExpPar.freq_list(1);
+stim_freq=S.(TestStruct).ExpPar.stim_freq(1);
 fs=S.(TestStruct).ExpPar.fs;
 st=1/fs;
 
@@ -254,6 +259,96 @@ for iTest=1:1
     ylabel('Force(N)')
     
 end
+
+%% EMBC 2024
+
+
+exp_lbl='Occ';
+ExpLabel=string(S.(AnaStruct).AnaPar.ExpTable.(exp_lbl));
+
+vMVC = 2;
+sMVC = 2;
+VoliLevels=[10 20 30 40]; VoliLevel=VoliLevels(vMVC);
+StimLevels=[ 0 10 20 30]; StimLevel=StimLevels(sMVC);
+RepTableMat=S.(TestStruct).(ExpLabel).RepTableMat;
+stim_freq=S.(TestStruct).ExpPar.stim_freq;
+
+Fig1Time=[0 1];
+Fig1Frames=[Fig1Time(1)*stim_freq Fig1Time(2)*stim_freq];
+
+Fig2Time=[0 15];
+Fig2Frames=[Fig2Time(1)*stim_freq Fig2Time(2)*stim_freq];
+
+Fig3Time=[0 17];
+Fig3Frames=[Fig3Time(1)*stim_freq Fig3Time(2)*stim_freq];
+
+
+fs=S.(TestStruct).ExpPar.fs;
+st=1/fs;
+iTrial=5;
+TrialLabel=sprintf("Trial_%d",iTrial);
+figure(1)
+for iTest=1:1
+    TestStruct=sprintf("%s_test",TestFolders{iTest});
+    AnaStruct=sprintf("%s_ana",TestFolders{iTest});
+    
+    clear lgd
+    Target=S.(AnaStruct).(ExpLabel).Target;
+    F=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Force');
+    PW=S.(TestStruct).(ExpLabel).(TrialLabel).data.('PW');
+    T=S.(TestStruct).(ExpLabel).(TrialLabel).data.('Time');
+    
+    F1= F(T>Fig1Time(1) & T<Fig1Time(2));
+    PW1=PW(T>Fig1Time(1) & T<Fig1Time(2));
+    T1=T(T>Fig1Time(1) & T<Fig1Time(2));
+    
+    F2= F(T>Fig2Time(1) & T<Fig2Time(2));
+    PW2=PW(T>Fig2Time(1) & T<Fig2Time(2));
+    T2=T(T>Fig2Time(1) & T<Fig2Time(2));
+    Target2=Target(T>Fig2Time(1) & T<Fig2Time(2));
+
+    F3= F(T>Fig3Time(1) & T<Fig3Time(2));
+    PW3=PW(T>Fig3Time(1) & T<Fig3Time(2));
+    T3=T(T>Fig3Time(1) & T<Fig3Time(2));
+    
+    subplot(3,1,1)
+    plot(T2,Target2*RepTableMat(iTrial,1),'r','LineWidth',3)
+    hold on
+    plot(T1(1),F1(1),'bo','LineWidth',2)
+    text(2,10,'t = 0','FontSize',14)
+    xlim([0 18])
+    xlabel('Time(s)')
+    ylabel(["(a)";"Force(N)"])
+    grid on
+    
+    subplot(3,1,2)
+    plot(T2,Target2*RepTableMat(iTrial,1),'r','LineWidth',3)
+    hold on
+    plot(T2,F2,'b','LineWidth',2)
+    plot(T2(end),F2(end),'bo','LineWidth',2)
+    text(0.5,12,'15 < t < 17','FontSize',14)
+    text(0.5,7,["*No Visual" ;"  feedback"],'FontSize',14)
+    xlim([0 18])
+    xlabel('Time(s)')
+    ylabel(["(b)";"Force(N)"])
+    grid on
+    subplot(3,1,3)
+    plot(T2,Target2*RepTableMat(iTrial,1),'r','LineWidth',3)
+    hold on
+    
+    plot(T3,F3,'b','LineWidth',2)
+    plot(T3(end),F3(end),'bo','LineWidth',2)
+    text(2,10,'t = 17','FontSize',14)
+    xlim([0 18])
+    xlabel('Time(s)')
+    ylabel(["(c)";"Force(N)"])
+    grid on
+
+    
+end
+
+
+
 %% statistical tests results 
 
 
