@@ -10,7 +10,7 @@ TestFolders=[  "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 TestFolders=[ "feb28_24" "feb29_24" "mar20_24"  ];
 TestFolders=["jan7" "jan11" "jan12" "feb28_24"  ];
 TestFolders=["jun20_24" "jul9_24" "jul21_24"];
-TestFolders=["jan7" "jan11" "jan12" "oct25" ];
+TestFolders=["jan7" "jan11" "jan12"  ];
 
 suffix="new";
 for iTest=1:length(TestFolders)
@@ -1032,8 +1032,8 @@ for iTest=1:length(TestFolders)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
 
     stim_freq=S.(TestLabel).ExpPar.stim_freq;
-    StimRange=S.(TestLabel).(ExpLabel).StimRange;
-
+    % StimRange=S.(TestLabel).(ExpLabel).StimRange;
+    StimRange=TimeRange;
     FrameRange=[StimRange(1)*stim_freq StimRange(2)*stim_freq];
     FrameRangeInd=[FrameRange(1): FrameRange(2)];
     NumofDropped=S.(TestLabel).(ExpLabel).num_of_dropped;
@@ -1051,7 +1051,7 @@ for iTest=1:length(TestFolders)
     NormCoef=polyval(p,100); %% --- >>> Update based on mainanalysis
     % NormCoef=S.(AnaLabel).(ExpLabel).AmpModul_MAV_MAX;
 
-    NormCoef=S.(AnaLabel).(ExpLabel).MAV_MAX;
+    NormCoef=S.(AnaLabel).(ExpLabel).MAV_MAX_theo;
 
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
 

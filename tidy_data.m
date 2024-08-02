@@ -5,9 +5,6 @@ function S=tidy_data(FolderName,save)
 % This will reorganize the data for further analyses 
 % Only one file at a time whose name is expsave.mat
 
-% FolderNames=["jan7"]; 
-% FolderNames=["nov8", "nov28_2","dec5"];  % Foldername to be loaded
-% FolderNames=["dec5","nov28_2","nov27","nov8","nov7"]; 
 
 FolderName=string(FolderName);
 

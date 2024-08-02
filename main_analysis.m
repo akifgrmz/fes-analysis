@@ -9,7 +9,7 @@ clear all
 %TestFolders=["feb28_24" ];
 %TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25" "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 % TestFolders=["feb28_24" "feb29_24" "mar18_24" "mar20_24"];
-TestFolders=["jan7" "jan11" "jan12"  "oct25" ];
+TestFolders=["jan7" "jan11" "jan12"   ];
 % TestFolders=["jun20_24" ]
 
 for iTest=1:length(TestFolders)
@@ -31,7 +31,7 @@ clear all
 % TestFolders=[ "apr20" "oct11" "oct18"];
 % TestFolders=["oct25"];
 % TestFolders=[ "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
-TestFolders=["jan7" "jan11" "jan12" "oct25" ];
+TestFolders=["jan7" "jan11" "jan12"  ];
 % TestFolders=["jun20_24" "jul9_24" "jul21_24"  ]
 
 for iTest=1:length(TestFolders)
@@ -199,9 +199,13 @@ for iTest=1:length(TestFolders)
     S.(AnaLabel).AnaPar.BPFilter.BPOrder=BPOrder;
     S.(AnaLabel).AnaPar.BPFilter.fcutlow=fcutlow;
     S.(AnaLabel).AnaPar.BPFilter.fcuthigh=fcuthigh;
+    S.(AnaLabel).AnaPar.BPFilter.d1=d1;
+
     S.(AnaLabel).AnaPar.LPFilter.LPOrder=LPOrder;
     S.(AnaLabel).AnaPar.LPFilter.LPPass=LPPass;
     S.(AnaLabel).AnaPar.LPFilter.LPStop=LPStop;
+    S.(AnaLabel).AnaPar.LPFilter.d2=d2;
+    
     S.(AnaLabel).AnaPar.HandFilter.LPOrder=HandLPOrder;
     S.(AnaLabel).AnaPar.HandFilter.LPPass=HandLPPass;
     S.(AnaLabel).AnaPar.HandFilter.LPStop=HandLPStop;
@@ -220,8 +224,6 @@ for iTest=1:length(TestFolders)
     S.(AnaLabel).AnaPar.FatFilt.FatFilt=FatFilt;
     S.(AnaLabel).AnaPar.FatFilt.N_FatFilt=N_FatFilt;
 
-    S.(AnaLabel).AnaPar.BPFilter.d1=d1;
-    S.(AnaLabel).AnaPar.LPFilter.d2=d2;
 
     S.(AnaLabel).AnaPar.LPFilters{1}=d2;
     S.(AnaLabel).AnaPar.LPFilters{2}=d3;
@@ -1387,13 +1389,13 @@ end
 % Update this to more general
 MAV_Mean_tests=array2table(MAV_Mean_tests,'VariableNames',["Mean" "Std" "PW" "Exp" "Test"] );
 
-%%Mean MAV of Occ Trials 
+%% Mean MAV of Occ Trials 
 clc
 clear MAVDropped
 exp_lbl='Occ';
 % VoliLevels=[10 20 30 40];
 % StimLevels=[ 10 12 15 0];
-MeanTime=[ 6 11];
+MeanTime=[ 10 15];
 
 % Calculating the means at time [10 15]
 for iTest=1:length(TestFolders)
@@ -1548,7 +1550,7 @@ end
 NumofUpdate=4; % table mvc_table is updated 4 times inside loop below
 NumofVariables=4;
 mvc_table=strings(NumofUpdate*length(TestFolders),NumofVariables);
-MVC_Percent=100;
+MVC_Percent=120;
 sMVC_Ref=0;
 AvgTimeMVC=2;
 
