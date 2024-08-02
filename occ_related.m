@@ -3,7 +3,8 @@
 %% Data Inject 
 clc
 clear all
-TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
+TestFolders=["jan7" "jan11" "jan12" ];
+% "apr20" "may19" "oct11" "oct18" "oct25"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_ana",TestFolders{iTest});
@@ -291,8 +292,8 @@ clear all
 % TestFiles=["dec5_tau_test","nov28_2_tau_test","nov27_tau_test","nov8_tau_test"];
 % TestFolder=["dec5","nov28_2","nov27","nov8"];
 
-% TestFolders=["jan7" "jan11" "jan12"];
-TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
+TestFolders=["jan7" "jan11" "jan12"];
+% TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct11" "oct18" "oct25"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_tau_test",TestFolders{iTest});
@@ -698,7 +699,7 @@ OccTable=table(Occ(:,1),Occ(:,2),Occ(:,3),Occ(:,4),Occ(:,5), Occ(:,6), Occ(:,7),
     "v_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc" "Target_mvc" "Test" "Tau" "Feat" "Filt" ...
     "Target_Level" "Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW" "Done" "Trial"]);
 
-writetable( OccTable,'occlusion_v4.csv')
+writetable( OccTable,'occlusion_old_test.csv')
 
 %% Effort Simulation 
 %linear modeling for individual occ predictions 
@@ -823,7 +824,7 @@ OccCoef2=table(CoefMat2(:,1),CoefMat2(:,2),CoefMat2(:,3),CoefMat2(:,4),CoefMat2(
     CoefMat2(:,8),CoefMat2(:,9),CoefMat2(:,10),CoefMat2(:,11),CoefMat2(:,12),CoefMat2(:,13),...
     'VariableNames',["Coeff1" "Coeff2" "Coeff3" "Test" "Type" "Indiv" "Log" "Effort_o" "Occ" "LogOcc" "MVC_Voli" "MVC_Stim" "Trial"]);
 
-writetable( OccCoef2,'occ_coef.csv')
+writetable( OccCoef2,'occ_coef_old_test.csv')
 %% Plotting fittings 
 
 
@@ -1013,7 +1014,7 @@ Effort_Est=table(ErrMat(:,1),ErrMat(:,2),ErrMat(:,3),ErrMat(:,4),ErrMat(:,5), Er
     "Occ_Type" "Filt" "Trial" "Exp" "Test" "LogModel" "Target_Level" "Stim_Force"...
     "Voli_Force" "VoliMVC" "StimMVC" "PW" "Done"]);
 
-writetable( Effort_Est,'occ_est_error.csv')
+writetable( Effort_Est,'occ_est_error_old_test.csv')
 
 
 %% Plotting Effort
@@ -1022,7 +1023,8 @@ clc
 lbl='Occ';
 PlotVoli=4;
 PlotStim=4;
-TestFolders=["jan7" "jan11" "apr20" "mar16"];
+TestFolders=["jan7" "jan11" "jan12"];
+    % "mar16"];
 TimeRange=[1 15];
 VoliMVCLevels=[10 20 30 40 ];
 StimMVCLevels=[ 0 10 20 30 ];
@@ -1448,7 +1450,7 @@ end
 Dropped_stats=array2table([[x ;x_dropped] [g(2:end,:); g_dropped(2:end,:)] ],'VariableNames',[VarNames]);
 
 S.(AnaStruct).(ExpLabel).Dropped_stats=Dropped_stats;
-writetable( Dropped_stats, 'dropped_stats2.csv')
+writetable( Dropped_stats, 'dropped_stats_old_test.csv')
 
 %% Dropped Frames based Occlusion Estimation 
 % Occ = 0-stim - avg(dropped frames)
@@ -1528,7 +1530,7 @@ for iTest=1:length(TestFolders)
     Occ=[Occ; DropOccTest];
 end
 
-writetable( Occ, 'dropped_occ.csv')
+writetable( Occ, 'dropped_occ_old_test.csv')
 
 %% Effort Correction using Dropped Frames Occ Estimations 
 % 1- E= E_e+E_vprime-E_d   (Hybrid)

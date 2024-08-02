@@ -49,10 +49,10 @@ end
 % Labeling
 %
 
-DataInd=["EMG","Trigger","Force","PW","Time", "Torque"];
+DataInd=["EMG","Trigger","Force","PW","Time"];
 ExpLabels=["MVCTrials","RCCurveTrials","CustomTrials","OccTrials","FatigueTrials" ];
 S.(ExpStruct).ExpPar.ExpLabels=ExpLabels;
-S.(ExpStruct).ExpPar.DataInd=table(1,2,3,4,5,6,'VariableNames',DataInd);
+S.(ExpStruct).ExpPar.DataInd=array2table( [1:length(DataInd)],'VariableNames',DataInd);
 
 % 
 % Num of Trials might not be needed anymore

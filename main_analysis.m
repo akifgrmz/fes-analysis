@@ -7,6 +7,8 @@
 
 clear all
 TestFolders=["oct25" ];
+TestFolders=["jan7" "jan11" "jan12"];
+
 for iTest=1:length(TestFolders)
     tidy_data(TestFolders(iTest));
 end
@@ -22,7 +24,7 @@ TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct2
 % TestFolders=[ "apr20" "oct11" "oct18"];
 TestFolders=["oct25"];
 
-
+TestFolders=["jan7" "jan11" "jan12"];
 
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
