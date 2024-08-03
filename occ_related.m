@@ -1012,6 +1012,7 @@ for iType=1:length(OccType)
     figure(2)
     legend('Location','NorthWest')
 end
+
         %% Dropped Frames based Occlusion Estimation 
 % Occ = 0-stim - avg(dropped frames)
 % TestFolders=["jan7" "jan11" "apr20" "mar16"];
@@ -1071,6 +1072,8 @@ for iTest=1:length(TestFolders)
                 TrialLabel=sprintf("Trial_%d",TrialNums(iRep));
                 
                 DroppedFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames;
+                S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat
+
                 MAV_dropped=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
                     (FrameRange(1)<=DroppedFrames & DroppedFrames<=FrameRange(2),:).('MAV');
                 
