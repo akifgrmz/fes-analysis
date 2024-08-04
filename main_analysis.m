@@ -904,7 +904,7 @@ PlotTime=[ 12 13];
 % PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
 PlotFrame=floor([ 333 337]);
 
-TeststoPlot=TestFolders([4]);
+TeststoPlot=TestFolders([3]);
 
 for iTest=1:length(TeststoPlot)
     TestLabel=sprintf("%s_test",TeststoPlot(iTest));
@@ -1155,7 +1155,7 @@ end
 
 %% Plotting EMG Features 
 clc
-AnaLabel=sprintf('%s_ana',TestFolders(4));
+AnaLabel=sprintf('%s_ana',TestFolders(3));
 ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
 TimeRange=[0.1 13];
 TrialNum=[  4];
@@ -1417,7 +1417,7 @@ for iTest=1:length(TestFolders)
         VoliLevel=VoliLevels(iVoli);
 
         for iStim=1:length(StimLevels)
-            StimLevel=StimLevels(iStim);
+            StimLevel=StimLevels(iStim)
 
             TrialsInd(:,c)= find_trialnum(VoliLevel, StimLevel, RepTableMat);
             
@@ -1432,15 +1432,16 @@ for iTest=1:length(TestFolders)
 
                 Amp_Modul_Mean(TrialsInd(iTrial,c),3:5)=RepTableMat(TrialsInd(iTrial,c),[1,4,5]);
                 
-                if StimLevel~=0
-                    DroppedFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames;
-                    Mean_MAVDropped(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
-                        (MeanRangeInd(1)>=DroppedFrames & DroppedFrames<=MeanRangeInd(2),:).('MAV')); 
-                    Std_MAVDropped(TrialsInd(iTrial,c),1)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
-                        (MeanRangeInd(1)>=DroppedFrames & DroppedFrames<=MeanRangeInd(2),:).('MAV'));     
-                else 
+                if StimLevel==0
                     Mean_MAVDropped(TrialsInd(iTrial,c),1)=NaN;
                     Std_MAVDropped(TrialsInd(iTrial,c),1)=NaN;
+                
+                else 
+                     DroppedFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames;
+                    Mean_MAVDropped(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
+                        (MeanFrame(1)<=DroppedFrames & DroppedFrames<=MeanFrame(2),:).('MAV')); 
+                    Std_MAVDropped(TrialsInd(iTrial,c),1)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
+                        (MeanFrame(1)<=DroppedFrames & DroppedFrames<=MeanFrame(2),:).('MAV'));    
                 end
                 MAV_Mean_reps(TrialsInd(iTrial,c),5)=Mean_MAVDropped(TrialsInd(iTrial,c),1);
                 MAV_Mean_reps(TrialsInd(iTrial,c),6)=Std_MAVDropped(TrialsInd(iTrial,c),1);
@@ -1550,7 +1551,7 @@ end
 NumofUpdate=4; % table mvc_table is updated 4 times inside loop below
 NumofVariables=4;
 mvc_table=strings(NumofUpdate*length(TestFolders),NumofVariables);
-MVC_Percent=120;
+MVC_Percent=100;
 sMVC_Ref=0;
 AvgTimeMVC=2;
 
@@ -1616,7 +1617,8 @@ end
 
 %% Saving the results
 
-save_test(TestFolders,S,"new")
+suffix="_new";
+save_test(TestFolders,S,suffix)
 
 
 %% Time Constants of RCCurve Trials

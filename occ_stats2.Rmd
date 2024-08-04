@@ -40,10 +40,7 @@ droppedocc<- read_csv("dropped_occ2.csv",show_col_types = FALSE)
 
 occraw<- read_csv("occlusion_v5.csv",show_col_types = FALSE)
 err_raw<- read_csv("occ_est_error2.csv",show_col_types = FALSE)
-err_raw
-droppedocc
-occraw
-coefraw
+
 ```
 
 ```{r dataframe modifications}
@@ -65,7 +62,6 @@ occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
                                 '30' = 'Stim_30'))
 
 occ<-occ%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
-#occ<-occ%>%filter(Test!="apr20")
 
 
 droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
@@ -111,14 +107,11 @@ coef<-coef%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
 
 coef<-coef%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
 
-summary(err)
-summary(occ)
-summary(coef)
 
 ```
 
 
-```{r Plotting: maintain section  }
+```{r Plotting: maintain section}
 
 plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
 
@@ -127,15 +120,15 @@ ggplot(plot_tibble, aes(x =  v_mvc , y = vprime_mvc , color = MVC_Stim_Cat)) +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
     facet_wrap(~Feat,scales='free')+
-    labs(x = "Volitional Effort: F_v (% MVC)",
-    y = "Maintained Volitional effort: F_vprime (% MVC)",
+    labs(x = "Volitional Effort: E_v (% MVC)",
+    y = "Maintained Volitional effort: E_vprime (% MVC)",
     title = "Maintained force and MAV for different effort levels and stim levels",
     subtitle = "2 able-body participants")
 
-lm_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='Hand')
+lm_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea')
 
 lm_tibble <- lm_tibble %>%
-  mutate(Test = relevel(Test, ref = "jul9_24"))
+  mutate(Test = relevel(Test, ref = "jan7"))
  m1 <- lm(Occ_mvc ~ MVC_Voli + MVC_Stim , data = lm_tibble)
 tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
@@ -150,25 +143,42 @@ ggplot(plot_tibble, aes(x =  v_mvc , y = Occ_mvc , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+
     facet_wrap(~Feat,scales='free')+
-    labs(x = "Volitional Effort: F_v (% MVC)",
+    labs(x = "Volitional Effort: E_v (% MVC)",
     y = "Occlusion (% MVC)",
     title = "Occluded force and MAV",
     subtitle = "2 able-body participants")
 
-lm_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='Hand')
+lm_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea')
 lm_tibble <- lm_tibble %>%
-  mutate(Test = relevel(Test, ref = "jul9_24"))
+  mutate(Test = relevel(Test, ref = "jan7"))
 
  m1 <- lm(Occ_mvc ~ (MVC_Voli + MVC_Stim), data = lm_tibble) 
 tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+
  m2 <- lm(Occ_Dropped_mvc ~ (MVC_Voli + MVC_Stim), data = lm_tibble) 
 tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
 
+
+```{r }
+
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
+
+ggplot(plot_tibble, aes(x =  v_mvc , y = Occ_mvc , color = MVC_Stim_Cat)) +
+    geom_point() +
+    geom_smooth(method = "lm")+
+    facet_wrap(~Feat,scales='free')+
+    labs(x = "Volitional Effort: E_v (% MVC)",
+    y = "Occlusion (% MVC)",
+    title = "Occluded force and MAV",
+    subtitle = "2 able-body participants")
+```
+
+
 ```{r Plotting for EMBC  }
 
-plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='Force')
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea')
 
 occ_err_long<-plot_tibble%>%pivot_longer(cols=c('Occ_mvc','vprime_mvc'),
                                     names_to='Occlusion_Type',
@@ -343,6 +353,7 @@ tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 ```
 
 ```{r }
+
 ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = MAV_Type))+
   geom_point() +
   geom_abline(aes(intercept=13.842, slope=0.373,color='Dropped'))+
