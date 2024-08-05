@@ -329,44 +329,45 @@ for iTau=1:length(OccRefs)
             Occ=[ Occ;  F_occ  F_vprime F_sprime F_v Dropped_occ F_target F_occ_mvc F_vprime_mvc...
                 F_sprime_mvc F_v_mvc Dropped_occ_mvc Hybrid_occ_mvc F_target_mvc TestFolders(iTest) EffortType...
                 TauLabels(iTau) "EffortMea" "Unfilt" table2array(RepMatTable(iTrial,:) ) iTrial ];
-            
+
+                %%s MAV based occlusion estimation using stim-turned off region 
             for iFilt=1:length(FiltLabels)
                 FiltLabel=FiltLabels{iFilt};
-                
+
                 MAV_target=F_target; %%% ---- Fix This 
 
                 PreOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(PreOffFrameInd,:).('MAV_vEMG'));
                 PostOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(PostOffFrameInd,:).('MAV_vEMG'));
                 MAV_vprime=PostOffMAV;
                 MAV_sprime=PreOffMAV-PostOffMAV;
-                
+
                 MAV_occ=MAV_vprime-MAV_v;
                 MAV_occ_mvc=MAV_occ/MAV_max*100;
                 MAV_vprime_mvc=MAV_vprime/MAV_max*100;
                 MAV_sprime_mvc=MAV_sprime/MAV_max*100;
-                
+
                 MAV_v_mvc=MAV_v/MAV_max*100;
                 MAV_target_mvc=MAV_target/MAV_max*100;
-                
+
                 Occ=[ Occ;  MAV_occ  MAV_vprime MAV_sprime MAV_v Dropped_occ MAV_target MAV_occ_mvc ...
                     MAV_vprime_mvc MAV_sprime_mvc MAV_v_mvc Dropped_occ_mvc Hybrid_occ_mvc MAV_target_mvc...
                     TestFolders(iTest) EffortType TauLabels(iTau) "MAV" FiltLabel table2array(RepMatTable(iTrial,:)) iTrial];
-            
+
                 AmpModul_MAV_target=F_target; %%% ---- Fix This 
-                
+
                 AmpModul_PreOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel)...
                     .AmpModulFeats(PreOffFrameInd,:).('Amp_MAV_vEMG'));
                 AmpModul_PostOffMAV=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel)...
                     .AmpModulFeats(PostOffFrameInd,:).('Amp_MAV_vEMG'));
-                
+
                 AmpModul_MAV_vprime=AmpModul_PostOffMAV;
                 AmpModul_MAV_sprime=AmpModul_PreOffMAV-AmpModul_PostOffMAV;
-                
+
                 AmpModul_MAV_occ=AmpModul_MAV_vprime-AmpModul_MAV_v;
                 AmpModul_MAV_occ_mvc=AmpModul_MAV_occ/AmpModul_MAV_max*100;
                 AmpModul_MAV_vprime_mvc=AmpModul_MAV_vprime/AmpModul_MAV_max*100;
                 AmpModul_MAV_sprime_mvc=AmpModul_MAV_sprime/AmpModul_MAV_max*100;
-                
+
                 AmpModul_MAV_v_mvc=AmpModul_MAV_v/AmpModul_MAV_max*100;
                 AmpModul_MAV_target_mvc=AmpModul_MAV_target/AmpModul_MAV_max*100;
 
@@ -418,7 +419,7 @@ for iType=1:length(OccType)
 
         EffortType=S.(TestLabel).ExpPar.EffortType;
 
-        RowInd=OccTable.('Feat')==EffortType & OccTable.('Filt')=="Unfilt"...
+        RowInd=OccTable.('Feat')=="EffortMea" & OccTable.('Filt')=="Unfilt"...
             & OccTable.('Tau')=="3*tau" & OccTable.('MVC_Stim')~="0";
         
     % 1- Linear fitting for Individualized results
@@ -614,7 +615,7 @@ for iTest=1:length(TestFolders)
 
     EffortType=S.(TestLabel).ExpPar.EffortType;
 
-    RowInd=OccTable.('Feat')==EffortType &...
+    RowInd=OccTable.('Feat')=="EffortMea" &...
         OccTable.('Filt')=="Unfilt" & OccTable.('Tau')=="3*tau" &...
         OccTable.('MVC_Stim')~="0";
 
@@ -765,17 +766,19 @@ for iModel=1:length(LogModel)
             IndTrials=find_trialnum(RepTableMat(iTrial,:).('MVC_Voli'), ...
                 RepTableMat(iTrial,:).('MVC_Stim'),S.(TestLabel).(ExpLabel).RepTableMat);
 
-            RowIndTemp=OccTable.('Test')==TestFolders(iTest) & OccTable.('Feat')== EffortType & ...
+            RowIndTemp=OccTable.('Test')==TestFolders(iTest) & OccTable.('Feat')== "EffortMea" & ...
             OccTable.('Filt')=="Unfilt" & OccTable.('Tau')=="3*tau" & OccTable.('Trial')==string(IndTrials');
 
             [~,c]=size(RowIndTemp);
-            RowInd=RowIndTemp(:,1);
+            RowInd1=RowIndTemp(:,1);
             for i=1:c-1
-                RowInd=RowInd | RowIndTemp(:,i+1);
+                RowInd1=RowInd1 | RowIndTemp(:,i+1);
             end
             %sum(RowInd)
 
-            Fv_prime=str2double(OccTable(RowInd,:).('vprime_mvc'));
+            Fv_prime=str2double(OccTable(RowInd1,:).('vprime_mvc'));
+            Fv_prime=str2double(OccTable(RowInd1,:).('vprime_mvc'));
+
             Effort_Fv_prime=TargetFrames*mean(Fv_prime);
 
             for iType=1:length(OccType)
@@ -1023,10 +1026,12 @@ ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
 VoliMVCLevels=[10 20 30 40];
 StimMVCLevels=[10 20 30];
 
+occ_table= readtable('occlusion_v5.csv');
+
 FiltLabels=string(S.(AnaLabel).AnaPar.FiltLabels);
 
 Occ=table([],[],[],[],[],[],[],[],[],'VariableNames',["MAV" "MAV_Type"...
-    "NormCoef" "Repeat" "Trial" "StimMVC" "VoliMVC" "Test" "NumofDropped"]);
+    "NormCoef" "Repeat" "Trial" "MVC_Stim" "MVC_Voli" "Test" "NumofDropped"]);
 NormMVC=40;
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
@@ -1075,13 +1080,19 @@ for iTest=1:length(TestFolders)
                 DroppedFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames;
                 MAV_dropped=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat...
                     (FrameRange(1)<=DroppedFrames & DroppedFrames<=FrameRange(2),:).('MAV');
-
+        
                 EffortMea=S.(AnaLabel).(ExpLabel).(TrialLabel).data.(EffortLabel);
-                
-                occEffort=
-                occDropped(iRep)=mean(MAV_dropped)-mean(NoStim);
-                NoStimMAV(iRep)=NoStim(iRep);
-                DroppedMAV(iRep)=mean(MAV_dropped);
+
+                RowInd=OccTable.('Test')==TestFolders(iTest) & OccTable.('Trial')==string(TrialNums(iRep)) & ...
+                    OccTable.('Feat')=="EffortMea" & OccTable.('Filt')=="Unfilt" & OccTable.('Tau')=="3*tau" & OccTable.('MVC_Stim')~="0";
+               
+                occEffort(iRep)=OccTable(RowInd,:).('Occ_mvc');
+                occHybrid(iRep)=OccTable(RowInd,:).('Occ_Hybrid_mvc');
+                occDropped2(iRep)=OccTable(RowInd,:).('Occ_Dropped');
+
+                occDropped(iRep)=(mean(MAV_dropped)-mean(NoStim))/NormCoef*100;
+                NoStimMAV(iRep)=NoStim(iRep)/NormCoef*100;
+                DroppedMAV(iRep)=mean(MAV_dropped)/NormCoef*100;
                 Repeats(iRep)=sprintf("Rep_%d",iRep);
                 Trials(iRep)=TrialLabel;
                 StimMVC(iRep)=StimMVCLevels(iStim);
@@ -1090,16 +1101,16 @@ for iTest=1:length(TestFolders)
                 NumDropped(iRep)=sprintf("%d_Drops",NumofDropped);
                 NormCoefs(iRep)=NormCoef;
                 
-                DropOccTest=[DropOccTest; [occDropped(iRep) NoStimMAV(iRep) DroppedMAV(iRep)]'...
-                    ["Occ" "NoStim" "Dropped"]' ones(3,1)*NormCoefs(iRep) strings(3,1)+Repeats(iRep)...
-                    strings(3,1)+Trials(iRep) ones(3,1)*StimMVC(iRep) ones(3,1)*VoliMVC(iRep)...
-                    strings(3,1)+Tests(iRep) strings(3,1)+NumDropped(iRep) ];
+                DropOccTest=[DropOccTest; [occDropped(iRep) NoStimMAV(iRep) DroppedMAV(iRep) occEffort(iRep) occHybrid(iRep)]'...
+                    ["OccDropped" "NoStim" "DroppedMAV" "OccEffort" "OccHybrid"]' ones(5,1)*NormCoefs(iRep) strings(5,1)+Repeats(iRep)...
+                    strings(5,1)+Trials(iRep) ones(5,1)*StimMVC(iRep) ones(5,1)*VoliMVC(iRep)...
+                    strings(5,1)+Tests(iRep) strings(5,1)+NumDropped(iRep) ];
                 
                 for iFilt=1:length(FiltLabels)
                     FiltLabel=FiltLabels(iFilt);
 
                     MAV_Filt=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel)...
-                        .Feats(FrameRange(1):FrameRange(2),:).('MAV_vEMG'));
+                        .Feats(FrameRange(1):FrameRange(2),:).('MAV_vEMG'))/NormCoef*100;
 
                     DropOccTest=[DropOccTest; MAV_Filt...
                         FiltLabel NormCoefs(iRep) Repeats(iRep)...
@@ -1114,13 +1125,13 @@ for iTest=1:length(TestFolders)
         DropOccTest(:,4),DropOccTest(:,5),DropOccTest(:,6),DropOccTest(:,7),...
         DropOccTest(:,8),DropOccTest(:,9),'VariableNames',...
         ["MAV" "MAV_Type"  "NormCoef" "Repeat" "Trial"...
-        "StimMVC" "VoliMVC" "Test" "NumofDropped"]);
+        "MVC_Stim" "MVC_Voli" "Test" "NumofDropped"]);
     
     S.(AnaLabel).(ExpLabel).DropOccTest=DropOccTest;
     Occ=[Occ; DropOccTest];
 end
 
-writetable( Occ, 'dropped_occ2.csv')
+writetable( Occ, 'dropped_occ3.csv')
 
 %%  Occlusion from dropped frames 
 clc
