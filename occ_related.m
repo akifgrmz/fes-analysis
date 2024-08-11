@@ -11,9 +11,10 @@ TestFolders=[ "feb28_24" "feb29_24" "mar20_24"  ];
 TestFolders=["jan7" "jan11" "jan12" "feb28_24"  ];
 TestFolders=["jun20_24" "jul9_24" "jul21_24"];
 TestFolders=["jan7" "jan11" "jan12"  ];
+TestFolders=[ "jan7" "jan11" "jan12" "jun20_24" "jul9_24" "jul21_24" "jul31_24" ];
 
 textt="%s_ana%s";
-suffix_text="_new";
+suffix_text="-aug7-";
 suffix=strings(1,length(TestFolders))+suffix_text;
 TestFiles=compose(textt,[TestFolders' suffix']); 
 
@@ -327,8 +328,10 @@ for iTau=1:length(OccRefs)
             Hybrid_occ_mvc= F_vprime_mvc-Dropped_occ_mvc;
             
             Occ=[ Occ;  F_occ  F_vprime F_sprime F_v Dropped_occ F_target F_occ_mvc F_vprime_mvc...
-                F_sprime_mvc F_v_mvc Dropped_occ_mvc Hybrid_occ_mvc F_target_mvc TestFolders(iTest) EffortType...
+                F_sprime_mvc F_v_mvc Dropped_occ_mvc Hybrid_occ_mvc DroppedMAV Mean_NoStimMAV MAV_max F_target_mvc TestFolders(iTest) EffortType...
                 TauLabels(iTau) "EffortMea" "Unfilt" table2array(RepMatTable(iTrial,:) ) iTrial ];
+
+
 
                 %%s MAV based occlusion estimation using stim-turned off region 
             for iFilt=1:length(FiltLabels)
@@ -350,7 +353,7 @@ for iTau=1:length(OccRefs)
                 MAV_target_mvc=MAV_target/MAV_max*100;
 
                 Occ=[ Occ;  MAV_occ  MAV_vprime MAV_sprime MAV_v Dropped_occ MAV_target MAV_occ_mvc ...
-                    MAV_vprime_mvc MAV_sprime_mvc MAV_v_mvc Dropped_occ_mvc Hybrid_occ_mvc MAV_target_mvc...
+                    MAV_vprime_mvc MAV_sprime_mvc MAV_v_mvc Dropped_occ_mvc Hybrid_occ_mvc  DroppedMAV Mean_NoStimMAV MAV_max MAV_target_mvc...
                     TestFolders(iTest) EffortType TauLabels(iTau) "MAV" FiltLabel table2array(RepMatTable(iTrial,:)) iTrial];
 
                 AmpModul_MAV_target=F_target; %%% ---- Fix This 
@@ -374,29 +377,27 @@ for iTau=1:length(OccRefs)
 
                 Occ=[ Occ; AmpModul_MAV_occ AmpModul_MAV_vprime AmpModul_MAV_sprime AmpModul_MAV_v ...
                     Dropped_occ AmpModul_MAV_target AmpModul_MAV_occ_mvc AmpModul_MAV_vprime_mvc...
-                    AmpModul_MAV_sprime_mvc AmpModul_MAV_v_mvc Dropped_occ_mvc Hybrid_occ_mvc ...
+                    AmpModul_MAV_sprime_mvc AmpModul_MAV_v_mvc Dropped_occ_mvc Hybrid_occ_mvc  DroppedMAV Mean_NoStimMAV MAV_max  ...
                     AmpModul_MAV_target_mvc TestFolders(iTest) EffortType TauLabels(iTau) "Amp_Modul"...
                     FiltLabel table2array(RepMatTable(iTrial,:)) iTrial];
             end
         end
 
         OccTest=Occ(Occ(:,14)==TestFolders(iTest),:); % 14 is where Test variable is located
-        OccTest=array2table(OccTest,'VariableNames',[ "Occ" "vprime" "sprime" "v" "Occ_Dropped"...
-            "Target" "Occ_mvc" "vprime_mvc" "sprime_mvc" "v_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc"...
-            "Target_mvc" "Test" "EffortType" "Tau" "Feat" "Filt" "Target_Level" "Stim_Force" "Voli_Force"...
-            "MVC_Voli" "MVC_Stim" "PW" "Done" "Trial"]);
+        OccTest=array2table(OccTest,'VariableNames',[ "Occ" "vprime" "sprime" "v" "Occ_Dropped" "Target" "Occ_mvc" "vprime_mvc"...
+            "sprime_mvc" "v_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc" "DroppedMAV" "NoStimMAV" "MAV_max" "Target_mvc" "Test" ...
+            "EffortType" "Tau" "Feat" "Filt" "Target_Level" "Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW" "Done" "Trial"]);
         
         S.(AnaLabel).(ExpLabel).OccTest=OccTest;
         clear OccTest
     end
 end
 
-OccTable=array2table(Occ,'VariableNames', [ "Occ" "vprime" "sprime" "v" "Occ_Dropped"...
-    "Target" "Occ_mvc" "vprime_mvc" "sprime_mvc" "v_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc"...
-    "Target_mvc" "Test" "EffortType" "Tau" "Feat" "Filt" "Target_Level" "Stim_Force" "Voli_Force"...
-    "MVC_Voli" "MVC_Stim" "PW" "Done" "Trial"]);
+OccTable=array2table(Occ,'VariableNames', [ "Occ" "vprime" "sprime" "v" "Occ_Dropped" "Target" "Occ_mvc" "vprime_mvc"...
+            "sprime_mvc" "v_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc" "DroppedMAV" "NoStimMAV" "MAV_max" "Target_mvc" "Test" ...
+            "EffortType" "Tau" "Feat" "Filt" "Target_Level" "Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW" "Done" "Trial"]);
 
-writetable( OccTable,'occlusion_v5.csv')
+writetable( OccTable,'occlusion_v6.csv')
 
 %% Effort Simulation 
 %linear modeling for individual occ predictions 
@@ -404,38 +405,49 @@ writetable( OccTable,'occlusion_v5.csv')
 clear lm_table
 % TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20"];
 lm_table=table();
-FiltTypes=["Unfilt" "GS" "Comb"];
 CoefMat=[];
 CoefMat2=[];
 CoefMat3=[];
 
 % AvgOcclusionTests=["feb28_24"]; % Generalized result will not match the 
 % indiv result for feb28_24 for this method because the slopes and averages will be slitly different
-AvgOcclusionTests=TestFolders; 
+AvgOcclusionTests=["jan7" "jan11" "jan12";
+                    "jun20_24" "jul9_24"	"jul21_24"]; 
 
+for iTest=1:length(TestFolders)
+    TestLabel=sprintf("%s_test",TestFolders(iTest));
+    EffortTypeInd(iTest)=S.(TestLabel).ExpPar.EffortType;
+end
+
+EffortTypes=unique(EffortTypeInd);
+for iEffortType=1:length(EffortTypes)
+    EffortLabel=EffortTypes(iEffortType)
+    EffortTestFolders=TestFolders(EffortTypeInd==EffortLabel)
+    Coefs=[];
 for iType=1:length(OccType)
-   
-    for iTest=1:length(TestFolders)
+   lm_table=table();
+
+    for iTest=1:length(EffortTestFolders)
+        TestLabel=sprintf("%s_test",EffortTestFolders(iTest));
 
         EffortType=S.(TestLabel).ExpPar.EffortType;
-
-        RowInd=OccTable.('Feat')=="EffortMea" & OccTable.('Filt')=="Unfilt"...
+        RowInd=OccTable.('EffortType')==EffortType & OccTable.('Feat')=="EffortMea" & OccTable.('Filt')=="Unfilt"...
             & OccTable.('Tau')=="3*tau" & OccTable.('MVC_Stim')~="0";
         
-    % 1- Linear fitting for Individualized results
+% 1- Linear fitting for Individualized results
         lm_table.Occ=str2double(OccTable(RowInd,:).(OccType(iType)));
         lm_table.LogOcc=abs(log(str2double(OccTable(RowInd,:).(OccType(iType)))));
         lm_table.VoliMVC=str2double(OccTable(RowInd,:).('MVC_Voli'));
         lm_table.StimMVC=str2double(OccTable(RowInd,:).('MVC_Stim'));
         lm_table.Test=categorical((OccTable(RowInd,:).('Test')));
         
-        lm_table.Test=reordercats(lm_table.Test,TestFolders);
+        lm_table.Test=reordercats(lm_table.Test,EffortTestFolders);
         mdl = fitlm(lm_table,'Occ~VoliMVC+StimMVC+Test');
         CoefNum=table2array(mdl.Coefficients({'VoliMVC', 'StimMVC'},'Estimate'))';
         CoefCat=table2array(mdl.Coefficients([1,4:end],'Estimate'));
         pVals=mdl.Coefficients.('pValue');
-        pValInd=[1 4:4+length(TestFolders)-2]; % 1: p val for first test, 2,3: numerical variables, 4-:rest of the tests  
-        TestInd=lm_table.Test==TestFolders(iTest);
+        pValInd=[1 4:4+length(EffortTestFolders)-2]; % 1: p val for first test, 2,3: numerical variables, 4-:rest of the tests  
+        TestInd=lm_table.Test==EffortTestFolders(iTest);
 
         if iTest==1
             Coefs(iTest,:)=[CoefCat(1) CoefNum];
@@ -446,23 +458,23 @@ for iType=1:length(OccType)
         Effort_o=[];
         Effort_o=[ Coefs(iTest,1)+(Coefs(iTest,2)*lm_table.VoliMVC(TestInd)+Coefs(iTest,3)*lm_table.StimMVC(TestInd))];
         
-        CoefMat2=[ CoefMat2; repmat([Coefs(iTest,:) pVals(2) pVals(3) pVals(pValInd(iTest)) TestFolders(iTest)...
+        CoefMat2=[ CoefMat2; repmat([Coefs(iTest,:) pVals(2) pVals(3) pVals(pValInd(iTest)) EffortTestFolders(iTest) EffortType...
             OccType(iType) boolean(1) boolean(0)], length(lm_table.Occ(TestInd)),1) Effort_o lm_table.Occ(TestInd)...
             lm_table.LogOcc(TestInd) lm_table.VoliMVC(TestInd) lm_table.StimMVC(TestInd) [1:length(lm_table.Occ(TestInd))]'];
         
-        CoefMat3=[ CoefMat3; Coefs(iTest,:) pVals(pValInd(iTest)) pVals(2) pVals(3) TestFolders(iTest) OccType(iType) boolean(1) boolean(0) ];
+        CoefMat3=[ CoefMat3; Coefs(iTest,:) pVals(pValInd(iTest)) pVals(2) pVals(3) EffortTestFolders(iTest) EffortType OccType(iType) boolean(1) boolean(0) ];
         
     end
     
-    CoefMat=[ CoefMat; Coefs TestFolders' strings(length(TestFolders),1)+OccType(iType) boolean(ones(length(TestFolders),1))  boolean(zeros(length(TestFolders),1))];
+    CoefMat=[ CoefMat; Coefs EffortTestFolders' strings(length(EffortTestFolders),1)+EffortType strings(length(EffortTestFolders),1)+OccType(iType) boolean(ones(length(EffortTestFolders),1))  boolean(zeros(length(EffortTestFolders),1))];
     mdlLog = fitlm(lm_table,'LogOcc~VoliMVC+StimMVC+Test');
     CoefNum=table2array(mdlLog.Coefficients({'VoliMVC', 'StimMVC'},'Estimate'));
     CoefCat=table2array(mdlLog.Coefficients([1,4:end],'Estimate'));
     pVals=mdlLog.Coefficients.('pValue');
-    pValInd=[1 4:4+length(TestFolders)-2]; % 1: p val for first test, 2,3: numerical variables, 4-:rest of the tests  
+    pValInd=[1 4:4+length(EffortTestFolders)-2]; % 1: p val for first test, 2,3: numerical variables, 4-:rest of the tests  
 %     Effort_o=[];
-    for iTest=1:length(TestFolders)
-        TestInd=lm_table.Test==TestFolders(iTest);
+    for iTest=1:length(EffortTestFolders)
+        TestInd=lm_table.Test==EffortTestFolders(iTest);
 
         if iTest==1
             Coefs(iTest,:)=[CoefCat(1) CoefNum'];
@@ -473,18 +485,18 @@ for iType=1:length(OccType)
         Effort_o=[];
         Effort_o=[ Coefs(iTest,1)+(Coefs(iTest,2)*lm_table.VoliMVC(TestInd)+Coefs(iTest,3)*lm_table.StimMVC(TestInd))];
         
-        CoefMat2=[ CoefMat2; repmat([Coefs(iTest,:) pVals(2) pVals(2) pVals(pValInd(iTest)) TestFolders(iTest) OccType(iType) boolean(1) boolean(1)],...
+        CoefMat2=[ CoefMat2; repmat([Coefs(iTest,:) pVals(2) pVals(2) pVals(pValInd(iTest)) EffortTestFolders(iTest) EffortType OccType(iType) boolean(1) boolean(1)],...
             length(lm_table.Occ(TestInd)),1) Effort_o lm_table.Occ(TestInd) lm_table.LogOcc(TestInd)...
             lm_table.VoliMVC(TestInd) lm_table.StimMVC(TestInd) [1:length(lm_table.Occ(TestInd))]' ];
         
-        CoefMat3=[ CoefMat3; Coefs(iTest,:) pVals(pValInd(iTest))  pVals(2) pVals(3) TestFolders(iTest) OccType(iType) boolean(1) boolean(1) ];
+        CoefMat3=[ CoefMat3; Coefs(iTest,:) pVals(pValInd(iTest))  pVals(2) pVals(3) EffortTestFolders(iTest) EffortType OccType(iType) boolean(1) boolean(1) ];
     end
     
-    CoefMat=[ CoefMat; Coefs  TestFolders' strings(length(TestFolders),1)+OccType(iType) boolean(ones(length(TestFolders),1)) boolean(ones(length(TestFolders),1))];
+    CoefMat=[ CoefMat; Coefs  EffortTestFolders' strings(length(EffortTestFolders),1)+EffortType strings(length(EffortTestFolders),1)+OccType(iType) boolean(ones(length(EffortTestFolders),1)) boolean(ones(length(EffortTestFolders),1))];
     
 %----- 2- Linear fitting for Averaged results
     lm_table.Test=string(lm_table.Test);
-    TestInd=any(lm_table.('Test') == AvgOcclusionTests,2);
+    TestInd=any(lm_table.('Test') == AvgOcclusionTests(iEffortType,:),2);
     lm_table_gen=lm_table(TestInd,:);
 
     mdl_gen = fitlm(lm_table_gen,'Occ~VoliMVC+StimMVC');
@@ -495,17 +507,17 @@ for iType=1:length(OccType)
 %     Effort_o=[];
 %     Effort_o=[ Effort_o; CoefCat_gen+CoefNum_gen(1)*lm_table.VoliMVC+CoefNum_gen(2)*lm_table.StimMVC];
 
-    CoefMat=[ CoefMat;  CoefCat_gen CoefNum_gen' "Avg" OccType(iType) boolean(0) boolean(0)];
+    CoefMat=[ CoefMat;  CoefCat_gen CoefNum_gen' "Avg" EffortType OccType(iType) boolean(0) boolean(0)];
 
-    for iTest=1:length(TestFolders)  
-        TestInd=lm_table.Test==TestFolders(iTest);
+    for iTest=1:length(EffortTestFolders)  
+        TestInd=lm_table.Test==EffortTestFolders(iTest);
         Effort_o=[];
         Effort_o=CoefCat_gen+CoefNum_gen(1)*lm_table.VoliMVC(TestInd)+CoefNum_gen(2)*lm_table.StimMVC(TestInd);
 
-        CoefMat2=[ CoefMat2; repmat([CoefCat_gen CoefNum_gen' pVals' TestFolders(iTest) OccType(iType) boolean(0) boolean(0)],length(lm_table.Occ(TestInd)),1)...
+        CoefMat2=[ CoefMat2; repmat([CoefCat_gen CoefNum_gen' pVals' EffortTestFolders(iTest) EffortType OccType(iType) boolean(0) boolean(0)],length(lm_table.Occ(TestInd)),1)...
             Effort_o lm_table.Occ(TestInd) lm_table.LogOcc(TestInd) lm_table.VoliMVC(TestInd) lm_table.StimMVC(TestInd) [1:length(lm_table.Occ(TestInd))]' ];
         
-        CoefMat3=[ CoefMat3; CoefCat_gen CoefNum_gen' pVals' TestFolders(iTest) OccType(iType) boolean(0) boolean(0) ];
+        CoefMat3=[ CoefMat3; CoefCat_gen CoefNum_gen' pVals' EffortTestFolders(iTest) EffortType OccType(iType) boolean(0) boolean(0) ];
     end
     
     mdl_genLog = fitlm(lm_table_gen,'LogOcc~VoliMVC+StimMVC');
@@ -516,89 +528,95 @@ for iType=1:length(OccType)
 %     Effort_o=[];
 %     Effort_o=[ Effort_o; CoefCat_gen+CoefNum_gen(1)*lm_table.VoliMVC+CoefNum_gen(2)*lm_table.StimMVC];
     
-    CoefMat=[ CoefMat;  CoefCat_gen CoefNum_gen' "Avg" OccType(iType) boolean(0) boolean(1)];
+    CoefMat=[ CoefMat;  CoefCat_gen CoefNum_gen' "Avg" EffortType OccType(iType) boolean(0) boolean(1)];
     
-    for iTest=1:length(TestFolders)  
-        TestInd=lm_table.Test==TestFolders(iTest);
+    for iTest=1:length(EffortTestFolders)  
+        TestInd=lm_table.Test==EffortTestFolders(iTest);
         Effort_o=[];
         Effort_o=CoefCat_gen+CoefNum_gen(1)*lm_table.VoliMVC(TestInd)+CoefNum_gen(2)*lm_table.StimMVC(TestInd);
 
-        CoefMat2=[ CoefMat2; repmat([CoefCat_gen CoefNum_gen' pVals' TestFolders(iTest) OccType(iType) boolean(0) boolean(1)],length(lm_table.Occ(TestInd)),1)...
+        CoefMat2=[ CoefMat2; repmat([CoefCat_gen CoefNum_gen' pVals' EffortTestFolders(iTest) EffortType OccType(iType) boolean(0) boolean(1)],length(lm_table.Occ(TestInd)),1)...
             Effort_o lm_table.Occ(TestInd) lm_table.LogOcc(TestInd) lm_table.VoliMVC(TestInd) lm_table.StimMVC(TestInd) [1:length(lm_table.Occ(TestInd))]' ];
         
-        CoefMat3=[ CoefMat3; CoefCat_gen CoefNum_gen' pVals' TestFolders(iTest) OccType(iType) boolean(0) boolean(1)];
+        CoefMat3=[ CoefMat3; CoefCat_gen CoefNum_gen' pVals' EffortTestFolders(iTest) EffortType OccType(iType) boolean(0) boolean(1)];
     end
 end
+end
 
-OccCoef=array2table(CoefMat,'VariableNames',["Coeff1" "Coeff2" "Coeff3" "Test" "Type" "Indiv" "Log"]);
+%%
+OccCoef=array2table(CoefMat,'VariableNames',["Coeff1" "Coeff2" "Coeff3" "Test" "EffortType" "Type" "Indiv" "Log"]);
 
-OccCoef2=array2table(CoefMat2,'VariableNames',["Coeff1" "Coeff2" "Coeff3" "pVal1" "pVal2" "pVal3" "Test" "Type" "Indiv" "Log"...
+OccCoef2=array2table(CoefMat2,'VariableNames',["Coeff1" "Coeff2" "Coeff3" "pVal1" "pVal2" "pVal3" "Test" "EffortType" "Type" "Indiv" "Log"...
     "Effort_o" "Occ" "LogOcc" "MVC_Voli" "MVC_Stim" "Trial"]);
 
-OccCoef3=array2table(CoefMat3,'VariableNames',["Coeff1" "Coeff2" "Coeff3" "pVal1" "pVal2" "pVal3" "Test" "Type" "Indiv" "Log"]);
-writetable( OccCoef2,'occ_coef2.csv')
+OccCoef3=array2table(CoefMat3,'VariableNames',["Coeff1" "Coeff2" "Coeff3" "pVal1" "pVal2" "pVal3" "Test" "EffortType" "Type" "Indiv" "Log"]);
+writetable( OccCoef3,'occ_coef3.csv')
 
 %% Plotting fittings 
 clear Occ
 lmTable=table();
-
-iType=1;
-Type=OccType(iType);
+close all
 Log=false;
 IndivType=true;
-
+OccType=["Occ_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc"];
+% OccType=["Occ_mvc" "Occ_Dropped_mvc"];
 FitVoliPts=[1:40];
 
-for iTest=1:length(TestFolders)
-    Test=TestFolders(iTest);
-    AnaLabel=sprintf("%s_ana",Test);
-    EffortType=S.(TestLabel).ExpPar.EffortType;
+for iType=1:length(OccType)
+    Type=OccType(iType);
 
-    RowInd=OccTable.('Feat')==EffortType &...
-        OccTable.('Filt')=="Unfilt" & OccTable.('Tau')=="3*tau" &...
-        OccTable.('MVC_Stim')~="0";
-    
-    lmTable.Occ=str2double(OccTable(RowInd,:).(OccType(iType)));
-    lmTable.LogOcc=abs(log(str2double(OccTable(RowInd,:).(OccType(iType)))));
-    lmTable.VoliMVC=str2double(OccTable(RowInd,:).('MVC_Voli'));
-    lmTable.StimMVC=str2double(OccTable(RowInd,:).('MVC_Stim'));
-    lmTable.Test=string((OccTable(RowInd,:).('Test')));
+    for iTest=1:length(TestFolders)
+        Test=TestFolders(iTest);
+        AnaLabel=sprintf("%s_ana",Test);
+        EffortType=S.(TestLabel).ExpPar.EffortType;
+    lmTable=table();
 
-    [gVoli, VoliID]=findgroups(lmTable(lmTable.Test==Test,:).('VoliMVC'));
-    [gStim, StimID]=findgroups(lmTable(lmTable.Test==Test,:).('StimMVC'));
-    TestName=S.(AnaLabel).AnaPar.TestName;
-    cm=lines(StimID);
-    for iStim=1:length(StimID)
-        Stim=StimID(iStim);
-        StimLabel=sprintf("Stim:%d",Stim);
-
-        CoeffRowInd=  OccCoef3.('Log')==string(Log) & OccCoef3.('Indiv')==string(IndivType)...
-        & OccCoef3.('Type') == Type & OccCoef3.('Test') == Test;
-
-        Coeff_Indiv(1)=OccCoef3(CoeffRowInd,:).('Coeff1');
-        Coeff_Indiv(2)=OccCoef3(CoeffRowInd,:).('Coeff2');
-        Coeff_Indiv(3)=OccCoef3(CoeffRowInd,:).('Coeff3');
-        Coeff_Indiv=double(Coeff_Indiv);
-
-        for iVoli=1:length(VoliID)
-            OccInd=lmTable.('Test')==Test & lmTable.('StimMVC')==Stim & lmTable.('VoliMVC')==VoliID(iVoli);
-
-            Occ(iVoli,:)=lmTable(OccInd,:).('Occ');
-        end
-        FitOcc=Coeff_Indiv(1) + Coeff_Indiv(2)*FitVoliPts + Coeff_Indiv(3)*Stim;
+        RowInd=OccTable.('Feat')=="EffortMea" & OccTable.('Filt')=="Unfilt" &...
+            OccTable.('Tau')=="3*tau" & OccTable.('MVC_Stim')~="0";
         
-        figure(4)
-        subplot(length(TestFolders),1,iTest)
-        plot(FitVoliPts,FitOcc,'DisplayName',sprintf("Stim%d",StimID(iStim)),'Color',cm(iStim,:))
-        hold on
-        plot(VoliID,(Occ),'o','DisplayName',sprintf("Stim%d",StimID(iStim)),'Color',cm(iStim,:))
-        % ylim([-20 20])
-        xlabel(['Percent Voli. Levels'])
-        ylabel(TestName)
-        legend
+        lmTable.Occ=str2double(OccTable(RowInd,:).(OccType(iType)));
+        lmTable.LogOcc=abs(log(str2double(OccTable(RowInd,:).(OccType(iType)))));
+        lmTable.VoliMVC=str2double(OccTable(RowInd,:).('MVC_Voli'));
+        lmTable.StimMVC=str2double(OccTable(RowInd,:).('MVC_Stim'));
+        lmTable.Test=string((OccTable(RowInd,:).('Test')));
+    
+        [gVoli, VoliID]=findgroups(lmTable(lmTable.Test==Test,:).('VoliMVC'));
+        [gStim, StimID]=findgroups(lmTable(lmTable.Test==Test,:).('StimMVC'));
+        TestName=S.(AnaLabel).AnaPar.TestName;
+        cm=lines(StimID);
+        for iStim=1:length(StimID)
+            Stim=StimID(iStim);
+            StimLabel=sprintf("Stim:%d",Stim);
+    
+            CoeffRowInd=  OccCoef3.('Log')==string(Log) & OccCoef3.('Indiv')==string(IndivType)...
+            & OccCoef3.('Type') == Type & OccCoef3.('Test') == Test;
+    
+            Coeff_Indiv(1)=OccCoef3(CoeffRowInd,:).('Coeff1');
+            Coeff_Indiv(2)=OccCoef3(CoeffRowInd,:).('Coeff2');
+            Coeff_Indiv(3)=OccCoef3(CoeffRowInd,:).('Coeff3');
+            Coeff_Indiv=double(Coeff_Indiv);
+    
+            for iVoli=1:length(VoliID)
+                OccInd=lmTable.('Test')==Test & lmTable.('StimMVC')==Stim & lmTable.('VoliMVC')==VoliID(iVoli);
+    
+                Occ(iVoli,:)=lmTable(OccInd,:).('Occ');
+            end
+
+            FitOcc=Coeff_Indiv(1) + Coeff_Indiv(2)*FitVoliPts + Coeff_Indiv(3)*Stim;
+            
+            figure(4)
+            subplot(length(TestFolders),length(OccType),length(OccType)*iTest-length(OccType)+iType)
+            plot(FitVoliPts,FitOcc,'DisplayName',sprintf("Stim%d",StimID(iStim)),'Color',cm(iStim,:))
+            hold on
+            plot(VoliID,(Occ),'o','DisplayName',sprintf("Stim%d",StimID(iStim)),'Color',cm(iStim,:))
+            % ylim([-20 20])
+            xlabel(['Percent Voli. Levels'])
+            ylabel(TestName)
+        end
     end
 end
-
+subplot(length(TestFolders),length(OccType),1)
+legend
 
 %% Coefficient plotting
 
@@ -697,12 +715,9 @@ OccKickOffLevel=0.3;  % Percent effort
 ErrMat=[];
 LogModel= "false" ;
 FeattoAna="Filt_MAV_vEMG";
-RampTime=[5 10];
-ConstTime=[10 15];
-TurnOffTime=[11 12];
-RampInd=stim_freq*RampTime(1):stim_freq*RampTime(2);
-ConstInd=stim_freq*ConstTime(1):stim_freq*ConstTime(2);
-FrameInd=[ RampInd ConstInd];
+        % RampTime=[5 10];
+        % ConstTime=[10 15];
+        % TurnOffTime=[11 12];
 clear Effort
 for iModel=1:length(LogModel)
     for iTest=1:length(TestFolders)
@@ -710,6 +725,15 @@ for iModel=1:length(LogModel)
         TestLabel=sprintf("%s_test",TestFolders(iTest));
         ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
         EffortType=S.(TestLabel).ExpPar.EffortType;
+    
+        StimRange=S.(TestLabel).(ExpLabel).StimRange;
+        StimConstantRange=S.(TestLabel).(ExpLabel).StimConstantRange;
+        StimProfile=S.(TestLabel).(ExpLabel).StimProfile;
+        RampRange=[StimRange(1) StimConstantRange(1)];
+
+        RampInd=stim_freq*RampRange(1):stim_freq*RampRange(2);
+        ConstInd=stim_freq*StimConstantRange(1):stim_freq*StimConstantRange(2);
+        FrameInd=[ RampInd ConstInd];
 
         MAV_MAX=S.(AnaLabel).MVCTrials.MAV_MAX_theo;
         AmpModul_max_theo=S.(AnaLabel).MVCTrials.AmpModul_max_theo;
@@ -724,9 +748,7 @@ for iModel=1:length(LogModel)
             RCVar=S.(TestLabel).(RCLabel).RCVar;   
         elseif ExpRuns(double(S.(AnaLabel).AnaPar.ExpTable(2,:).('Ramp')))
             Label=S.(AnaLabel).AnaPar.ExpTable(1,:).('Ramp');
-            RCVar(1)=S.(TestLabel).(Label).Coeff1;   
-            RCVar(2)=S.(TestLabel).(Label).Coeff2;   
-            RCVar(3)=S.(TestLabel).(Label).Coeff3;
+            RCVar=S.(TestLabel).(Label).RCVar;   
         end
         % What if there is no RCVAR at all ?
         MVCLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('MVC');
@@ -746,18 +768,20 @@ for iModel=1:length(LogModel)
             StimMVCofFrames=gompertz(RCVar,PWofFrames)/MVC*100+0.00001;
 
             KeepInd=S.(AnaLabel).(ExpLabel).(TrialLabel).KeepInd(1:end-1);
+            EffortTypeLabel=sprintf("%sFrames",EffortType);
 
-            % 1- Force 
-            if S.(TestLabel).ExpPar.EffortType=="Hand"
-                Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).HandFrames(:,KeepInd))';
-                Effort_f=Force;
+            % if S.(TestLabel).ExpPar.EffortType=="Hand"
+            %         Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).HandFrames(:,KeepInd))';
+            %         Effort_f=Force;
+            % 
+            %     else
+            %         Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).ForceFrames(:,KeepInd))';
+            %         Effort_f=Force/F_MAX*100;
+            % 
+            % end
 
-            else
-                Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).ForceFrames(:,KeepInd))';
-                Effort_f=Force/F_MAX*100;
-
-            end
-                
+            Force=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(EffortTypeLabel)(:,KeepInd))';
+            Effort_f=Force/F_MAX*100;
             TargetFrames=mean(S.(AnaLabel).(ExpLabel).TargetFrames(:,KeepInd))';
             Target_mvc=RepTableMat(iTrial,:).('Target_Level')/F_MAX*TargetFrames;
             VoliEffort=RepTableMat(iTrial,:).('MVC_Voli')*TargetFrames;
@@ -766,7 +790,7 @@ for iModel=1:length(LogModel)
             IndTrials=find_trialnum(RepTableMat(iTrial,:).('MVC_Voli'), ...
                 RepTableMat(iTrial,:).('MVC_Stim'),S.(TestLabel).(ExpLabel).RepTableMat);
 
-            RowIndTemp=OccTable.('Test')==TestFolders(iTest) & OccTable.('Feat')== "EffortMea" & ...
+            RowIndTemp=OccTable.('EffortType')==EffortType & OccTable.('Test')==TestFolders(iTest) & OccTable.('Feat')== "EffortMea" & ...
             OccTable.('Filt')=="Unfilt" & OccTable.('Tau')=="3*tau" & OccTable.('Trial')==string(IndTrials');
 
             [~,c]=size(RowIndTemp);
@@ -777,22 +801,27 @@ for iModel=1:length(LogModel)
             %sum(RowInd)
 
             Fv_prime=str2double(OccTable(RowInd1,:).('vprime_mvc'));
-            Fv_prime=str2double(OccTable(RowInd1,:).('vprime_mvc'));
 
             Effort_Fv_prime=TargetFrames*mean(Fv_prime);
 
             for iType=1:length(OccType)
                 TypeLabel=OccType(iType);
 
-                RowInd=OccCoef.('Type') == OccType(iType) & OccCoef.('Test') == TestFolders(iTest) & OccCoef.('Log') == LogModel(iModel);
-                CoefIndv=str2double([ OccCoef(RowInd,:).('Coeff1') OccCoef(RowInd,:).('Coeff2') OccCoef(RowInd,:).('Coeff3') ]);
+                RowInd=OccCoef3.('Type') == OccType(iType) & OccCoef3.('Test') == TestFolders(iTest) & OccCoef3.('Log') == LogModel(iModel) & OccCoef3.('Indiv') == "false";
+                                
+                CoefAvg=str2double([ OccCoef3(RowInd,:).('Coeff1') OccCoef3(RowInd,:).('Coeff2') OccCoef3(RowInd,:).('Coeff3') ]);
+                Effort_o=(CoefAvg(1)+CoefAvg(2).*VoliEffort+CoefAvg(3).*StimEffort);
 
-                RowInd=OccCoef.('Type') == OccType(iType) & OccCoef.('Test') == "Avg" & OccCoef.('Log') == LogModel(iModel);
-                CoefAvg=str2double([ OccCoef(RowInd,:).('Coeff1') OccCoef(RowInd,:).('Coeff2') OccCoef(RowInd,:).('Coeff3') ]);
+                RowInd=OccCoef3.('Type') == OccType(iType) & OccCoef3.('Test') == TestFolders(iTest) & OccCoef3.('Log') == LogModel(iModel) & OccCoef3.('Indiv') == "true";
 
-                Effort_o=CoefAvg(1)+CoefAvg(2).*VoliEffort+CoefAvg(3).*StimEffort;
-                Effort_o_Indv=CoefIndv(1)+CoefIndv(2).*VoliEffort+CoefIndv(3).*StimEffort;
+                CoefIndv=str2double([ OccCoef3(RowInd,:).('Coeff1') OccCoef3(RowInd,:).('Coeff2') OccCoef3(RowInd,:).('Coeff3') ]);
+                Effort_o_Indv=(CoefIndv(1)+CoefIndv(2).*VoliEffort+CoefIndv(3).*StimEffort);
+                
 
+                if EffortType=="Hand"
+                    Effort_o=Effort_o/100;
+                    Effort_o_Indv=Effort_o_Indv/100;
+                end
                 if LogModel(iModel)=="true"
                     Effort_o=exp(Effort_o);
                     Effort_o_Indv=exp(Effort_o_Indv);
@@ -880,7 +909,7 @@ Effort_Est=array2table(ErrMat,'VariableNames',["Effort_e_MAV" "Effort_MAV" "Effo
     "SNR_Force" "SE_Force" "SNR_Amp" "SE_Amp" "Occ_Type" "Filt" "Trial" "Exp" "Test"...
     "LogModel" "EffortType" "Target_Level" "Stim_Force" "Voli_Force" "VoliMVC" "StimMVC" "PW" "Done"]);
 
-writetable( Effort_Est,'occ_est_error2.csv')
+writetable( Effort_Est,'occ_est_error3.csv')
 
 %% Plotting Effort
 close all
@@ -916,9 +945,10 @@ for iType=1:length(OccType)
         IndTrials=find_trialnum(vMVC,sMVC,RepTableMat);
         ttl=sprintf('Test: %s, sMVC: %d, vMVC: %d',TestFolders(iTest),sMVC,vMVC);
 
-        RowInd=OccTable.('Test')==TestFolders(iTest) & OccTable.('Feat')==EffortType &...
+        RowInd=OccTable.('Test')==TestFolders(iTest) & OccTable.('Feat')=="EffortMea" &...
             OccTable.('MVC_Voli')==num2str(vMVC) & OccTable.('MVC_Stim')==num2str(sMVC) &...
             OccTable.('Filt')=="Unfilt" & OccTable.('Tau')=="3*tau";
+
         Fv_prime=str2double(OccTable(RowInd,:).('vprime_mvc'));
 
 
@@ -1026,20 +1056,21 @@ ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
 VoliMVCLevels=[10 20 30 40];
 StimMVCLevels=[10 20 30];
 
-occ_table= readtable('occlusion_v5.csv');
+% occ_table= readtable('occlusion_v5.csv');
 
 FiltLabels=string(S.(AnaLabel).AnaPar.FiltLabels);
 
-Occ=table([],[],[],[],[],[],[],[],[],'VariableNames',["MAV" "MAV_Type"...
-    "NormCoef" "Repeat" "Trial" "MVC_Stim" "MVC_Voli" "Test" "NumofDropped"]);
+% Occ=table([],[],[],[],[],[],[],[],[],'VariableNames',["MAV" "MAV_Type"...
+%     "NormCoef" "Repeat" "Trial" "MVC_Stim" "MVC_Voli" "Test" "NumofDropped"]);
+Occ=[];
 NormMVC=40;
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     TestLabel=sprintf("%s_test",TestFolders{iTest});
 
     stim_freq=S.(TestLabel).ExpPar.stim_freq;
-    % StimRange=S.(TestLabel).(ExpLabel).StimRange;
-    StimRange=TimeRange;
+    StimRange=S.(TestLabel).(ExpLabel).StimConstantRange;
+    % StimRange=TimeRange;
     FrameRange=[StimRange(1)*stim_freq StimRange(2)*stim_freq];
     FrameRangeInd=[FrameRange(1): FrameRange(2)];
     NumofDropped=S.(TestLabel).(ExpLabel).num_of_dropped;
@@ -1104,7 +1135,7 @@ for iTest=1:length(TestFolders)
                 DropOccTest=[DropOccTest; [occDropped(iRep) NoStimMAV(iRep) DroppedMAV(iRep) occEffort(iRep) occHybrid(iRep)]'...
                     ["OccDropped" "NoStim" "DroppedMAV" "OccEffort" "OccHybrid"]' ones(5,1)*NormCoefs(iRep) strings(5,1)+Repeats(iRep)...
                     strings(5,1)+Trials(iRep) ones(5,1)*StimMVC(iRep) ones(5,1)*VoliMVC(iRep)...
-                    strings(5,1)+Tests(iRep) strings(5,1)+NumDropped(iRep) ];
+                    strings(5,1)+Tests(iRep)  strings(5,1)+EffortLabel strings(5,1)+NumDropped(iRep) ];
                 
                 for iFilt=1:length(FiltLabels)
                     FiltLabel=FiltLabels(iFilt);
@@ -1115,23 +1146,21 @@ for iTest=1:length(TestFolders)
                     DropOccTest=[DropOccTest; MAV_Filt...
                         FiltLabel NormCoefs(iRep) Repeats(iRep)...
                         Trials(iRep) StimMVC(iRep) VoliMVC(iRep)...
-                        Tests(iRep) NumDropped(iRep) ];
+                        Tests(iRep) EffortLabel NumDropped(iRep) ];
                 end
             end
         end
     end
     
-    DropOccTest=table(DropOccTest(:,1),DropOccTest(:,2),DropOccTest(:,3),...
-        DropOccTest(:,4),DropOccTest(:,5),DropOccTest(:,6),DropOccTest(:,7),...
-        DropOccTest(:,8),DropOccTest(:,9),'VariableNames',...
+    DropOccTest=array2table(DropOccTest,'VariableNames',...
         ["MAV" "MAV_Type"  "NormCoef" "Repeat" "Trial"...
-        "MVC_Stim" "MVC_Voli" "Test" "NumofDropped"]);
+        "MVC_Stim" "MVC_Voli" "Test" "EffortType" "NumofDropped"]);
     
     S.(AnaLabel).(ExpLabel).DropOccTest=DropOccTest;
     Occ=[Occ; DropOccTest];
 end
 
-writetable( Occ, 'dropped_occ3.csv')
+writetable( Occ, 'dropped_occ5.csv')
 
 %%  Occlusion from dropped frames 
 clc

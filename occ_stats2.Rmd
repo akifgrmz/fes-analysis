@@ -36,10 +36,10 @@ options(dplyr.summarise.inform = FALSE)
 ```{r Data Inject } 
 
 coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
-droppedocc<- read_csv("dropped_occ3.csv",show_col_types = FALSE)
+droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
 
-occraw<- read_csv("occlusion_v5.csv",show_col_types = FALSE)
-err_raw<- read_csv("occ_est_error2.csv",show_col_types = FALSE)
+occraw<- read_csv("occlusion_v6.csv",show_col_types = FALSE)
+err_raw<- read_csv("occ_est_error3.csv",show_col_types = FALSE)
 
 ```
 
@@ -354,7 +354,7 @@ filter(plot_tibble,Test=="oct18"  )%>% group_by(MVC_Stim_Cat)%>%summarise(count 
 
 
 ```{r Plotting: dropped frames occlusion}
-plotibble<-filter(droppedocc, NumofDropped !='4_Drops', MAV_Type !='OccHybrid', MAV_Type !='Comb')
+plotibble<-filter(droppedocc, NumofDropped !='4_Drops', MAV_Type !='OccHybrid', MAV_Type !='Comb',EffortType=="Force")
 formula <- y ~ poly(x, 1, raw = TRUE)
 my.format <-"b[0]~`=`~%.3g*\", \"*b[1]~`=`~%.3g"
 p1<-ggplot(plotibble, aes(x =  MVC_Voli , y = MAV, color = MAV_Type))+
@@ -385,9 +385,11 @@ ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = MAV_Type))+
 
 ```{r Plotting: maintain section  }
 filt="GS"
-occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type=="Occ_mvc", LogModel==FALSE)
+occ_type="Occ_mvc"
+log_model=FALSE
+occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type==occ_type, LogModel==log_model)
 
-occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")
+occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0", Occ_Type==occ_type, LogModel==log_model)
 
 p1<-ggplot(occ_err, aes(x =  VoliMVC , y = Effort_e_MAV_err , color = MVC_Stim_Cat)) +
     geom_point() +
@@ -419,11 +421,56 @@ p1/p2 -p3
 
 
 ```
+```{r Individualized vs Avg occ errors}
+
+filt="GS"
+log_model=FALSE
+effort_type="Force"
+occ_err<-filter(err, MVC_Stim_Cat!="Stim_0", Occ_Type!="Occ_Hybrid_mvc", LogModel==log_model, Filt==filt)
+
+long_tibble<-occ_err%>%pivot_longer(cols=c('Effort_e_MAV','Effort_MAV','Effort_MAV_Indv'),
+                                        names_to='Corrected_Efforts', values_to='Effort_Val')%>%
+  pivot_longer(cols=c('Effort_e_MAV_err','Effort_MAV_err','Effort_MAV_Indv_err'),
+                                        names_to='Corrected_Errors', values_to='Error_Val')
+
+long_tibble<-long_tibble%>%mutate(Error_Names=recode(Corrected_Errors,
+                                'Effort_e_MAV_err' = 'Before_Correction',
+                                'Effort_MAV_err' = 'After_Correction',
+                                'Effort_MAV_Indv_err' = 'Individualized_Correction')) %>%
+            mutate(Occlusion_Names=recode(Occ_Type,
+                                 'Occ_Dropped_mvc' = 'Dropped_Frames_Based',
+                                'Occ_mvc' = 'Force_Based'))
+long_tibble <- long_tibble %>%
+  mutate(Error_Names = relevel(factor(Error_Names), ref = "Before_Correction"))
+
+p1<-ggplot(filter(long_tibble,EffortType==effort_type, Error_Names!='Individualized_Correction'), aes(x =  VoliMVC , y = Error_Val , color = MVC_Stim_Cat)) +
+    geom_point() +
+    geom_smooth(method = "lm")+ 
+    geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
+    facet_wrap( Error_Names  ~  Occlusion_Names)+
+    ylim(-20, 20)+
+    labs(x = "Volitional Effort: F_v (% MVC)",
+    y = "Effort Estimation Error (% MVC)",
+    title = "Effort Estimation Error BEFORE Occlusion Correction",
+    subtitle = sprintf(' %s filtered, Log:%s, %s experiments', filt,log_model, effort_type))
+
+p2<-ggplot(long_tibble, aes(x =  Test , y = Error_Val , color = Error_Names)) +
+    geom_boxplot(notch = FALSE) +
+    facet_wrap(   ~ Occlusion_Names)+
+    ylim(-40, 40)+
+    labs(x = "Volitional Effort: F_v (% MVC)",
+    y = "Effort Estimation Error (% MVC)",
+    title = "Effort Estimation Error BEFORE Occlusion Correction",
+    subtitle = sprintf(' %s filtered, Log:%s', filt,log_model))
+
+p1/p2
+```
+
 
 ```{r Individualized vs Avg occ errors}
 
 filt="GS"
-type='Occ_Dropped_mvc'
+type='Occ_mvc'
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type==type)
 Log=FALSE
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")

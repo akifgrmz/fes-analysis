@@ -31,9 +31,9 @@ clear all
 % TestFolders=[ "apr20" "oct11" "oct18"];
 % TestFolders=["oct25"];
 % TestFolders=[ "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
-TestFolders=["jan7" "jan11" "jan12"  ];
+% TestFolders=["jan7" "jan11" "jan12"  ];
 % TestFolders=["jun20_24" "jul9_24" "jul21_24"  ]
-
+TestFolders=[ "jan7" "jan11" "jan12" "jun20_24" "jul9_24" "jul21_24" "jul31_24" ];
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
 end
@@ -43,8 +43,8 @@ S = load_test(TestFolders,TestFiles);
 %% Plots before analysis
 clc
 close all
-Trials=[ 9];  % Trial
-TimeRange=[1 12];  % in seconds
+Trials=[ 15 16 17]; 
+TimeRange=[1 16];  % in seconds
 % TestLabel=sprintf('%s_test',FolderNames);
 ylims=5;
 ExpNum=4;
@@ -57,7 +57,7 @@ for iTest=1:length(TestFolders)
         TrialLabel=sprintf('Trial_%d',Trials(iTrial));
         DataIndTable= S.(TestLabel).ExpPar.DataIndTable;
 
-        TimeRange=S.(TestLabel).(ExpLabel).StimRange;
+        % TimeRange=S.(TestLabel).(ExpLabel).StimRange;
 
         Time=S.(TestLabel).(ExpLabel).(TrialLabel).data(:,DataIndTable.("Time"));
         TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
@@ -240,7 +240,7 @@ end
 %%Fixing PW invalid values issue (-inf)
 %
 
-clc
+
 TrigThres=1;
 for iTest=1:length(TestFolders)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
@@ -270,8 +270,11 @@ for iTest=1:length(TestFolders)
                         % # PW
                     x(x<0)=0;
                     x(isnan(x))=0;
+                    StimOnInd(x~=0)=true;
 
                     S.(TestLabel).(ExpLabel).(TrialLabel).data(:,iPW)=x;
+                    S.(AnaLabel).(ExpLabel).(TrialLabel).StimInd=StimOnInd;
+                    StimOnInd=[];
                                 % # trigger
                     y(y>TrigThres)=1;
                     y(y<TrigThres)=0;
@@ -299,8 +302,12 @@ for iTest=1:length(TestFolders)
                     % # PW
                 x(x<0)=0;
                 x(isnan(x))=0;
+                StimOnInd(x~=0)=true;
 
                 S.(AnaLabel).(ExpLabel).(TrialLabel).data(:,iPW)=x;
+                S.(AnaLabel).(ExpLabel).(TrialLabel).StimInd=StimOnInd;
+                StimOnInd=[];
+
                             % # trigger
                 y(y>TrigThres)=1;
                 y(y<TrigThres)=0;
@@ -423,7 +430,7 @@ end
 %% Plots after filtering and preproccess 
 clc
 close all
-Trials=[ 11];  % Trial
+Trials=[ 11 12 13];  % Trial
 TimeRange=[1 12];  % in seconds
 % TestLabel=sprintf('%s_test',FolderNames);
 ylims=5;
@@ -577,52 +584,51 @@ for iTest=1:length(TestFolders)
 end
 
 
-%%Extracting Dropped Frames 
+%% Extracting Dropped Frames 
 clc
-ExpTable=S.(AnaLabel).AnaPar.ExpTable;
-VarNames=string(ExpTable.Properties.VariableNames);
-VarNames=VarNames(2:4) ;% excluding MVC and Fatigue Trials
 
-for iExp=1:length(VarNames)
-    VarName=VarNames(iExp);
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).(VarName); 
-    for iTest=1:length(TestFolders)
-        TestLabel=sprintf("%s_test",TestFolders{iTest});
-        AnaLabel=sprintf("%s_ana",TestFolders{iTest});
+ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ'); 
+for iTest=1:length(TestFolders)
+    TestLabel=sprintf("%s_test",TestFolders{iTest});
+    AnaLabel=sprintf("%s_ana",TestFolders{iTest});
 
-        if ~S.(TestLabel).(ExpLabel).dropped 
-            continue;
-        else
+    StimRange=S.(TestLabel).(ExpLabel).StimRange;
 
-            NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
-            StimRange=S.(TestLabel).(ExpLabel).StimRange;
-            stim_freq=S.(TestLabel).ExpPar.FreqList(1);
-            TrialsPW=S.(TestLabel).(ExpLabel).TrialsPW;
-    
-            for iTrial=1:NumofTrials
-                TrialLabel=sprintf('Trial_%d',iTrial);
-                FrameRange=[(stim_freq+1)*StimRange(1),stim_freq*StimRange(2)];
-                PW=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('PW');
-    
-                BegofFrames= S.(AnaLabel).(ExpLabel).(TrialLabel).BegofFrames;
-                NumofFrames=length(BegofFrames);
-    
-                if TrialsPW(iTrial) == 0
-                    ZeroInd=zeros(NumofFrames,1);
-                else
-                    ZeroInd=find(( PW(BegofFrames)==0)==1);
-                end
-    
-                DroppedFrames= ZeroInd(ZeroInd>=FrameRange(1) & ZeroInd<=FrameRange(2) );
-                DroppedEMG= S.(AnaLabel).(ExpLabel).(TrialLabel).BlankEMGFrames(:,DroppedFrames);
-    
-                S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames=DroppedFrames;
-                S.(AnaLabel).(ExpLabel).(TrialLabel).ZeroInd=ZeroInd;
-                S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedEMG=DroppedEMG;
+    if ~S.(TestLabel).(ExpLabel).dropped 
+        continue;
+    else
+
+        NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
+        stim_freq=S.(TestLabel).ExpPar.FreqList(1);
+        TrialsPW=S.(TestLabel).(ExpLabel).TrialsPW;
+
+        for iTrial=1:NumofTrials
+            TrialLabel=sprintf('Trial_%d',iTrial);
+
+            % StimRange=S.(TestLabel).(ExpLabel).(TrialLabel).StimRange;
+
+            FrameRange=[(stim_freq+1)*StimRange(1),stim_freq*StimRange(2)];
+            PW=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('PW');
+
+            BegofFrames= S.(AnaLabel).(ExpLabel).(TrialLabel).BegofFrames;
+            NumofFrames=length(BegofFrames);
+
+            if TrialsPW(iTrial) == 0
+                ZeroInd=zeros(NumofFrames,1);
+            else
+                ZeroInd=find(( PW(BegofFrames)==0)==1);
             end
+
+            DroppedFrames= ZeroInd(ZeroInd>=FrameRange(1) & ZeroInd<=FrameRange(2) );
+            DroppedEMG= S.(AnaLabel).(ExpLabel).(TrialLabel).BlankEMGFrames(:,DroppedFrames);
+
+            S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames=DroppedFrames;
+            S.(AnaLabel).(ExpLabel).(TrialLabel).ZeroInd=ZeroInd;
+            S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedEMG=DroppedEMG;
         end
     end
 end
+
 
 %% Plotting dropped frames
 
@@ -1136,6 +1142,8 @@ for iTest=1:length(TestFolders)
                     MeanMAV=mean(MAV_vEMG(end-stim_freq*1:end-stim_freq*0));
                 elseif ExpLabel=="RCCurveTrials"
                     MeanMAV=mean(MAV_vEMG(end-stim_freq*4:end-stim_freq*2));
+                elseif ExpLabel=="RCRampTrials"
+                    MeanMAV=mean(MAV_vEMG(end-stim_freq*2:end-stim_freq*0));
                 else
                     MeanMAV=mean(MAV_vEMG(end-stim_freq*7:end-stim_freq*2));
                 end
@@ -1395,7 +1403,6 @@ clear MAVDropped
 exp_lbl='Occ';
 % VoliLevels=[10 20 30 40];
 % StimLevels=[ 10 12 15 0];
-MeanTime=[ 10 15];
 
 % Calculating the means at time [10 15]
 for iTest=1:length(TestFolders)
@@ -1407,7 +1414,8 @@ for iTest=1:length(TestFolders)
     StimLevels=S.(TestLabel).(ExpLabel).StimMVCVec;
     RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
     stim_freq=S.(TestLabel).ExpPar.stim_freq;
-
+    
+    MeanTime=S.(TestLabel).(ExpLabel).StimConstantRange;
     MeanFrame=[MeanTime(1)*stim_freq MeanTime(2)*stim_freq];
     MeanRangeInd=[MeanFrame(1):MeanFrame(2)];
     FiltLabel="Unfilt";
@@ -1417,7 +1425,7 @@ for iTest=1:length(TestFolders)
         VoliLevel=VoliLevels(iVoli);
 
         for iStim=1:length(StimLevels)
-            StimLevel=StimLevels(iStim)
+            StimLevel=StimLevels(iStim);
 
             TrialsInd(:,c)= find_trialnum(VoliLevel, StimLevel, RepTableMat);
             
@@ -1546,7 +1554,7 @@ for iFeat=1:1
     end
 end
 
-%% Theoretical and Actual MVC MAV 
+%%Theoretical and Actual MVC MAV 
 
 NumofUpdate=4; % table mvc_table is updated 4 times inside loop below
 NumofVariables=4;
@@ -1617,7 +1625,7 @@ end
 
 %% Saving the results
 
-suffix="_new";
+suffix="-aug7-";
 save_test(TestFolders,S,suffix)
 
 
