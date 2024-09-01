@@ -62,12 +62,23 @@ fat_byframe_data<-fat_byframe_data%>%mutate(Test = as.factor(Test),
 summary(fat_byframe_data)
 
 ```
+```{r } 
 
+fat_byframe_data <- fat_byframe_data%>%group_by(Test)%>%mutate(TrialNum=length(unique(fat_byframe_data$Trial)))
+
+ggplot(data = fat_byframe_data, aes(x = Test, y = TrialNum)) + geom_bar(color=Test) +
+labs(title = "",
+x = "%MVC")
+
+```
 
 ```{r Trial Numbers Distribution}
 
-ggplot(data = fat_byframe, aes(x = R_sqr, fill = Test)) + geom_histogram(color = "white", bins = 20) +
-labs(title = "", x = "%MVC") + guides(fill = FALSE) + facet_grid( ~ Test)
+ggplot(data = fat_byframe, aes(x = R_sqr, fill = Test)) + 
+  geom_histogram(color = "white", bins = 20) +
+  labs(title = "", x = "%MVC") + 
+  guides(fill = FALSE) + 
+  facet_grid( ~ Test)
  
 ```
 

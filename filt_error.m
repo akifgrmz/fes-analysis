@@ -19,22 +19,21 @@ for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
     
-    sMVCzero_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('sMVC');
-    MAVMean_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('Mean');
-    vMVCVal_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_Reps.('vMVC');
+    sMVCzero_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table.('sMVC');
+    MAVMean_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table.('MAV_Mean');
+    vMVCVal_Reps=S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table.('vMVC');
     
-    sMVCzero=S.(AnaLabel).(ExpLabel).MAV_Mean.('sMVC'); 
-    MAVMean=S.(AnaLabel).(ExpLabel).MAV_Mean.('Mean');
-    vMVCVal=S.(AnaLabel).(ExpLabel).MAV_Mean.('vMVC');
+    sMVCzero=S.(AnaLabel).(ExpLabel).MAV_Mean_table.('sMVC');
+    MAVMean=S.(AnaLabel).(ExpLabel).MAV_Mean_table.('MAV_Mean_Reps');
+    vMVCVal=S.(AnaLabel).(ExpLabel).MAV_Mean_table.('vMVC');
     
-    Amp_Modul_Mean=S.(AnaLabel).(ExpLabel).Amp_Modul_Mean.('Mean');
+    Amp_Modul_Mean=S.(AnaLabel).(ExpLabel).MAV_Mean_table.('Amp_Mean_Reps');
     
     Ind=(sMVCzero==sMVC);
     Ind_Reps=(sMVCzero_Reps==sMVC);
     p1=polyfit(vMVCVal(Ind),MAVMean(Ind),1);
 
     p2=polyfit(vMVCVal(Ind),Amp_Modul_Mean(Ind),1);
-
     
     figure(1)
     subplot(2,1,1)

@@ -9,16 +9,37 @@ for iTest=1:length(TestFolders)
 end
 
 S = load_test(TestFolders,TestFiles);
+
+
+ %% Data Inject 
+clc
+clear all
+% TestFolders=["jan7" "jan11" "jan12" "apr20" "may19" "oct11" "oct18" "oct25"];
+% TestFolders=["jan7" "jan11" "jan12" "apr20" ];
+TestFolders=[  "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
+% TestFolders=[  "feb28_24" "mar20_24"];
+TestFolders=[ "feb28_24" "feb29_24" "mar20_24"  ];
+TestFolders=["jan7" "jan11" "jan12" "feb28_24"  ];
+TestFolders=["jun20_24" "jul9_24" "jul21_24"];
+TestFolders=["jan7" "jan11" "jan12"  ];
+TestFolders=[ "jan7" "jan11" "jan12" "jun20_24" "jul9_24" "jul21_24" "jul31_24" ];
+
+TestFolders=["jan7" "jan11" "jan12"  ];
+
+suffix_text="_ana"+"-aug7-";
+TestFiles=TestFolders+strings(1,length(TestFolders))+suffix_text;
+S = load_test(TestFolders,TestFiles);
+
 %% Initial Plotting 
 close all
-iTest=5;  % pick a test to plot 
+iTest=2;  % pick a test to plot 
 FolderName=TestFolders(iTest);  %% Folders to be loaded  
 Trials=[1];  % Trial
 TimeRange=[5 15];  % in seconds
 Exp= ["Fat"];
-AnaStruct=sprintf("%s_ana",TestFolders{iTest});
-TestStruct=sprintf("%s_test",TestFolders{iTest});
-ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(Exp);
+AnaStruct=sprintf("%s_ana",TestFolders(iTest));
+TestStruct=sprintf("%s_test",TestFolders(iTest));
+ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).(Exp);
 
 NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
 if sum(Trials>NumofTrials)>0
@@ -26,15 +47,15 @@ if sum(Trials>NumofTrials)>0
 end
 
 for iTrial=Trials
-    TrialLabel=sprintf('Trial_%d',iTrial);
+    TrialLabel=sprintf("Trial_%d",iTrial);
     
     Time=S.(AnaStruct).(ExpLabel).(TrialLabel).data.("Time");
     TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
     
     EMG=S.(AnaStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("BPFilt_EMG");
-    Trigger=S.(TestStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("Trigger");
-    Force=S.(TestStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("Force");
-    PW=S.(TestStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("PW");
+    Trigger=S.(AnaStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("Trigger");
+    Force=S.(AnaStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("Force");
+    PW=S.(AnaStruct).(ExpLabel).(TrialLabel).data(TimeInd,:).("PW");
     
     figure(iTrial)
     subplot(2,1,1)
@@ -78,25 +99,31 @@ IndStimVoli=[StimVoliStart*stim_freq:StimVoliEnd*stim_freq];
 SegInd=[IndVoli;IndStim;IndStimVoli];
 [NumofSegs,~]=size(SegInd);
 
-ExpLabel=S.(AnaStruct).AnaPar.ExpTable.(Exp);
+ExpLabel=S.(AnaStruct).AnaPar.ExpTable(1,:).(Exp);
 FeatLabels=string(S.(AnaStruct).AnaPar.FeatLabels);
 FiltLabels=string(S.(AnaStruct).AnaPar.FiltLabels);
 
+Fat_stats_Variables=["R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" ...
+    "EMG" "LPFilt" "Feat" "Segment" "Test" "Exp" " Filt" "Trial" "TrialNum" "EffortType"];
 
-Fat_stats=table([],[],[],[],[],[],[],[],[],[],[],[],[],...
-    'VariableNames',["Test" "Exp" " Filt" "Trial"...
-    "Feat" "Segment" "EMG" "R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "LPFilt"]);
-
-Fat=table([],[],[],[],[],[],[],[],[],[],[],[],...
-    'VariableNames',["Feat_Val" "LPFilt_Val" " Force" "LPFilt_Force"...
-    "Frame" "Feat" "Segment" "EMG" "Trial" "Filt" "Test" "Exp"]);
-                    
+Fat_stats=[];
+Fat_stats_Variables
+% Fat_stats=table([],[],[],[],[],[],[],[],[],[],[],[],[],...
+%     'VariableNames',["Test" "Exp" " Filt" "Trial"...
+%     "Feat" "Segment" "EMG" "R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "LPFilt"]);
+Fat=[];
+% Fat=table([],[],[],[],[],[],[],[],[],[],[],[],...
+%     'VariableNames',["Feat_Val" "LPFilt_Val" " Force" "LPFilt_Force"...
+%     "Frame" "Feat" "Segment" "EMG" "Trial" "Filt" "Test" "Exp"]);
+% 
 count=1;
 for iTest=1:length(TestFolders)
     AnaStruct=sprintf("%s_ana",TestFolders(iTest));
     TestStruct=sprintf("%s_test",TestFolders(iTest));
     NumofTrials=S.(TestStruct).(ExpLabel).NumofTrials;
    
+    EffortType=S.(TestStruct).ExpPar.EffortType;
+
     for iFilt=1:length(FiltLabels)
         FiltLabel=FiltLabels(iFilt);            
         samp_filt=1;
@@ -311,18 +338,20 @@ for iTest=1:length(TestFolders)
                 end
             end
         end
-
-        FatTable=table(tests',exps',filts',trials',feats',segs',emgs',r_sqr',...
-            coef_p_val',coefs',anova_p',force_corr',frames',...
-            'VariableNames',["Test" "Exp" " Filt" "Trial"...
-            "Feat" "Segment" "EMG" "R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "LPFilt"]);
+        Fat=[ Fat; r_sqr coef_p_val coefs anova_p force_corr emgs]
         S.(AnaStruct).(ExpLabel).(FiltLabel).FatTable=FatTable;
         Fat_stats= [ Fat_stats; FatTable];
+
+        % FatTable=table(tests',exps',filts',trials',feats',segs',emgs',r_sqr',...
+        %     coef_p_val',coefs',anova_p',force_corr',frames',...
+        %     'VariableNames',["Test" "Exp" " Filt" "Trial"...
+        %     "Feat" "Segment" "EMG" "R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "LPFilt"]);
+
         clear tests exps filts trials feats r_sqr coef_p_val anova_p force_corr segs coefs emgs frames FatTable
     
     end
 end
-
+%%
 writetable( Fat_stats, 'fatigue_stats.csv')
 writetable( Fat, 'fatigue_frames.csv')
 
@@ -343,7 +372,7 @@ StimVoliEnd=StimVoliStart+4;
 
 AnaLabel=sprintf("%s_ana",TestFolders(1));
 TestLabel=sprintf("%s_test",TestFolders{1});
-ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(Exp);
+ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).(Exp);
 
 stim_freq=S.(TestLabel).ExpPar.stim_freq;
 IndVoli=[VoliStart*stim_freq:VoliEnd*stim_freq];
@@ -352,9 +381,13 @@ IndStimVoli=[StimVoliStart*stim_freq:StimVoliEnd*stim_freq];
 SegInd=[IndVoli;IndStim;IndStimVoli];
 [NumofSegs,~]=size(SegInd);
 
-FatStimOnlyFrameStats=table([],[],[],[],[],[],[],[],[],[],[],'VariableNames',...
-    ["Feat_Val"  "Force" "Force_Norm" "Feat_Norm" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
-      
+VariableNames=  ["Feat_Val"  "Force" "Force_Norm" "Feat_Norm" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"];
+FatStimOnlyFrameStats=[];
+% FatStimOnlyFrameStats=table([],[],[],[],[],[],[],[],[],[],[],'VariableNames',...
+%     ["Feat_Val"  "Force" "Force_Norm" "Feat_Norm" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
+FatStimOnlyStatsVariables=["R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "Test"...
+    "Exp" "Filt" "Feat"  "Segment" "EMG" ];
+FatStimOnlyStats=[];      
 samp_filt=1;
 for iEMG=1:length(EMGLabels)
     EMGLabel=EMGLabels(iEMG);
@@ -371,7 +404,7 @@ for iEMG=1:length(EMGLabels)
             NumofTrials=S.(TestLabel).(ExpLabel).NumofTrials;
             clear FiltFeat
 
-            FatTable=S.(AnaLabel).(ExpLabel).(FiltLabel).FatTable;
+            % FatTable=S.(AnaLabel).(ExpLabel).(FiltLabel).FatTable;
 
             [SegNum,~]=size(SegInd);
             for iSeg=1:SegNum
@@ -428,12 +461,10 @@ for iEMG=1:length(EMGLabels)
                     g_seg(:)=SegLabel;
                     g_emg=strings(1,lg);
                     g_emg(:)=EMGLabel;
-
-                    temp=table(FiltFeat, FiltForce, FiltForce/FiltForce(1), FiltFeat/FiltFeat(1), g_trial', g_feat' ,g_seg' ,g_emg'...
-                        ,g_filt' ,g_test' ,g_exp','VariableNames',...
-                        ["Feat_Val" "Force" "Force_Norm" "Feat_Norm" "Trial" "Feat" "Segment" "EMG" "Filt" "Test" "Exp"]);
-                    FatStimOnlyFrameStats= [FatStimOnlyFrameStats; temp];
-
+                    
+                    FatStimOnlyFrameStats=[FatStimOnlyFrameStats; FiltFeat, FiltForce, FiltForce/FiltForce(1), FiltFeat/FiltFeat(1), g_trial', g_feat' ,g_seg' ,g_emg'...
+                        ,g_filt' ,g_test' ,g_exp' ];
+                    
                     S.(AnaLabel).(ExpLabel).(FiltLabel).Mdlr_sqr(iSeg)=Mdlr_sqr;
                     S.(AnaLabel).(ExpLabel).(FiltLabel).Mdlcoef_p_val(:,iSeg)=Mdlcoef_p_val;
                     S.(AnaLabel).(ExpLabel).(FiltLabel).Mdlcoef=Mdlcoef;
@@ -444,12 +475,12 @@ for iEMG=1:length(EMGLabels)
         end
     end
 end
+FatStimOnlyFrameStats=array2table(FatStimOnlyFrameStats,"VariableNames",VariableNames) ;
 
 FatStimOnlyStats=table(r_sqr',coef_p_val',coefs',anova_p',force_corr',tests',...
-    exps',filts',feats',segs',emgs',...
-    'VariableNames',["R_sqr" "Coef_p" "Coefs" "Anova_p" "Pear_r" "Test"...
-    "Exp" "Filt" "Feat"  "Segment" "EMG" ]);
+    exps',filts',feats',segs',emgs','VariableNames',FatStimOnlyStatsVariables);
 
+%%
 writetable( FatStimOnlyStats, 'fat_stimonly_force.csv')
 
 writetable( FatStimOnlyFrameStats, 'fat_stimonly_frame.csv')
@@ -476,7 +507,7 @@ Exp= ["Fat"];
 FiltLabel="Unfilt";
 AnaLabel=sprintf("%s_ana",TestFolders{iTest});
 TestLabel=sprintf("%s_test",TestFolders{iTest});
-ExpLabel=S.(AnaLabel).AnaPar.ExpTable.(Exp);
+ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).(Exp);
 stim_freq=S.(TestLabel).ExpPar.stim_freq;
 FrameInd=TimeRange(1)*stim_freq:TimeRange(2)*stim_freq;
 cm = lines(length(TestFolders));
