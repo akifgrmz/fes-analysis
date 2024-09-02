@@ -38,8 +38,8 @@ clear all
 % TestFolders=[ "jan7" "jan11" "jan12" "jun20_24" "jul9_24" "jul21_24" "jul31_24" ];
 TestFolders=["feb28_24" "feb29_24" "mar18_24"  "mar20_24" ];
 TestFolders=[ "jan7" "jan11" "jan12" "aug22_24" "aug26_24"];
-TestFolders=[ "jan7" "jan11" "jun20_24" "jul9_24" "jul21_24" "jul31_24" "aug19_24" "jan12" "aug22_24" "aug26_24"];
-TestFolders=["aug29_24"]
+TestFolders=[ "jan7" "jan11" "jun20_24" "jul9_24" "jul21_24" "jul31_24" "aug19_24" "jan12" "aug22_24" "aug26_24" "aug29_24"];
+% TestFolders=["aug29_24"]
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
 end
@@ -1298,7 +1298,7 @@ for iTest=1:length(TestFolders)
 end
 
 
-%% DroppedFrames Features
+%%DroppedFrames Features
 
 ExpLabels=S.(TestLabel).ExpPar.ExpLabels;
 ExpstoAna=ExpLabels([4]);
@@ -1601,22 +1601,23 @@ for iTest=1:length(TestFolders)
     MAV_Mean_reps_table=table(double(TrialStats(:,1)),double(TrialStats(:,2)),double(TrialStats(:,3)),double(TrialStats(:,4)),double(TrialStats(:,5)),...
         double(TrialStats(:,6)),double(TrialStats(:,7)),double(TrialStats(:,8)),double(TrialStats(:,9)),TrialStats(:,10),TrialStats(:,11),TrialStats(:,12),...
         TrialStats(:,13),'VariableNames',["MAV_Mean" "MAV_Std" "Amp_Mean" "Amp_Std" "Dropped_Mean" "Dropped_Std" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "Exp" "Test"]);
-
+    
     MAV_Mean_table=table(double(Mean_TrialStats(:,1)),double(Mean_TrialStats(:,2)),double(Mean_TrialStats(:,3)),double(Mean_TrialStats(:,4)),double(Mean_TrialStats(:,5)),...
         double(Mean_TrialStats(:,6)),double(Mean_TrialStats(:,7)),double(Mean_TrialStats(:,8)),double(Mean_TrialStats(:,9)),double(Mean_TrialStats(:,10)),double(Mean_TrialStats(:,11)),...
         Mean_TrialStats(:,12),Mean_TrialStats(:,13),Mean_TrialStats(:,14),Mean_TrialStats(:,15),'VariableNames',["Unique_Trial" "MAV_Mean_Reps" "MAV_Std_Reps"...
         "Amp_Mean_Reps" "Amp_Std_Reps" "Dropped_Mean_Reps" "Dropped_Std_Reps" "NumofReps" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "Exp" "Test"]);
-
+    
     S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table=MAV_Mean_reps_table;
     S.(AnaLabel).(ExpLabel).MAV_Mean_table=MAV_Mean_table;
-
+    
 end
 
-%% Plotting
+%% Plotting No Stim Trials
 
 cm = lines(length(TestFolders));
 sMVC=0;
 FiltLabel="Unfilt";
+Extrapolate=100;
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
@@ -1630,12 +1631,12 @@ for iTest=1:length(TestFolders)
     % MAVMean=S.(AnaLabel).(ExpLabel).MAV_Mean_table.('MAV_Mean_Reps');
     % vMVCVal=S.(AnaLabel).(ExpLabel).MAV_Mean_table.('vMVC');
     % Ind=(sMVCzero==sMVC);
-
+    
     Amp_Modul_Mean=S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('Amp_Mean');
-
+    
     Ind_Reps=(sMVCzero_Reps==sMVC);
     p1=polyfit(vMVCVal_Reps(Ind_Reps),MAVMean_Reps(Ind_Reps),1);
-
+    
     p2=polyfit(vMVCVal_Reps(Ind_Reps),Amp_Modul_Mean(Ind_Reps),1);
     
     figure(1)
@@ -1643,21 +1644,19 @@ for iTest=1:length(TestFolders)
     plot(vMVCVal_Reps(Ind_Reps),MAVMean_Reps(Ind_Reps),'o','LineWidth',1,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
     legend
     hold on
-    plot(vMVCVal_Reps(Ind_Reps),polyval(p1,vMVCVal_Reps(Ind_Reps)),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    plot([vMVCVal_Reps(Ind_Reps); Extrapolate],polyval(p1,[vMVCVal_Reps(Ind_Reps); Extrapolate]),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
     xlabel('% Voli. MVC')
     ylabel('Mean MAV')
-    xlim([0 50])
-
-
+    % xlim([0 50])
+    
     subplot(2,1,2)
     plot(vMVCVal_Reps(Ind_Reps),Amp_Modul_Mean(Ind_Reps),'o','LineWidth',1,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
     legend
     hold on
-    plot(vMVCVal_Reps(Ind_Reps),polyval(p2,vMVCVal_Reps(Ind_Reps)),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    plot([vMVCVal_Reps(Ind_Reps); Extrapolate],polyval(p2,[vMVCVal_Reps(Ind_Reps); Extrapolate]),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
     ylabel('% Amp modul')
     xlabel('% Voli. MVC')
-    xlim([0 50])
-
+    % xlim([0 50])
 end
 
 %% Normalize the Features over zero stim trials
@@ -1719,7 +1718,7 @@ for iFeat=1:1
     end
 end
 
-%%Theoretical and Actual MVC MAV 
+%% Theoretical and Actual MVC MAV 
 
 NumofUpdate=4; % table mvc_table is updated 4 times inside loop below
 NumofVariables=4;
@@ -1728,6 +1727,7 @@ MVC_Percent=100;
 sMVC_Ref=0;
 AvgTimeMVC=2;
 FiltLabel="Unfilt";
+cm = lines(length(TestFolders));
 
 for iTest=1:length(TestFolders)
     
@@ -1776,10 +1776,10 @@ for iTest=1:length(TestFolders)
     
     poly1=polyfit(vMVCLevs(Ind),MAVMean(Ind),1);
     poly2=polyfit(vMVCLevs(Ind),Amp_Modul_Mean(Ind),1);
-
+    
     MAV_max_theo=polyval(poly1,MVC_Percent);
     AmpModul_max_theo=polyval(poly2,MVC_Percent);
-
+    
     ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('MVC');
     S.(AnaLabel).(ExpLabel).MAV_MAX_theo=MAV_max_theo;
     S.(AnaLabel).(ExpLabel).AmpModul_max_theo=AmpModul_max_theo;
@@ -1787,9 +1787,28 @@ for iTest=1:length(TestFolders)
     mvc_table(iTest*NumofUpdate-1,:)=[ MAV_max_theo "MAV" true TestFolders(iTest) ];
     mvc_table(iTest*NumofUpdate,:)=[ AmpModul_max_theo "Amp" true TestFolders(iTest) ];
     
-    S.(AnaLabel).(ExpLabel).MVCTable= array2table(mvc_table,'VariableNames',["MVC" "Type" "Theo" "Test"]);
+    S.(AnaLabel).(ExpLabel).MVCTable= array2table(mvc_table,'VariableNames',["MVC_MAV" "Type" "Theo" "Test"]);
 
+
+
+    figure(1) 
+    subplot(2,1,1)
+    semilogy(vMVCLevs(Ind),MAVMean(Ind),'o','LineWidth',1,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    hold on 
+    semilogy([unique(vMVCLevs(Ind)); 100],polyval(poly1,[unique(vMVCLevs(Ind)); 100]),'LineWidth',2,'Color',cm(iTest,:),'DisplayName',TestFolders(iTest));
+    semilogy(100, MAV_max, '*','Color',cm(iTest,:),'DisplayName',TestFolders(iTest))
+    legend
+    xlabel('% Voli. MVC')
+    ylabel('Mean MAV')
+    % xlim([0 50])
+    
 end
+
+writetable(S.(AnaLabel).(ExpLabel).MVCTable,'mvc_table.csv')
+
+%% Plotting the MVC_ MAV levels
+
+
 
 %% Saving the results
 

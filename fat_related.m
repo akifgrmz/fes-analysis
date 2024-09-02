@@ -18,11 +18,11 @@ clear all
 % TestFolders=["jan7" "jan11" "jan12" "apr20" ];
 TestFolders=[  "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
 % TestFolders=[  "feb28_24" "mar20_24"];
-TestFolders=[ "feb28_24" "feb29_24" "mar20_24"  ];
-TestFolders=["jan7" "jan11" "jan12" "feb28_24"  ];
+TestFolders=["feb28_24" "feb29_24" "mar20_24"];
+TestFolders=["jan7" "jan11" "jan12" "feb28_24"];
 TestFolders=["jun20_24" "jul9_24" "jul21_24"];
 TestFolders=["jan7" "jan11" "jan12"  ];
-TestFolders=[ "jan7" "jan11" "jan12" "jun20_24" "jul9_24" "jul21_24" "jul31_24" ];
+TestFolders=["jan7" "jan11" "jan12" "jun20_24" "jul9_24" "jul21_24" "jul31_24"];
 
 TestFolders=["jan7" "jan11" "jan12"  ];
 

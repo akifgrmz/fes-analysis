@@ -54,17 +54,6 @@ for iField=1:length(ExpID)
 end
 S.(ExpStruct).ExpRuns=ExpRuns;
 
-% S.(ExpStruct).MVCTrials=temp.handles.MVCTrials;
-% S.(ExpStruct).FatigueTrials=temp.handles.FatigueTrials;
-% S.(ExpStruct).CustomTrials=temp.handles.CustomTrials;
-% S.(ExpStruct).OccTrials=temp.handles.ExpTrials;
-% S.(ExpStruct).RCCurveTrials=temp.handles.RCCurveTrials;
-% if isfield(temp.handles, 'RCRampTrials')
-%     S.(ExpStruct).RCRampTrials=temp.handles.RCRampTrials;
-% end
-
-
-
 
 if isfield(temp.handles, 'SbjInfo')
     S.(ExpStruct).ExpPar.SbjInfo=temp.handles.SbjInfo;
@@ -371,6 +360,14 @@ end
 
 S.(ExpStruct).ExpPar.fs_calc=fs;
 S.(ExpStruct).ExpPar.sample_t_calc=sample_t;
+
+ExpLabels=S.(ExpStruct).ExpPar.ExpLabels;  
+
+ExpShortCuts=["MVC","RC","Cus","Occ","Fat","Ramp","Calib"];
+ExpShortCutsTableVal=[ExpLabels; 1:length(ExpLabels)];
+ExpShortCutsVarible=ExpShortCuts(1:length(ExpLabels));
+
+S.(ExpStruct).ExpPar.ExpTable=array2table(ExpShortCutsTableVal,'VariableNames',ExpShortCutsVarible);
 
 %
 % Saving as struc
