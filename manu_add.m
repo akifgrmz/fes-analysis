@@ -217,4 +217,129 @@ function manu_add()
     str=sprintf("%s.mat is created",TestFile);
     disp(str)
 
+    %% 10- sep4_24
+    
+    FolderName=["sep4_24"];
+    TestFile=sprintf("%s_test",FolderName);
+    S=tidy_data(FolderName,false);
+    
+    % Additions 
+
+
+    iTrial=1;
+    Division=25;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)=S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)/Division;
+     
+    iTrial=2;
+    Division=25;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)=S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)/Division;
+
+    str=sprintf('%s/%s',FolderName,TestFile);
+    
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)
+
+    %% 11- sep6_24
+    
+    FolderName=["sep6_24"];
+    TestFile=sprintf("%s_test",FolderName);
+    S=tidy_data(FolderName,false);
+    
+    % Additions 
+
+    iTrial=4;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    iEMG=S.(TestFile).ExpPar.DataIndTable.('EMG');
+    Division=30;
+    S.(TestFile).OccTrials.(TrialLabel1).data(:,iEMG)=S.(TestFile).OccTrials.(TrialLabel1).data(:,iEMG)/Division;
+
+    iTrial=2;
+    Division=250;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)=S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)/Division;
+
+    iTrial=1;
+    Division=250;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)=S.(TestFile).MVCTrials.(TrialLabel1).data(:,iEMG)/Division;
+    S.(TestFile).OccTrials.NumofTrials=48;        
+    
+    str=sprintf('%s/%s',FolderName,TestFile);
+    
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)
+
+    %% 12- oct17_24
+    
+    FolderName=["oct17_24"];
+    TestFile=sprintf("%s_test",FolderName);
+    S=tidy_data(FolderName,false);
+    
+    % Additions 
+
+    ExpLabel="MVCTrials";
+    iTrial=1;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).(ExpLabel)=rmfield( S.(TestFile).(ExpLabel),TrialLabel1);
+
+    iTrial=2;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).(ExpLabel)=rmfield(S.(TestFile).(ExpLabel),TrialLabel1);
+    S.(TestFile).(ExpLabel).iTrial=2;
+    iTrial=3;
+
+    S.(TestFile).(ExpLabel).EffortMaxs=S.(TestFile).(ExpLabel).EffortMaxs(iTrial);
+    S.(TestFile).(ExpLabel).EffortMins=S.(TestFile).(ExpLabel).EffortMins(iTrial);
+    S.(TestFile).(ExpLabel).Trial_1=S.(TestFile).(ExpLabel).Trial_3;
+    S.(TestFile).(ExpLabel).MAV_MVCs=S.(TestFile).(ExpLabel).MAV_MVCs(iTrial);
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).(ExpLabel)=rmfield(S.(TestFile).(ExpLabel),TrialLabel1); 
+    S.(TestFile).(ExpLabel).MVC= S.(TestFile).(ExpLabel).EffortMaxs+S.(TestFile).(ExpLabel).EffortMins;
+    S.(TestFile).(ExpLabel).EffortMaxs= S.(TestFile).(ExpLabel).EffortMaxs+S.(TestFile).(ExpLabel).EffortMins;
+    S.(TestFile).(ExpLabel).NumofTrials=S.(TestFile).(ExpLabel).iTrial-1;
+    str=sprintf('%s/%s',FolderName,TestFile);
+    % 
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)
+
+        %% 13- oct18_24
+    
+    FolderName=["oct18_24"];
+    TestFile=sprintf("%s_test",FolderName);
+    S=tidy_data(FolderName,false);
+    
+    % Additions 
+
+    ExpLabel="MVCTrials";
+    iTrial=1;
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).(ExpLabel)=rmfield( S.(TestFile).(ExpLabel),TrialLabel1);
+    % 
+    % iTrial=2;
+    % TrialLabel1=sprintf("Trial_%d",iTrial);
+    % S.(TestFile).(ExpLabel)=rmfield(S.(TestFile).(ExpLabel),TrialLabel1);
+    % S.(TestFile).(ExpLabel).iTrial=2;
+
+    iTrial=2;
+    S.(TestFile).(ExpLabel).iTrial=iTrial; 
+    S.(TestFile).(ExpLabel).EffortMaxs=S.(TestFile).(ExpLabel).EffortMaxs(iTrial);
+    S.(TestFile).(ExpLabel).EffortMins=S.(TestFile).(ExpLabel).EffortMins(iTrial);
+    S.(TestFile).(ExpLabel).Trial_1=S.(TestFile).(ExpLabel).Trial_2;
+    S.(TestFile).(ExpLabel).MAV_MVCs=S.(TestFile).(ExpLabel).MAV_MVCs(iTrial);
+    TrialLabel1=sprintf("Trial_%d",iTrial);
+    S.(TestFile).(ExpLabel)=rmfield(S.(TestFile).(ExpLabel),TrialLabel1); 
+    S.(TestFile).(ExpLabel).MVC= S.(TestFile).(ExpLabel).EffortMaxs+S.(TestFile).(ExpLabel).EffortMins;
+    S.(TestFile).(ExpLabel).EffortMaxs= S.(TestFile).(ExpLabel).EffortMaxs+S.(TestFile).(ExpLabel).EffortMins;
+    S.(TestFile).(ExpLabel).NumofTrials=S.(TestFile).(ExpLabel).iTrial-1;
+    str=sprintf('%s/%s',FolderName,TestFile);
+    % 
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)
+
 end

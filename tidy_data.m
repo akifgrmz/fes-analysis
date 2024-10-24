@@ -317,8 +317,11 @@ for iExp=1:length(Lbl)
 
     T_turnoff=S.(ExpStruct).(ExpLabel).StimProfile;
     lgt=round(T_turnoff*fs+fs*mrg(iExp));
-    
     NumofTrials=S.(ExpStruct).(ExpLabel).NumofTrials;
+
+    if ExpLabel=="OccTrials"
+        NumofTrials=S.(ExpStruct).(ExpLabel).ListedNumofTrials;
+    end
     RedoTrials=S.(ExpStruct).(ExpLabel).RedoTrials;
 
     for iTrial=1:NumofTrials

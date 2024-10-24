@@ -21,7 +21,6 @@ TestFolders=[ "jan7" "jan11" "jun20_24" "jul9_24" "jul21_24" "jul31_24" "aug19_2
 TestFolders=["aug29_24"];
   
 TestFolders=[ "jan7" "jan11" "jan12" "aug22_24" "aug26_24" "aug29_24"];
-TestFolders=["jan7" "jan11" "jan12" "aug22_24" "sep3_24" "sep4_24" "sep6_24" "oct17_24" "oct18_24"];
 
 NumofTests=length(TestFolders);
 DroppedFrameFilts=strings(1,NumofTests)+"GS";

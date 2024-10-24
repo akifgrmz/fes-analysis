@@ -3,8 +3,8 @@
 clear all
 close all
 iTestPlot=1;  % pick a test to plot 
-FolderNames={'jan7'};  %% Folders to be loaded 
-FileNames={'jan7_test'};  %% Files to be loaded 
+FolderNames={'sep6_24'};  %% Folders to be loaded 
+FileNames={'sep6_24_test'};  %% Files to be loaded 
 
 % TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
 iExp=4;    % pick an exp to plot 
@@ -14,7 +14,7 @@ Fields = fieldnames(M);
 ExpStruct=Fields{iTestPlot};
 ExpLabels=M.(ExpStruct).ExpPar.ExpLabels;
 %%
-FolderNames=['mar20_24'];  %% Folders to be loaded 
+FolderNames=['sep6_24'];  %% Folders to be loaded 
 
 PlotRange=[ 13 14 ];  % Trial
 TimeRange=[4 22];  % in seconds
