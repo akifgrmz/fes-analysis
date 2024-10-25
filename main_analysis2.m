@@ -37,9 +37,9 @@ DroppedFrameFilts=strings(1,NumofTests)+"GS";
 NoStimFilts=strings(1,NumofTests)+"GS";
 MAV_MAXMethods=strings(1,NumofTests)+"Real";
 
-% AvgOcclusionTests=["jan7" "jan11" "jan12";
-%      "aug22_24" "sep3_24" "sep4_24" ];
-AvgOcclusionTests=["sep6_24" "oct17_24" "oct18_24"];
+AvgOcclusionTests=["jan7" "jan11" "jan12";
+     "aug22_24" "sep3_24" "sep4_24" ];
+% AvgOcclusionTests=["sep6_24" "oct17_24" "oct18_24"];
 
 TauTestsForce=["jan7" "jan11" "jan12"]; % Average of 
 TauTestsHand=["jan7" "jan11" "jan12"]; % Average of 
@@ -77,7 +77,7 @@ Tau_table= readtable('tau_estimates3.csv');
 Tau_stats_table= readtable('tau_est_stats.csv');
 
 
-%% Setting up initial parameters
+%%Setting up initial parameters
 for iTest=1:length(TestFolders)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
@@ -1405,14 +1405,12 @@ for iTest=1:length(TestFolders)
 end
 
 writetable(S.(AnaLabel).(ExpLabel).MVCTable,'mvc_table.csv')
+%%-
+
 %%
-
-
 suffix="-oct19-";
 save_test(TestFolders,S,suffix)
 
-
-%%
 %% Occlusion Analysis
 % # Determining Force, MAV Occlusion 
 % Occ eqn F_o= Fs-Fs'   
@@ -1969,7 +1967,7 @@ for iModel=1:length(LogModel)
                         EffortType S.(TestLabel).(ExpLabel).RepTableMat(iTrial,1:7) ];
 
 %                     % 4- Saving the Results
-    %                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).(TypeLabel).EffortEst=table();
+%                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).(TypeLabel).EffortEst=table();
                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).(TypeLabel).EffortEst(:,'Effort_o')=array2table(Effort_o);
                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).(TypeLabel).EffortEst(:,'Effort_o_Indv')=array2table(Effort_o_Indv);
                     S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).(TypeLabel).EffortEst(:,'Effort_f')=array2table(Effort_f);
@@ -2004,7 +2002,7 @@ Effort_Est=array2table(ErrMat,'VariableNames',["Effort_e_MAV" "Effort_MAV" "Effo
 
 writetable( Effort_Est,'occ_est_error4.csv')
 
-%% Dropped Frames based Occlusion Estimation 
+%%Dropped Frames based Occlusion Estimation 
 % Occ = 0-stim - avg(dropped frames)
 % TestFolders=["jan7" "jan11" "apr20" "mar16"];
 
@@ -2127,8 +2125,6 @@ for iTest=1:length(TestFolders)
 end
 
 writetable( Occ, 'dropped_occ6.csv')
-
-
 
 %%  Occlusion from dropped frames 
 clc
