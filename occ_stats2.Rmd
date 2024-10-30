@@ -40,6 +40,7 @@ droppedocc<- read_csv("dropped_occ6.csv",show_col_types = FALSE)
 
 occraw<- read_csv("occlusion_v7.csv",show_col_types = FALSE)
 err_raw<- read_csv("occ_est_error4.csv",show_col_types = FALSE)
+rmse_raw<- read_csv("rmse2.csv",show_col_types = FALSE)
 
 ```
 
@@ -123,9 +124,57 @@ coef<-coef%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
 
 coef<-coef%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
 
+
+rmse<-rmse_raw%>%mutate(Test = as.factor(Test),
+                       Effort_Type = as.factor(Effort_Type),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test),
+                       Ref_Trial = as.integer(Ref_Trial))
+
+rmse<-rmse%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
 summary(occ)
 ```
 
+
+```{r Plotting rmse}
+
+plot_rmse<-filter(rmse,  Norm == TRUE, Error_Type=="RMSE", Error!=0) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+  mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
+
+plot_rmse$Filt <- factor(plot_rmse$Filt, levels = c("Ref", "GS", "Comb", "Unfilt"))
+
+plot_rmse_summary <- plot_rmse %>%
+  group_by(Filt, Effort_Type, MVC_Voli_Cat, MVC_Stim_Cat) %>%
+  summarise(
+    mean_error = mean(Error),
+    sd_error = sd(Error)
+  )
+
+NumofTest<-length(unique(plot_tibble$Test) )
+ggplot(plot_rmse_summary, aes(x = Filt  , y = 100*mean_error, fill = MVC_Stim_Cat)) +
+    geom_col(position = "dodge") +     #geom_smooth(method = "lm")+ 
+    geom_errorbar(aes(ymin = 100*(mean_error - sd_error), ymax = 100*(mean_error + sd_error)),
+                position = position_dodge(0.9), width = 0.25) +    
+  facet_wrap(Effort_Type~MVC_Voli_Cat)+
+    #ylim(-10,200)
+    labs(x = "Filter ",
+    y = "NRMSE (% MVC MAV)",
+    title = "NRMSE ",
+    subtitle = sprintf("%d able-body participants",length(unique(plot_tibble$Test) )))
+    
+```
 
 ```{r Plotting: maintain section}
 
