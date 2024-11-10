@@ -287,7 +287,7 @@ S.(ExpStruct).FatigueTrials.StimRange=[5 35];
 %     'VariableNames',["dec5","nov28_2","nov27","nov8","nov7"]);
 
 
-mrg=[1.8 2 1];
+mrg=[1.8 0.5 1];
 
 sample_t=S.(ExpStruct).ExpPar.sample_t;
 fs=1/sample_t;
@@ -304,6 +304,10 @@ end
 
 if ~isfield(S.(ExpStruct).OccTrials, 'StimConstantRange')
     S.(ExpStruct).OccTrials.StimConstantRange=[S.(ExpStruct).OccTrials.StimProfile-5 S.(ExpStruct).OccTrials.StimProfile];
+end
+
+if ~isfield(S.(ExpStruct).OccTrials, 'TrialType')
+    S.(ExpStruct).OccTrials.TrialType = "Orig";
 end
 
 
@@ -326,6 +330,12 @@ for iExp=1:length(Lbl)
 
     for iTrial=1:NumofTrials
         TrialLabel=sprintf('Trial_%d',iTrial);
+        
+        if ~isfield(S.(ExpStruct).(ExpLabel), TrialLabel)
+            TrialLabel2=sprintf('OtherTrial_%d',iTrial);
+            S.(ExpStruct).(ExpLabel).(TrialLabel).data=S.(ExpStruct).(ExpLabel).(TrialLabel2).data;
+            S.(ExpStruct).(ExpLabel)=rmfield(S.(ExpStruct).(ExpLabel),TrialLabel2);
+        end
 
         % if ~isfield(S.(ExpStruct).OccTrials.(TrialLabel), 'StimProfile')
         %     S.(ExpStruct).OccTrials.(TrialLabel).StimProfile=15; % Stim turn off time 
@@ -338,6 +348,7 @@ for iExp=1:length(Lbl)
         % if ~isfield(S.(ExpStruct).OccTrials, 'StimConstantRange')
         %     S.(ExpStruct).OccTrials.(TrialLabel).StimConstantRange=[S.(ExpStruct).OccTrials.(TrialLabel).StimProfile-5 S.(ExpStruct).OccTrials.(TrialLabel).StimProfile];
         % end
+
         
         [lg_dt,~]=size(S.(ExpStruct).(ExpLabel).(TrialLabel).data);
         if  lg_dt>=lgt

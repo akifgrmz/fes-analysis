@@ -5,24 +5,26 @@
 
 % %% Tidy Data
 % 
-% TestFolders=["jan7" "jan11" "jan12" "aug22_24" "sep3_24" "sep4_24" "sep6_24"];
-% TestFolders=[ "sep4_24" "sep6_24" "oct17_24"];
-% 
-% for iTest=1:length(TestFolders)
-%     TestFolder=TestFolders(iTest);
-%     S=tidy_data(TestFolder);
-%     TestFile=sprintf("%s_test",TestFolder);
-%     str=sprintf('%s/%s',TestFolder,TestFile);
-%     save(str,'-struct','S',TestFile)
-%     str=sprintf("%s.mat is created",TestFile);
-%     disp(str)
-% end
+TestFolders=["jan7" "jan11" "jan12" "aug22_24" "sep3_24" "sep4_24" "sep6_24"];
+TestFolders=[ "sep4_24" "sep6_24" "oct17_24"];
+TestFolders=["oct29_24", "oct31_24"];
+
+for iTest=1:length(TestFolders)
+    TestFolder=TestFolders(iTest);
+    S=tidy_data(TestFolder);
+    TestFile=sprintf("%s_test",TestFolder);
+    str=sprintf('%s/%s',TestFolder,TestFile);
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)
+end
 
 
 %% Defining Initial Parameters
 
 TestFolders=["jan7" "jan11" "jan12" "aug22_24" "sep3_24" "sep4_24" "sep6_24" "oct17_24" "oct18_24"];
 % TestFolders=["sep3_24" "sep4_24" "oct17_24"];
+% TestFolders=["oct29_24", "oct31_24"];
 
 NumofTests=length(TestFolders);
 DroppedFiltLabels=strings(1,NumofTests)+"GS";
@@ -553,7 +555,7 @@ for iTest=1:length(TestFolders)
                 ZeroInd=find(( PW(BegofFrames)==0)==1);
             end
 
-            DroppedFrames= ZeroInd(ZeroInd>=FrameRange(1) & ZeroInd<=FrameRange(2) );
+            DroppedFrames= ZeroInd(ZeroInd>=FrameRange(1) & ZeroInd<=FrameRange(2));
             DroppedEMG= S.(AnaLabel).(ExpLabel).(TrialLabel).BlankEMGFrames(:,DroppedFrames);
 
             S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames=DroppedFrames;
@@ -1026,7 +1028,7 @@ end
 %%Mean MAV of Stim Only Trials 
 clear MAV_Mean
 
-RCMeanTime=[8 10]; % Calculating the means at time [8 10]
+RCMeanTime=[9 10]; % Calculating the means at time [8 10]
 FiltLabel="Unfilt";
 RampTimeRange=[2 20];
 MAV_Mean_tests=[];
@@ -1171,24 +1173,27 @@ MAV_Mean_tests=array2table(MAV_Mean_tests,'VariableNames',["Mean" "Std" "PW" "Ex
 %%Mean MAV of Occ Trials 
 clc
 clear MAVDropped
-exp_lbl='Occ';
-% VoliLevels=[10 20 30 40];
-% StimLevels=[ 10 12 15 0];
 TrialStats=[];
-
+TrialStatsAll=[];
+Mean_TrialStatsAll=[];
 for iTest=1:length(TestFolders)
     TestLabel=sprintf("%s_test",TestFolders{iTest});
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     
-    ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).(exp_lbl);
+    ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).('Occ');
     VoliLevels=S.(TestLabel).(ExpLabel).VoliMVCVec;
     StimLevels=S.(TestLabel).(ExpLabel).StimMVCVec;
     RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
     stim_freq=S.(TestLabel).ExpPar.stim_freq;
+    TrialType=S.(TestLabel).(ExpLabel).TrialType;
+    StimConstantRange=S.(TestLabel).(ExpLabel).StimConstantRange;
+    MeanFrame=[StimConstantRange(1)*stim_freq StimConstantRange(2)*stim_freq];
+    StimConstantRangeInd=[MeanFrame(1):MeanFrame(2)];
+
+    VoliRange=StimConstantRange-2;
+    VoliFrame=[VoliRange(1)*stim_freq VoliRange(2)*stim_freq];
+    VoliRangeInd=[VoliFrame(1):VoliFrame(2)];
     
-    MeanTime=S.(TestLabel).(ExpLabel).StimConstantRange;
-    MeanFrame=[MeanTime(1)*stim_freq MeanTime(2)*stim_freq];
-    MeanRangeInd=[MeanFrame(1):MeanFrame(2)];
     c=1;
     clear MAV_Mean MAV_Mean_Reps TrialsInd Amp_Modul_Mean  Amp_Modul_Mean_Reps Mean_MAVDropped Std_MAVDropped RepTrialsInd 
     TrialStats=[];
@@ -1203,62 +1208,93 @@ for iTest=1:length(TestFolders)
             TrialsInd(:,c)= find_trialnum(VoliLevel, StimLevel, RepTableMat);
             for iFilt=1:length(FiltLabels)
                 FiltLabel=FiltLabels(iFilt);
-
+                
                 for iTrial=1:length(TrialsInd(:,c))
                     TrialLabel=sprintf('Trial_%d',TrialsInd(iTrial,c));
-
+                    
                     if StimLevel==0
                         Mean_MAVDropped(TrialsInd(iTrial,c),1)=NaN;
                         Std_MAVDropped(TrialsInd(iTrial,c),1)=NaN;
-                    
+                        
                     else 
                         DroppedFrames=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFrames;
                         FiltInd=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat.('Filt')==FiltLabel;
                         DropFrames=double(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat(FiltInd,:).('MAV'));
-    
-                        Mean_MAVDropped(TrialsInd(iTrial,c),1)=mean(DropFrames(MeanFrame(1)<=DroppedFrames & DroppedFrames<=MeanFrame(2))); 
-                        Std_MAVDropped(TrialsInd(iTrial,c),1)=std(DropFrames(MeanFrame(1)<=DroppedFrames & DroppedFrames<=MeanFrame(2)));    
+                        
+                        % Mean_MAVDropped(TrialsInd(iTrial,c),1)=mean(DropFrames(MeanFrame(1)<=DroppedFrames & DroppedFrames<=MeanFrame(2))); 
+                        % Std_MAVDropped(TrialsInd(iTrial,c),1)=std(DropFrames(MeanFrame(1)<=DroppedFrames & DroppedFrames<=MeanFrame(2)));    
+
+                        DroppedFiltInd=S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat.('Filt')==FiltLabel;
+                        Mean_MAVDropped(TrialsInd(iTrial,c),1)=mean(str2double(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat(DroppedFiltInd,:).('MAV')));
+                        Std_MAVDropped(TrialsInd(iTrial,c),1)=std(str2double(S.(AnaLabel).(ExpLabel).(TrialLabel).DroppedFeat(DroppedFiltInd,:).('MAV')));
                     end
-                
-                    MAV_Mean_reps(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(MeanRangeInd,:).('MAV_vEMG'));
-                    MAV_Mean_reps(TrialsInd(iTrial,c),2)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(MeanRangeInd,:).('MAV_vEMG'));
-                    MAV_Mean_reps(TrialsInd(iTrial,c),3)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(MeanRangeInd,:).('Amp_MAV_vEMG'));
-                    MAV_Mean_reps(TrialsInd(iTrial,c),4)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(MeanRangeInd,:).('Amp_MAV_vEMG'));                    
+                    
+                    MAV_Mean_reps(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(StimConstantRangeInd,:).('MAV_vEMG'));
+                    MAV_Mean_reps(TrialsInd(iTrial,c),2)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(StimConstantRangeInd,:).('MAV_vEMG'));
+                    MAV_Mean_reps(TrialsInd(iTrial,c),3)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(StimConstantRangeInd,:).('Amp_MAV_vEMG'));
+                    MAV_Mean_reps(TrialsInd(iTrial,c),4)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(StimConstantRangeInd,:).('Amp_MAV_vEMG'));
+
+                    MAV_Mean_Voli_reps(TrialsInd(iTrial,c),1)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(VoliRangeInd,:).('MAV_vEMG'));
+                    MAV_Mean_Voli_reps(TrialsInd(iTrial,c),2)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(VoliRangeInd,:).('MAV_vEMG'));
+                    MAV_Mean_Voli_reps(TrialsInd(iTrial,c),3)=mean(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(VoliRangeInd,:).('Amp_MAV_vEMG'));
+                    MAV_Mean_Voli_reps(TrialsInd(iTrial,c),4)=std(S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(VoliRangeInd,:).('Amp_MAV_vEMG')); 
+
                     MAV_Mean_reps(TrialsInd(iTrial,c),5)=Mean_MAVDropped(TrialsInd(iTrial,c),1);
                     MAV_Mean_reps(TrialsInd(iTrial,c),6)=Std_MAVDropped(TrialsInd(iTrial,c),1);
                     MAV_Mean_reps(TrialsInd(iTrial,c),7:9)=RepTableMat(TrialsInd(iTrial,c),[1,4,5]);
-
+                    
                     Amp_Modul_Mean(TrialsInd(iTrial,c),3:5)=RepTableMat(TrialsInd(iTrial,c),[1,4,5]);
-
-                    TrialStats=[TrialStats; MAV_Mean_reps(TrialsInd(iTrial,c),:) FiltLabel TrialsInd(iTrial,c) ExpLabel TestLabel  ];                               
+                    
+                    TrialStats=[TrialStats; MAV_Mean_reps(TrialsInd(iTrial,c),1:4) MAV_Mean_Voli_reps(TrialsInd(iTrial,c),:) MAV_Mean_reps(TrialsInd(iTrial,c),5:9)...
+                        FiltLabel TrialsInd(iTrial,c) TrialType ExpLabel TestLabel];                               
                 end
-
+                
                 MAV_Mean(c,:) = [ c mean(MAV_Mean_reps(TrialsInd(:,c),1))  std(MAV_Mean_reps(TrialsInd(:,c),1)) mean(MAV_Mean_reps(TrialsInd(:,c),3))...
-                    std(MAV_Mean_reps(TrialsInd(:,c),3)) mean(Mean_MAVDropped(TrialsInd(:,c),1)) std(Mean_MAVDropped(TrialsInd(:,c),1))  ...
-                    length(TrialsInd(:,c)) RepTableMat(TrialsInd(iTrial,c),[1 4 5 ])];
-
-                Mean_TrialStats=[Mean_TrialStats; MAV_Mean(c,:) FiltLabel TrialsInd(iTrial,c) ExpLabel TestLabel];
+                    std(MAV_Mean_reps(TrialsInd(:,c),3)) mean(MAV_Mean_Voli_reps(TrialsInd(:,c),1))  std(MAV_Mean_Voli_reps(TrialsInd(:,c),1)) ...
+                    mean(MAV_Mean_Voli_reps(TrialsInd(:,c),3)) std(MAV_Mean_Voli_reps(TrialsInd(:,c),3)) mean(Mean_MAVDropped(TrialsInd(:,c),1))...
+                    std(Mean_MAVDropped(TrialsInd(:,c),1)) length(TrialsInd(:,c)) RepTableMat(TrialsInd(iTrial,c),[1 4 5 ])];
+                
+                Mean_TrialStats=[Mean_TrialStats; MAV_Mean(c,:) FiltLabel TrialsInd(iTrial,c) TrialType ExpLabel TestLabel];
             end
-    
+            
             c=c+1;
         end
     end
     
-    MAV_Mean_reps_table=table(double(TrialStats(:,1)),double(TrialStats(:,2)),double(TrialStats(:,3)),double(TrialStats(:,4)),double(TrialStats(:,5)),...
-        double(TrialStats(:,6)),double(TrialStats(:,7)),double(TrialStats(:,8)),double(TrialStats(:,9)),TrialStats(:,10),TrialStats(:,11),TrialStats(:,12),...
-        TrialStats(:,13),'VariableNames',["MAV_Mean" "MAV_Std" "Amp_Mean" "Amp_Std" "Dropped_Mean" "Dropped_Std" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "Exp" "Test"]);
+    % MAV_Mean_reps_table=table(double(TrialStats(:,1)),double(TrialStats(:,2)),double(TrialStats(:,3)),double(TrialStats(:,4)),double(TrialStats(:,5)),...
+    %     double(TrialStats(:,6)),double(TrialStats(:,7)),double(TrialStats(:,8)),double(TrialStats(:,9)),TrialStats(:,10),TrialStats(:,11),TrialStats(:,12),...
+    %     TrialStats(:,13),'VariableNames',["MAV_Mean" "MAV_Std" "Amp_Mean" "Amp_Std" "Dropped_Mean" "Dropped_Std" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "Exp" "Test"]);
+
+    % MAV_Mean_table=table(double(Mean_TrialStats(:,1)),double(Mean_TrialStats(:,2)),double(Mean_TrialStats(:,3)),double(Mean_TrialStats(:,4)),double(Mean_TrialStats(:,5)),...
+    %     double(Mean_TrialStats(:,6)),double(Mean_TrialStats(:,7)),double(Mean_TrialStats(:,8)),double(Mean_TrialStats(:,9)),double(Mean_TrialStats(:,10)),double(Mean_TrialStats(:,11)),...
+    %     Mean_TrialStats(:,12),Mean_TrialStats(:,13),Mean_TrialStats(:,14),Mean_TrialStats(:,15),'VariableNames',["Unique_Trial" "MAV_Mean_Reps" "MAV_Std_Reps"...
+    %     "Amp_Mean_Reps" "Amp_Std_Reps" "Dropped_Mean_Reps" "Dropped_Std_Reps" "NumofReps" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "Exp" "Test"]);
+
+    MAV_Mean_reps_table=array2table(TrialStats,'VariableNames',["MAV_Mean" "MAV_Std" "Amp_Mean" "Amp_Std" "Voli_MAV_Mean" "Voli_MAV_Std" "Voli_Amp_Mean" "Voli_Amp_Std"...
+        "Dropped_Mean" "Dropped_Std" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "TrialType" "Exp" "Test"]);
     
-    MAV_Mean_table=table(double(Mean_TrialStats(:,1)),double(Mean_TrialStats(:,2)),double(Mean_TrialStats(:,3)),double(Mean_TrialStats(:,4)),double(Mean_TrialStats(:,5)),...
-        double(Mean_TrialStats(:,6)),double(Mean_TrialStats(:,7)),double(Mean_TrialStats(:,8)),double(Mean_TrialStats(:,9)),double(Mean_TrialStats(:,10)),double(Mean_TrialStats(:,11)),...
-        Mean_TrialStats(:,12),Mean_TrialStats(:,13),Mean_TrialStats(:,14),Mean_TrialStats(:,15),'VariableNames',["Unique_Trial" "MAV_Mean_Reps" "MAV_Std_Reps"...
-        "Amp_Mean_Reps" "Amp_Std_Reps" "Dropped_Mean_Reps" "Dropped_Std_Reps" "NumofReps" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "Exp" "Test"]);
-    
+    MAV_Mean_table=array2table(Mean_TrialStats,'VariableNames',["Unique_Trial" "MAV_Mean_Reps" "MAV_Std_Reps" "Amp_Mean_Reps" "Amp_Std_Reps" "Voli_MAV_Mean_Reps"...
+        "Voli_MAV_Std_Reps" "Voli_Amp_Mean_Reps" "Voli_Amp_Std_Reps" "Dropped_Mean_Reps" "Dropped_Std_Reps" "NumofReps" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial"...
+        "TrialType" "Exp" "Test"]);
+        
     S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table=MAV_Mean_reps_table;
     S.(AnaLabel).(ExpLabel).MAV_Mean_table=MAV_Mean_table;
+    TrialStatsAll=[TrialStatsAll; TrialStats];
+    Mean_TrialStatsAll=[Mean_TrialStatsAll; Mean_TrialStats];
     
 end
 
-%%Normalize the Features over zero stim trials
+TrialStatsAll_table=array2table(TrialStatsAll,'VariableNames',["MAV_Mean" "MAV_Std" "Amp_Mean" "Amp_Std" "Voli_MAV_Mean" "Voli_MAV_Std" "Voli_Amp_Mean" "Voli_Amp_Std"...
+    "Dropped_Mean" "Dropped_Std" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "TrialType" "Exp" "Test"]);
+
+Mean_TrialStatsAll_table=array2table(Mean_TrialStatsAll,'VariableNames',["Unique_Trial" "MAV_Mean_Reps" "MAV_Std_Reps" "Amp_Mean_Reps" "Amp_Std_Reps" "Voli_MAV_Mean_Reps"...
+    "Voli_MAV_Std_Reps" "Voli_Amp_Mean_Reps" "Voli_Amp_Std_Reps" "Dropped_Mean_Reps" "Dropped_Std_Reps" "NumofReps" "TargetLevel" "vMVC" "sMVC" "Filt" "Trial" "TrialType"...
+    "Exp" "Test"]);
+
+% writetable(Mean_TrialStatsAll_table,"mean_trial_stats.csv")
+% writetable(TrialStatsAll_table,"trial_stats.csv")
+
+%% Normalize the Features over zero stim trials
 FeatLabels=string(S.(AnaLabel).AnaPar.FeatLabels);
 % VoliMVCLevels=[10 20 30 40 ];
 % StimMVCLevels=[0 10 20 30 ];
@@ -1278,10 +1314,10 @@ for iFeat=1:1
         StimMVCLevels=S.(TestLabel).(ExpLabel).StimMVCVec;
 
         for iVoli=1:length(VoliMVCLevels)
-            sMVC_Vec=(S.(AnaLabel).(ExpLabel).MAV_Mean_table(FiltInd,:).('sMVC'));
-            vMVC_Vec=(S.(AnaLabel).(ExpLabel).MAV_Mean_table(FiltInd,:).('vMVC'));
+            sMVC_Vec=double(S.(AnaLabel).(ExpLabel).MAV_Mean_table(FiltInd,:).('sMVC'));
+            vMVC_Vec=double(S.(AnaLabel).(ExpLabel).MAV_Mean_table(FiltInd,:).('vMVC'));
 
-            Voli_NormCoeff=(S.(AnaLabel).(ExpLabel).MAV_Mean_table(FiltInd,:).('MAV_Mean_Reps')...
+            Voli_NormCoeff=double(S.(AnaLabel).(ExpLabel).MAV_Mean_table(FiltInd,:).('MAV_Mean_Reps')...
                 (sMVC_Vec==0 & vMVC_Vec==VoliMVCLevels(iVoli)));
 
             for iStim=1:length(StimMVCLevels)
@@ -1317,7 +1353,7 @@ for iFeat=1:1
     end
 end
 
-%% Theoretical and Actual MVC MAV 
+%%Theoretical and Actual MVC MAV 
 
 % NumofUpdate=4; % table mvc_table is updated 4 times inside loop below
 % NumofVariables=5;
@@ -1368,11 +1404,11 @@ for iTest=1:length(TestFolders)
     
     % Theoretical MAV_MAX
     ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).('Occ');
-    sMVCLevs=(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('sMVC'));
-    vMVCLevs=(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('vMVC'));
+    sMVCLevs=double(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('sMVC'));
+    vMVCLevs=double(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('vMVC'));
     
-    MAVMean=(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('MAV_Mean'));
-    Amp_Modul_Mean=(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('Amp_Mean'));
+    MAVMean=double(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('MAV_Mean'));
+    Amp_Modul_Mean=double(S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(FiltInd,:).('Amp_Mean'));
     
     Ind=(sMVCLevs==sMVC_Ref);
     
@@ -1412,7 +1448,7 @@ end
 
 writetable(S.(AnaLabel).(ExpLabel).MVCTable,'mvc_table.csv')
 
-%% # Evaluate the filter accuracy
+%%Evaluate the filter accuracy
 % NRMSE_s= sqrt(sum((MAV_voli-MAV_filt)^2)/T)/std(MAV_voli)
 % NRMSE_v= sqrt(sum((MAV_voli_1-MAV_voli_2)^2)/T)/std(MAV_voli_1)
 % TestFolders=["jan7" "jan11" "jan12" ];
@@ -1472,6 +1508,7 @@ for iTest=1:length(TestFolders)
                 rmse(iRefTrial)=sqrt(sum((MAV_filt-MAV_ref).^2)/mean(MAV_ref))/length(MAV_filt);
                 mav_diff(iRefTrial)=mean(MAV_filt-MAV_ref)/length(MAV_filt);
                 Error=rmse(iRefTrial);
+                
                 Error_Type="RMSE";
                 T=[T; Error Error_Type "false" MVC_Voli MVC_Stim iTrial RefIndTrial(iRefTrial) FiltLabel EffortType TestFolders(iTest)];
 
@@ -1504,7 +1541,7 @@ for iTest=1:length(TestFolders)
 end
 
 
-writetable(RMSETable,'rmse2.csv')
+writetable(RMSETable,'rmse3.csv')
 
 %%
 suffix="-oct19-";
@@ -2445,7 +2482,7 @@ for iTest=1:length(TestFolders)
         legend({'Trigger(a.u.)','Raw EMG (mV)'})
         title(sprintf('Test:%s, Trial: %d', TestName, Trials(iTrial)))
         xlabel('Time (s)')
-%         ylim([-ylims ylims])
+        ylim(0.4*[-1 1])
 
         subplot(2,length(Trials),length(Trials)+iTrial)
         plot(Time(TimeInd),PW/200,'r','LineWidth',1)
@@ -2454,6 +2491,7 @@ for iTest=1:length(TestFolders)
         legend({'PW (a.u.)','Meas. Effort'})
         title('Pulse Width and Force Signal')
         xlabel('Time (s)')
+        ylim([-100 800])
     end
 
 RepTableMat=S.(TestLabel).OccTrials.RepTableMat;
@@ -2465,8 +2503,8 @@ end
 clc
 close all
 Trials=[ 1: 10]; 
-TimeRange=[1 16];  % in seconds
-TimeRange=[1 12];  % in seconds
+TimeRange=[1 12];
+
 % TestLabel=sprintf('%s_test',FolderNames);
 ylims=5;
 ExpNum=4;
@@ -2481,8 +2519,7 @@ for iTest=1:length(TestFolders)
     for iTrial=1:length(Trials)
         TrialLabel=sprintf('Trial_%d',Trials(iTrial));
         DataIndTable= S.(TestLabel).ExpPar.DataIndTable;
-
-        TimeRange=S.(TestLabel).(ExpLabel).StimRange;
+        % TimeRange=S.(TestLabel).(ExpLabel).StimRange;
         Time=S.(AnaLabel).(ExpLabel).(TrialLabel).data.('Time');
         TimeInd= Time>=TimeRange(1) & Time<=TimeRange(2);
 
@@ -2515,7 +2552,7 @@ Lbl='Occ';
 PlotTrial=[ 8 9];
 PlotTime=[ 12 13];
 % PlotFrame=floor([ stim_freq*PlotTime(1) stim_freq*PlotTime(2)]);
-PlotFrame=floor([ 478 482]);
+PlotFrame=floor([ 278 282]);
 
 TeststoPlot=TestFolders(end);
 
@@ -2645,7 +2682,7 @@ end
 
 %% Plotting the dropped frames 
 close all
-iTrial=16;
+iTrial=12;
 TrialLabel=sprintf('Trial_%d',iTrial);
 ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).('Occ');
 FiltLabel="GS";
@@ -2701,12 +2738,12 @@ for iTest=1:length(TestFolders)
 end
 
 
-%%Plotting EMG Features 
+%% Plotting EMG Features 
 clc
 AnaLabel=sprintf('%s_ana',TestFolders(1));
 ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).('Occ');
-TimeRange=[0.1 13];
-TrialNum=[  4];
+TimeRange=[1 10];
+TrialNum=[ 1: 12];
 cm=lines(3);
 FiltLabel="GS";
 for iTest=1:length(TestFolders)
@@ -2721,7 +2758,7 @@ for iTest=1:length(TestFolders)
         AmpMAV=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(FrameInd,:).('Amp_MAV_vEMG');
         AmpClipped=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).AmpModulFeats(FrameInd,:).('Clip_MAV_vEMG');   
 
-        figure(1)
+        figure(iTrial)
         subplot(length(TestFolders),1,iTest)
         plot(FrameInd,AmpMAV,'LineWidth',2,'DisplayName',sprintf('AmpMAV, Trial: %d',TrialNum(iTrial)),'Color',cm(1,:))
         hold on 
@@ -2729,15 +2766,13 @@ for iTest=1:length(TestFolders)
         plot(FrameInd,AmpClipped,'DisplayName',sprintf('AmpClipped, Trial: %d',TrialNum(iTrial)),'Color',cm(2,:))
         title(TestFolders(iTest))
     end
-
 %     title(ttl)
     legend('Location','NorthWest')
     grid on
 end
 
 
-% Mean MAV Plotting
-
+%% Mean MAV Plotting
 cm = lines(length(TestFolders));
 sMVC=0;
 FiltLabel="Unfilt";
@@ -2856,9 +2891,8 @@ for iTest=1:length(TestFolders)
 end
 
 
-
 %% Plotting Adaptive Filter 
-PlotRange=[ 5 15];
+PlotRange=[ 5 10];
 vMVC=10;
 sMVC=0;
 FiltLabel="GS";
@@ -2867,7 +2901,7 @@ for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     TestLabel=sprintf("%s_test",TestFolders{iTest});
 
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
+    ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).('Occ');
     
     RepTableMat=S.(TestLabel).(ExpLabel).RepTableMat;
     IndTrials=find_trialnum(vMVC,sMVC,RepTableMat);
@@ -2926,13 +2960,13 @@ for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders{iTest});
     TestLabel=sprintf("%s_test",TestFolders{iTest});
 
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('Occ');
+    ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).('Occ');
     sMVC=S.(AnaLabel).(ExpLabel).MAV_Mean_table.('sMVC');
     OccMeans=S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(sMVC==0,:).('MAV_Mean');    
     OccStds=S.(AnaLabel).(ExpLabel).MAV_Mean_reps_table(sMVC==0,:).('MAV_Std');
     MVCRange=S.(AnaLabel).(ExpLabel).MAV_Mean_table(sMVC==0,:).('vMVC');
     
-    ExpLabel=S.(AnaLabel).AnaPar.ExpTable(1,:).('RC');
+    ExpLabel=S.(TestLabel).ExpPar.ExpTable(1,:).('RC');
     RCMeans=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('Mean'));
     RCStds=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('Std'));
     PWPoints=double(S.(AnaLabel).(ExpLabel).MAV_Mean.('PW'));
@@ -2968,7 +3002,6 @@ title("M-Wave MAV (No Voli. Effort )",'fontweight','bold','fontsize',14)
 
 %% Plotting NRMSE
 clc
-
 for iTest=1:length(TestFolders)
     AnaLabel=sprintf("%s_ana",TestFolders(iTest));
     TestLabel=sprintf("%s_test",TestFolders(iTest));
@@ -2991,7 +3024,6 @@ for iTest=1:length(TestFolders)
             TrialsInd= find_trialnum(VoliLevel, StimLevel, RepTableMat);
 
             % RowInd=RMSETable
-
             for iTrial=1:length(TrialsInd)
                 TrialLabel=sprintf("Trial_%d",TrialsInd(iTrial));
                 

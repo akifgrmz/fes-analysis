@@ -17,6 +17,14 @@ function manu_add()
         disp(str)
     end
     
+    %% Subject IDs
+    TestFolders=["jan7" "jan11" "jan12" "feb27" "mar7" "mar16" "apr20" "oct18" "oct25" "feb28_24" "feb29_24" "mar18_24" "mar20_24"];
+    
+    sbj=["A1" "A2" "A3" "A1" "A4" "A5"];
+    
+    
+    
+    
     %% 1- Jun20_24
     % Load
     
@@ -341,5 +349,26 @@ function manu_add()
     save(str,'-struct','S',TestFile)
     str=sprintf("%s.mat is created",TestFile);
     disp(str)
+
+%% 14- oct29_24
+    
+    FolderName=["oct29_24"];
+    TestFile=sprintf("%s_test",FolderName);
+    S=tidy_data(FolderName,false);
+    
+    % Additions 
+
+    ExpLabel="OccTrials";
+    StimRange=[7 10];
+    StimConstantRange=[8 10];
+    
+    S.(TestFile).(ExpLabel).StimRange=StimRange;
+    S.(TestFile).(ExpLabel).StimConstantRange=StimConstantRange;
+    str=sprintf('%s/%s',FolderName,TestFile);
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)    
+
+
 
 end

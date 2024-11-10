@@ -28,6 +28,8 @@ library(ggpmisc)
 library(tidyr)
 library(ggsignif)
 
+library(ggpubr)
+
 options(dplyr.summarise.inform = FALSE)
 
 ```
@@ -40,8 +42,9 @@ droppedocc<- read_csv("dropped_occ6.csv",show_col_types = FALSE)
 
 occraw<- read_csv("occlusion_v7.csv",show_col_types = FALSE)
 err_raw<- read_csv("occ_est_error4.csv",show_col_types = FALSE)
-rmse_raw<- read_csv("rmse2.csv",show_col_types = FALSE)
+rmse_raw<- read_csv("rmse3.csv",show_col_types = FALSE)
 
+trial_stats_raw<- read_csv("trial_stats.csv",show_col_types = FALSE)
 ```
 
 ```{r dataframe modifications}
@@ -142,39 +145,90 @@ rmse<-rmse%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
                                 '10' = 'Stim_10',
                                 '20' = 'Stim_20',
                                 '30' = 'Stim_30',
-                                '40' = 'Stim_40'))
+                                '40' = 'Stim_40',
+                                '50' = 'Stim_50',
+                                '60' = 'Stim_60'))
 
-summary(occ)
+trial_stats<-trial_stats_raw%>%mutate(Test = as.factor(Test),
+                       Exp = as.factor(Exp),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test))
+
+#summary(occ)
 ```
 
 
 ```{r Plotting rmse}
 
-plot_rmse<-filter(rmse,  Norm == TRUE, Error_Type=="RMSE", Error!=0) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+plot_rmse<-filter(rmse, Error_Type=="RMSE", Error!=0, Norm==TRUE) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
   mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
 
 plot_rmse$Filt <- factor(plot_rmse$Filt, levels = c("Ref", "GS", "Comb", "Unfilt"))
 
 plot_rmse_summary <- plot_rmse %>%
-  group_by(Filt, Effort_Type, MVC_Voli_Cat, MVC_Stim_Cat) %>%
+  group_by(Filt, Effort_Type, MVC_Voli_Cat) %>%
   summarise(
     mean_error = mean(Error),
-    sd_error = sd(Error)
+    sd_error = sd(Error),
+    n = n(),  # Get the sample size
+    conf_int = qt(0.975, df = n - 1) * (sd_error / sqrt(n))
   )
 
-NumofTest<-length(unique(plot_tibble$Test) )
-ggplot(plot_rmse_summary, aes(x = Filt  , y = 100*mean_error, fill = MVC_Stim_Cat)) +
-    geom_col(position = "dodge") +     #geom_smooth(method = "lm")+ 
-    geom_errorbar(aes(ymin = 100*(mean_error - sd_error), ymax = 100*(mean_error + sd_error)),
+f_tibble<-filter(plot_rmse_summary, Effort_Type == "Force")
+parti_tibble<-filter(plot_rmse, Effort_Type == "Force")
+
+g1<-ggplot(f_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
                 position = position_dodge(0.9), width = 0.25) +    
-  facet_wrap(Effort_Type~MVC_Voli_Cat)+
-    #ylim(-10,200)
+  #facet_wrap(~Effort_Type)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
     labs(x = "Filter ",
     y = "NRMSE (% MVC MAV)",
     title = "NRMSE ",
-    subtitle = sprintf("%d able-body participants",length(unique(plot_tibble$Test) )))
-    
+    subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(22, 0.75),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  ) + 
+    stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Force"), aes(), 
+                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+                     label = "p.signif",
+                     method = "wilcox.test")
+
+h_tibble<-filter(plot_rmse_summary, Effort_Type == "Hand")
+parti_tibble<-filter(plot_rmse, Effort_Type == "Hand")
+g2<-ggplot(h_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
+                position = position_dodge(0.9), width = 0.25) +    
+  #facet_wrap(~Effort_Type)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ",
+    y = "NRMSE (% MVC MAV)",
+    title = "NRMSE ",
+    subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(22, 0.75),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  ) + 
+    stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Hand"), aes(), 
+                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+                     label = "p.signif",
+                     method = "wilcox.test")
+#pdf("rmsu_results.pdf", width = 6, height = 6)  # specify dimensions in inches
+
+#g1+g2
+
+#dev.off()
 ```
+
 
 ```{r Plotting: maintain section}
 
@@ -184,7 +238,7 @@ ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Cat)) 
     geom_point() +
     geom_smooth(method = "lm")+ 
     geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
-    facet_wrap(EffortType~Feat)+
+    facet_grid(EffortType~Feat)+
     ylim(-10,200)
     labs(x = "Volitional Effort: E_v (% MVC)",
     y = "Maintained Volitional effort: E_vprime (% MVC)",
@@ -445,6 +499,8 @@ p1/p2 -p3
 
 
 ```
+
+
 ```{r Individualized vs Avg occ errors}
 
 filt="GS"

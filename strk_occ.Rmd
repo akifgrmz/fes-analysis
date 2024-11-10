@@ -1,0 +1,649 @@
+---
+title: "strk_occ"
+output: html_document
+date: "2024-11-09"
+---
+
+---
+title: "Occlusion Stats v2"
+output: html_document
+date: "2023-04-10"
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE}
+library(magrittr); 
+library(here); 
+library(janitor)
+library(readxl);
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+library(ggpmisc)
+library(tidyr)
+library(ggsignif)
+
+library(ggpubr)
+
+options(dplyr.summarise.inform = FALSE)
+
+```
+
+
+```{r Data Inject } 
+
+coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
+droppedocc<- read_csv("dropped_occ6.csv",show_col_types = FALSE)
+
+occraw<- read_csv("occlusion_v7.csv",show_col_types = FALSE)
+err_raw<- read_csv("occ_est_error4.csv",show_col_types = FALSE)
+rmse_raw<- read_csv("rmse2.csv",show_col_types = FALSE)
+
+trial_stats_raw<- read_csv("trial_stats.csv",show_col_types = FALSE)
+```
+
+```{r dataframe modifications}
+
+occ<-occraw%>%mutate(Test = as.factor(Test),
+                     Tau = as.factor(Tau),
+                     Feat = as.factor(Feat),
+                     Filt = as.factor(Filt))
+
+occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+occ<-occ%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
+                     Repeat = as.factor(Repeat),
+                     NumofDropped = as.factor(NumofDropped))
+
+droppedocc<-droppedocc%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err_raw%>%mutate(MVC_Voli_Cat=recode(VoliMVC,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(StimMVC,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err%>%mutate(Test = as.factor(Test),
+                     Filt = as.factor(Filt),
+                     Occ_Type = as.factor(Occ_Type),
+                     MVC_Stim_Cat = as.factor(MVC_Stim_Cat),
+                     MVC_Voli_Cat = as.factor(MVC_Voli_Cat),
+                     MVC_Stim = as.integer(StimMVC),
+                     MVC_Voli = as.integer(VoliMVC))
+
+err<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+coef<-coefraw%>%mutate(Test = as.factor(Test),
+                       Type = as.factor(Type),
+                       Trial = as.integer(Trial))
+
+coef<-coef%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30'))
+
+coef<-coef%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+rmse<-rmse_raw%>%mutate(Test = as.factor(Test),
+                       Effort_Type = as.factor(Effort_Type),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test),
+                       Ref_Trial = as.integer(Ref_Trial))
+
+rmse<-rmse%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40',
+                                '50' = 'Stim_50',
+                                '60' = 'Stim_60'))
+
+trial_stats<-trial_stats_raw%>%mutate(Test = as.factor(Test),
+                       Exp = as.factor(Exp),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test))
+
+#summary(occ)
+```
+
+
+
+```{r Plotting trial_stats}
+
+plot_trial_stats<-filter(trial_stats,TrialType=="Other")
+
+trial_stats_wide <- plot_trial_stats %>% select (Filt, MAV_Mean, Voli_MAV_Mean, Dropped_Mean, sMVC, Trial, Test)%>%  
+  pivot_wider(
+    names_from = Filt,
+    values_from = c(MAV_Mean, Dropped_Mean, Voli_MAV_Mean)
+  )
+
+# Compute the ratios by dividing mean_error of 'GS' and 'Comb' by 'Unfilt'
+trial_stats_wide <- trial_stats_wide %>%  group_by(sMVC,Test)%>%
+  mutate(
+    ratio_GS = MAV_Mean_GS / MAV_Mean_Unfilt,
+    ratio_Comb = MAV_Mean_Comb / MAV_Mean_Unfilt,
+    ratio_Unfilt = MAV_Mean_Unfilt / MAV_Mean_Unfilt,
+    sd_ratio_GS = sd(MAV_Mean_GS / MAV_Mean_Unfilt),
+    sd_ratio_Comb = sd(MAV_Mean_Comb / MAV_Mean_Unfilt),
+    sd_ratio_Unfilt = sd(MAV_Mean_Unfilt / MAV_Mean_Unfilt),
+    
+    dropped_ratio_GS = Dropped_Mean_GS / MAV_Mean_Unfilt,
+    dropped_ratio_Comb = Dropped_Mean_Comb / MAV_Mean_Unfilt,
+    dropped_ratio_Unfilt = Dropped_Mean_Unfilt / MAV_Mean_Unfilt,
+    dropped_sd_ratio_GS = sd(Dropped_Mean_GS / MAV_Mean_Unfilt),
+    dropped_sd_ratio_Comb = sd(Dropped_Mean_Comb / MAV_Mean_Unfilt),
+    dropped_sd_ratio_Unfilt = sd(Dropped_Mean_Unfilt / MAV_Mean_Unfilt),    
+    
+    voli_ratio_GS = MAV_Mean_GS  / Voli_MAV_Mean_Unfilt,
+    voli_ratio_Comb = MAV_Mean_Comb / Voli_MAV_Mean_Unfilt,
+    voli_ratio_Unfilt = MAV_Mean_Unfilt / Voli_MAV_Mean_Unfilt,
+    voli_sd_GS = sd(MAV_Mean_GS / Voli_MAV_Mean_Unfilt),
+    voli_sd_Comb= sd(MAV_Mean_Comb / Voli_MAV_Mean_Unfilt),
+    voli_sd_Unfilt= sd(MAV_Mean_Unfilt / Voli_MAV_Mean_Unfilt)
+  )
+
+# Reshape the ratios back to long format for plotting
+ratio_long <- trial_stats_wide %>%
+  select(starts_with("ratio_"), starts_with("sd_ratio_"),sMVC,Test) %>%
+  pivot_longer(
+    cols = c(starts_with("ratio_"),starts_with("sd_ratio_")),
+    names_to = c(".value", "Filt"),
+    names_pattern = "(ratio|sd_ratio)_(.*)")%>%
+  mutate(Type = "Regular")
+
+dropped_ratio_long <- trial_stats_wide %>%
+  select(starts_with("dropped_ratio_"), starts_with("dropped_sd_ratio_"), sMVC, Test) %>%
+  pivot_longer(
+    cols = c(starts_with("dropped_ratio_"), starts_with("dropped_sd_ratio_")),
+    names_to = c(".value", "Filt"),
+    names_pattern = "(dropped_ratio|dropped_sd_ratio)_(.*)"
+  ) %>%
+  mutate(Type = "Dropped")
+
+voli_ratio_long <- trial_stats_wide %>%
+  select(starts_with("voli_ratio_"), starts_with("voli_sd_"), sMVC, Test) %>%
+  pivot_longer(
+    cols = c(starts_with("voli_ratio"), starts_with("voli_sd")),
+    names_to = c(".value", "Filt"),
+    names_pattern = "(voli_ratio|voli_sd)_(.*)") %>%
+  mutate(Type = "Voli")
+
+
+voli_ratio_long_renamed <- voli_ratio_long %>%
+  rename(ratio = voli_ratio,
+         sd_ratio = voli_sd)
+dropped_ratio_long_renamed  <- dropped_ratio_long %>%
+  rename(ratio = dropped_ratio,
+         sd_ratio = dropped_sd_ratio)
+
+data_renamed<-plot_trial_stats%>%select( MAV_Mean, MAV_Std, Filt, sMVC, Test) %>% rename(ratio = MAV_Mean,
+         sd_ratio = MAV_Std) %>% mutate(Type = factor("MAV"))
+
+combined_dt <- bind_rows(ratio_long, voli_ratio_long_renamed ,dropped_ratio_long_renamed,data_renamed)
+
+dt_means<-combined_dt %>% group_by(Filt, sMVC, Test, Type) %>%
+  summarise(
+    mean_val = mean(ratio),
+    sd_val = sd(ratio))
+
+combined_dt_allstim<-combined_dt%>% filter(sMVC !="0",  Type == "Voli", Filt != "Unfilt")
+
+stats_dt <- combined_dt_allstim %>%
+  group_by(Filt, Test, Type) %>%
+  do({
+    model <- lm(ratio ~ sMVC, data = .)
+    data.frame(
+      Filt = unique(.$Filt),
+      Test = unique(.$Test),
+      Type = unique(.$Type),
+      r_squared = summary(model)$r.squared,
+      p_value = coef(summary(model))[2, 4],
+      max_sMVC = max(.$sMVC),
+      y_position = mean(.$ratio, na.rm = TRUE) 
+    )
+  })
+
+dt_means<-filter(dt_means, Type == c("Voli", "MAV") )%>% filter( !(sMVC == 0 & Filt != "Unfilt")) %>%
+ mutate(sMVC_ref=recode(sMVC,'0' = 'Ref (Stim=0)', "10"="10", "20"="20","30"="30","40"="40","50"="50","60"="60","70"="70","80"="80"))
+
+dt_means$sMVC_ref <- factor(dt_means$sMVC_ref, levels = c('Ref (Stim=0)', "10", "20","30","40","50","60","70","80"))
+
+g1<-ggplot(dt_means, aes(x = sMVC_ref  , y = mean_val, fill = Filt)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.8)+
+  geom_errorbar(aes(ymin = mean_val - sd_val, ymax = mean_val + sd_val),
+                position = position_dodge(0.8), width = 0.3) +    
+  facet_grid(Type~Test,scales = "free")+
+    #ylim(-10,200)+
+    labs(x = "% Stim MVC ",
+    y = "Mean MAV (V)",
+    title = "Mean MAV of filtered and unfiltered EMG")+
+     theme_minimal() +
+    theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.1, 0.65),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+
+p1<-ggplot(combined_dt_allstim, aes(x = sMVC  , y = 100*ratio, color = Filt)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  facet_grid(~Test,scales = "free")+
+    #ylim(-10,200)+
+    labs(x = "% Stim MVC",
+    y = "Mean MAV",
+    title = "MAV Rate of Volitional and stimulation applied segments")+
+      theme(
+    #strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.1, 0.2),
+    #legend.background = element_rect(fill = alpha("white", 0.6))
+  )+
+  geom_text(
+    data = stats_dt,
+    aes(x = max_sMVC, y = 100*y_position, 
+        label = paste("R² =", round(r_squared, 2), ", p =", round(p_value, 4))),
+    color = "black",
+    size = 3,
+    hjust = 01,  # Adjust horizontal alignment if needed
+    vjust = -1    # Adjust vertical alignment if needed
+  )
+ pdf("stk_occ_results.pdf", width = 6, height = 8)  # specify dimensions in inches
+
+g1/p1
+
+dev.off()
+```
+
+```{r }
+ratio_long_means<-ratio_long %>% group_by(Filt, sMVC,Test) %>%
+  summarise(
+    mean_error = mean(ratio),
+    sd_error = sd(ratio))
+
+
+dropped_long_means<-dropped_ratio_long %>% group_by(Filt, sMVC,Test) %>%
+  summarise(
+    mean_error = mean(dropped_ratio),
+    sd_error = sd(dropped_ratio))
+
+voli_long_means<-voli_ratio_long %>% group_by(Filt, sMVC,Test) %>%
+  summarise(
+    mean_error = mean(voli_ratio),
+    sd_error = sd(voli_ratio))
+
+stats_means<-plot_trial_stats %>% group_by(Filt, sMVC, Test) %>%
+  summarise(
+    mean_error = mean(MAV_Mean),
+    sd_error = sd(MAV_Mean))
+
+
+g1<-ggplot(stats_means, aes(x = sMVC  , y = mean_error, fill = Filt)) +
+    geom_col(position = position_dodge(width = 10)) +     #geom_smooth(method = "lm")+ 
+   geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error),
+                position = position_dodge(10), width = 5) +    
+  facet_wrap(~Test)+
+    #ylim(-10,200)+
+    labs(x = "% Stim MVC ",
+    y = "Mean MAV ",
+    title = "Mean MAV  (single test)")
+
+g2<- ggplot(ratio_long_means, aes(x = sMVC  , y = mean_error, fill = Filt)) +
+    geom_col(position = position_dodge(width = 10)) +     #geom_smooth(method = "lm")+ 
+   geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error),
+                position = position_dodge(10), width = 5) +    
+  facet_wrap(~Test)+
+    #ylim(-10,200)+
+    labs(x = "% Stim MVC ",
+    y = "MAV Ratio",
+    title = "MAV Ratio")
+
+g3<- ggplot(dropped_long_means, aes(x = sMVC  , y = mean_error, fill = Filt)) +
+    geom_col(position = position_dodge(width = 10)) +     #geom_smooth(method = "lm")+ 
+   geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error),
+                position = position_dodge(10), width = 5) +    
+  facet_wrap(~Test)+
+    #ylim(-10,200)
+    labs(x = "% Stim MVC ",
+    y = "MAV Ratio",
+    title = "Dropped Ratios")
+
+g4<- ggplot(voli_long_means, aes(x = sMVC  , y = mean_error, fill = Filt)) +
+    geom_col(position = position_dodge(width = 10)) +     #geom_smooth(method = "lm")+ 
+   geom_errorbar(aes(ymin = mean_error - sd_error, ymax = mean_error + sd_error),
+                position = position_dodge(10), width = 5) +    
+  facet_wrap(~Test)+
+  coord_cartesian(ylim=c(0,2)) + 
+    labs(x = "% Stim MVC ",
+    y = "MAV Ratio",
+    title = "Voli Ratios")
+
+plot_trial_stats_fullstim<-plot_trial_stats%>% filter(sMVC !="0")
+
+stats_data <- plot_trial_stats_fullstim %>%
+  group_by(Filt, Test) %>%
+  summarize(
+    r_squared = summary(lm(MAV_Mean ~ sMVC, data = .))$r.squared,
+    p_value = coef(summary(lm(MAV_Mean ~ sMVC, data = .)))[2, 4],
+    max_sMVC = max(sMVC),         # Position text at max sMVC
+    y_position = MAV_Mean[which.max(sMVC)]  # Corresponding y position at max sMVC
+  )
+
+stats_data <- plot_trial_stats_fullstim %>%
+  group_by(Filt, Test) %>%
+  do({
+    model <- lm(MAV_Mean ~ sMVC, data = .)
+    data.frame(
+      Filt = unique(.$Filt),
+      Test = unique(.$Test),
+      r_squared = summary(model)$r.squared,
+      p_value = coef(summary(model))[2, 4],
+      max_sMVC = max(.$sMVC),
+      y_position = mean(.$MAV_Mean, na.rm = TRUE) 
+    )
+  })
+
+
+p1<-ggplot(plot_trial_stats_fullstim, aes(x = sMVC  , y = MAV_Mean, color = Filt)) +
+      geom_point() +
+    geom_smooth(method = "lm")+ 
+  facet_wrap(~Test)+
+    #ylim(-10,200)+
+    labs(x = "% Stim MVC ",
+    y = "Mean MAV ",
+    title = "Mean MAV  (single test)")+
+  geom_text(
+    data = stats_data,
+    aes(x = max_sMVC, y = y_position, 
+        label = paste("R² =", round(r_squared, 2), ", p =", round(p_value, 4))),
+    color = "black",
+    size = 3,
+    hjust = 01,  # Adjust horizontal alignment if needed
+    vjust = -1    # Adjust vertical alignment if needed
+  )
+p1
+
+ratio_long_fullstim<-ratio_long%>% filter(sMVC !="0")
+stats_data <- ratio_long_fullstim %>%
+  group_by(Filt, Test) %>%
+  do({
+    model <- lm(ratio ~ sMVC, data = .)
+    data.frame(
+      Filt = unique(.$Filt),
+      Test = unique(.$Test),
+      r_squared = summary(model)$r.squared,
+      p_value = coef(summary(model))[2, 4],
+      max_sMVC = max(.$sMVC),
+      y_position = mean(.$ratio, na.rm = TRUE)     # Calculating mean of MAV_Mean for y position
+    )
+  })
+
+p2<-ggplot(ratio_long_fullstim, aes(x = sMVC  , y = ratio, color = Filt)) +
+      geom_point() +
+    geom_smooth(method = "lm")+ 
+  facet_wrap(~Test)+
+    #ylim(-10,200)+
+    labs(x = "% Stim MVC ",
+    y = "Mean MAV ",
+    title = "Mean MAV  (single test)")+
+    geom_text(
+    data = stats_data,
+    aes(x = max_sMVC, y = y_position, 
+        label = paste("R² =", round(r_squared, 2), ", p =", round(p_value, 4))),
+    color = "black",
+    size = 3,
+    hjust = 01,  # Adjust horizontal alignment if needed
+    vjust = -1    # Adjust vertical alignment if needed
+  )
+
+dropped_ratio_long_fullstim<-dropped_ratio_long%>% filter(sMVC !="0")
+stats_data <- dropped_ratio_long_fullstim %>%
+  group_by(Filt,Test) %>%
+  do({
+    model <- lm(dropped_ratio ~ sMVC, data = .)
+    data.frame(
+      Filt = unique(.$Filt),
+      Test = unique(.$Test),
+      r_squared = summary(model)$r.squared,
+      p_value = coef(summary(model))[2, 4],
+      max_sMVC = max(.$sMVC),
+      y_position = mean(.$dropped_ratio, na.rm = TRUE)     # Calculating mean of MAV_Mean for y position
+    )
+  })
+
+p3<- ggplot(dropped_ratio_long_fullstim, aes(x = sMVC  , y = dropped_ratio, color = Filt)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  facet_wrap(~Test)+
+  #ylim(-10,200)+
+  labs(x = "% Stim MVC ",
+       y = "MAV Ratio",
+       title = "Dropped Ratios")+
+  geom_text(
+    data = stats_data,
+    aes(x = max_sMVC, y = y_position, 
+        label = paste("R² =", round(r_squared, 2), ", p =", round(p_value, 4))),
+    color = "black",
+    size = 3,
+    hjust = 01,  # Adjust horizontal alignment if needed
+    vjust = -1    # Adjust vertical alignment if needed
+  )
+ 
+voli_ratio_long_fullstim<-voli_ratio_long %>% filter(sMVC != "0" )
+stats_data <- voli_ratio_long_fullstim %>%
+  group_by(Filt,Test) %>%
+  do({
+    model <- lm(voli_ratio ~ sMVC, data = .)
+    data.frame(
+      Filt = unique(.$Filt),
+      Test = unique(.$Test),
+      r_squared = summary(model)$r.squared,
+      p_value = coef(summary(model))[2, 4],
+      max_sMVC = max(.$sMVC),
+      y_position = mean(.$voli_ratio, na.rm = TRUE)     # Calculating mean of MAV_Mean for y position
+    )
+  })
+
+p4<- ggplot(voli_ratio_long_fullstim, aes(x = sMVC  , y = voli_ratio, color = Filt)) +
+  geom_point() +
+  geom_smooth(method = "lm")+ 
+  facet_wrap(~Test)+
+  coord_cartesian(ylim=c(0,5)) +
+  labs(x = "% Stim MVC ",
+       y = "MAV Ratio",
+       title = "Voli Ratios")+
+  geom_text(
+    data = stats_data,
+    aes(x = max_sMVC, y = y_position, 
+        label = paste("R² =", round(r_squared, 2), ", p =", round(p_value, 4))),
+    color = "black",
+    size = 3,
+    hjust = 01,  # Adjust horizontal alignment if needed
+    vjust = -1    # Adjust vertical alignment if needed
+  )  
+
+
+plot_rmse<-filter(rmse, Error_Type=="RMSE", Error!=0, Norm==TRUE) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+  mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
+
+plot_rmse$Filt <- factor(plot_rmse$Filt, levels = c("Ref", "GS", "Comb", "Unfilt"))
+
+plot_rmse_summary <- plot_rmse %>%
+  group_by(Filt, Effort_Type, MVC_Stim_Cat,Test, MVC_Stim) %>%
+  summarise(
+    mean_error = mean(Error),
+    sd_error = sd(Error),
+    n = n(),  # Get the sample size
+    conf_int = qt(0.975, df = n - 1) * (sd_error / sqrt(n))
+  )
+
+r1 <- ggplot(plot_rmse_summary, aes(x = MVC_Stim, y = mean_error, fill = Filt)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = (mean_error - conf_int), ymax =(mean_error + conf_int)),
+                position = position_dodge(9), width = 4) +
+  facet_wrap( ~ Test) +
+  labs(x = "Stim MVC % ", y = "NRMSE (% MVC MAV)", title = "NRMSE",
+       subtitle = sprintf("%d participants", length(unique(plot_rmse_summary$Test)))) +
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.1, 0.45),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  ) +
+  # Add pairwise comparisons between "Ref" and other filters
+  stat_compare_means(data = subset(plot_rmse_summary,Effort_Type == "Force"), aes(group = Effort_Type), 
+                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+                     label = "p.signif",
+                     method = "wilcox.test",
+                     position = position_dodge(0.1))+
+    stat_compare_means(data = subset(plot_rmse_summary,Effort_Type == "Hand"), aes(group = Effort_Type), 
+                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+                     label = "p.signif",
+                     method = "t.test",
+                     position = position_dodge(0.9))
+
+
+g1/g2/g3/g4
+
+p1/p2/p3/p4
+```
+
+```{r }
+
+plot_rmse<-filter(rmse, Error_Type=="RMSE", Error!=0, Norm==TRUE) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+  mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
+
+plot_rmse$Filt <- factor(plot_rmse$Filt, levels = c("Ref", "GS", "Comb", "Unfilt"))
+
+plot_rmse_summary <- plot_rmse %>%
+  group_by(Filt, Effort_Type, MVC_Voli_Cat,Test) %>%
+  summarise(
+    mean_error = mean(Error),
+    sd_error = sd(Error),
+    n = n(),  # Get the sample size
+    conf_int = qt(0.975, df = n - 1) * (sd_error / sqrt(n))
+  )
+
+g1 <- ggplot(plot_rmse_summary, aes(x = Filt, y = mean_error, fill = MVC_Voli_Cat)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = (mean_error - conf_int), ymax =(mean_error + conf_int)),
+                position = position_dodge(0.9), width = 0.25) +
+  facet_wrap( ~ Test) +
+  labs(x = "Filter", y = "NRMSE (% MVC MAV)", title = "NRMSE",
+       subtitle = sprintf("9 participants, %d participants", length(unique(plot_rmse_summary$Test)))) +
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.1, 0.45),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  ) +
+  # Add pairwise comparisons between "Ref" and other filters
+  stat_compare_means(data = subset(plot_rmse_summary,Effort_Type == "Force"), aes(group = Effort_Type), 
+                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+                     label = "p.signif",
+                     method = "wilcox.test",
+                     position = position_dodge(0.1))+
+    stat_compare_means(data = subset(plot_rmse_summary,Effort_Type == "Hand"), aes(group = Effort_Type), 
+                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+                     label = "p.signif",
+                     method = "t.test",
+                     position = position_dodge(0.9))
+
+g1
+
+```
+
+```{r }
+
+# Sample data for bars with a facet variable
+data_bar <- data.frame(
+  category = c("A", "B", "C"),
+  bar_value = c(10, 15, 8),
+  facet_var = "Bar Plot"  # Add a facet variable for bar plot
+)
+
+# Sample data for points with the same facet variable
+data_points <- data.frame(
+  category = c("A", "B", "C", "A", "B", "C"),
+  point_value = c(12, 14, 9, 11, 13, 10),
+  facet_var = "Point Plot"  # Add a different facet variable for point plot
+)
+
+# Combine datasets by binding rows (must have the same column names)
+combined_data <- bind_rows(
+  data_bar %>% rename(value = bar_value),    # Rename bar_value to value
+  data_points %>% rename(value = point_value) # Rename point_value to value
+)
+
+# Create the faceted plot
+ggplot(combined_data, aes(x = category, y = value)) +
+  # Bar plot layer, only applied to the "Bar Plot" facet
+  geom_bar(data = filter(combined_data, facet_var == "Bar Plot"),
+           stat = "identity", fill = "skyblue", width = 0.6) +
+  # Points layer, only applied to the "Point Plot" facet
+  geom_point(data = filter(combined_data, facet_var == "Point Plot"), 
+             color = "red", size = 3) +
+  # Add faceting by the common facet variable
+  facet_wrap(~facet_var) +
+  labs(y = "Value", x = "Category", title = "Faceted Bar and Point Plot")
+```
