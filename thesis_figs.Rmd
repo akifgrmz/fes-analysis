@@ -1,0 +1,716 @@
+---
+title: "thesis_figs"
+output: html_document
+date: "2025-02-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE}
+library(magrittr)
+library(here)
+library(janitor)
+library(readxl)
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+library(ggpmisc)
+library(tidyr)
+library(ggsignif)
+library(ggpubr)
+library(ggforce)
+library(dplyr)
+library(egg)
+options(dplyr.summarise.inform = FALSE)
+
+```
+
+```{r Data Inject }
+
+droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
+#occraw<- read_csv("occlusion_v4.csv",show_col_types = FALSE)
+occraw<- read_csv("occ_embc2025.csv",show_col_types = FALSE)
+occraw%>%count(Test)
+
+occraw2<- read_csv("occlusion_v10.csv",show_col_types = FALSE)
+occraw2%>%count(Test,EffortType)
+
+err_raw<- read_csv("occerr_embc2025.csv",show_col_types = FALSE)
+err_raw%>%count(Test)
+
+trial_stats_raw<- read_csv("trial_stats2.csv",show_col_types = FALSE)
+rmse_raw<- read_csv("rmse3.csv",show_col_types = FALSE)
+
+```
+
+```{r dataframe modifications}
+
+occ<-occraw%>%mutate(Test = as.factor(Test),
+                     Tau = as.factor(Tau),
+                     Feat = as.factor(Feat),
+                     Filt = as.factor(Filt))
+
+occ<-occ%>%mutate(EffortType = as.factor(EffortType))
+
+
+occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+occ<-occ%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+occ2<-occraw2%>%mutate(Test = as.factor(Test),
+                     Tau = as.factor(Tau),
+                     Feat = as.factor(Feat),
+                     Filt = as.factor(Filt))
+
+occ2<-occ2%>%mutate(EffortType = as.factor(EffortType))
+
+
+occ2<-occ2%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+occ2<-occ2%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
+                     Repeat = as.factor(Repeat),
+                     NumofDropped = as.factor(NumofDropped))
+
+droppedocc<-droppedocc%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err_raw%>%mutate(MVC_Voli_Cat=recode(VoliMVC,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(StimMVC,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err%>%mutate(Test = as.factor(Test),
+                     Filt = as.factor(Filt),
+                     Occ_Type = as.factor(Occ_Type),
+                     MVC_Stim_Cat = as.factor(MVC_Stim_Cat),
+                     MVC_Voli_Cat = as.factor(MVC_Voli_Cat),
+                     MVC_Stim = as.integer(StimMVC),
+                     MVC_Voli = as.integer(VoliMVC))
+
+err<-err%>%mutate(EffortType = as.factor(EffortType))
+
+
+err<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+
+rmse<-rmse_raw%>%mutate(Test = as.factor(Test),
+                       Effort_Type = as.factor(Effort_Type),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test),
+                       Ref_Trial = as.integer(Ref_Trial))
+
+rmse<-rmse%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40',
+                                '50' = 'Stim_50',
+                                '60' = 'Stim_60',
+                                '70' = 'Stim_70',
+                                '80' = 'Stim_80'))
+
+trial_stats<-trial_stats_raw%>%mutate(Test = as.factor(Test),
+                       Exp = as.factor(Exp),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test))
+summary(occ2)
+occ%>%count(Test)
+err%>%count(Test,Filt)
+rmse%>%count(Test)
+
+```
+
+```{r Plotting: maintain section}
+library(scales)  # Ensure the 'scales' package is loaded
+
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
+
+plot_tibble<-plot_tibble%>%mutate(Feat=recode(Feat,
+                                             'EffortMea' = 'Force'))
+NumofTest<-length(unique(plot_tibble$Test) )
+default_colors <- hue_pal()(length(unique(plot_tibble$MVC_Stim_Cat)))
+
+annotation_data1 <- data.frame(Feat = c("Force", "MAV"), 
+                              x = 12, 
+                              y = 80, 
+                              label = c("(a)", "(b)"))
+
+annotation_data2 <- data.frame(Feat = c("Force", "MAV"), 
+                              x = 12, 
+                              y = 75, 
+                              label = c("(c)", "(d)"))
+
+p1<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Cat)) +
+    geom_point(size = 2) +
+    geom_smooth(method = "lm", size = 2,se = FALSE) +
+    geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No occlusion level'),size = 2)+
+ #   facet_grid(EffortType~Feat)+
+     facet_grid(~Feat)+
+    coord_cartesian(ylim=c(-10,80)) + 
+    labs(x = expression("Volitional Effort: V (% MVC)"),
+    y = expression("Maintained Volitional Effort: V' (% MVC)"))+
+      theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position="top",
+    #legend.position = c(0.2, 0.4),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )+
+ scale_color_manual(labels=c('No occlusion level','10% Stim', '20% Stim', '30% Stim'),name=expression(""),values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat)), 
+               "No occlusion level" = "black")
+  ) +
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat))), "dashed"))))+
+geom_text(
+    data = annotation_data1, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black", fontface = "bold"
+  )
+
+p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat)) +
+    geom_point(size = 2) +
+    geom_smooth(method = "lm", size = 2,se = FALSE)+
+ #   facet_grid(EffortType~Feat)+
+     facet_grid(~Feat)+
+    coord_cartesian(ylim=c(-20, 80)) + 
+    labs(x = expression("Volitional Effort: V (% MVC)"),
+    y = expression("Occluded Effort (% MVC)")
+    ) +
+        theme_minimal(base_size = 17) +
+  theme(
+  strip.text = element_blank(),    
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    #legend.position="top",
+    legend.position = "none",  # Position legend inside the plot (top-right corner)
+   # legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )+
+ scale_color_manual(
+    values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat))))+
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat)))))))+
+geom_text(
+    data = annotation_data2, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black",fontface = "bold"
+  )
+
+pdf("force_occ_lines2.pdf", width = 8, height = 10) 
+
+suppressWarnings(print(p1/p2))
+
+dev.off()
+```
+
+```{r Hand occlusion results}
+library(scales)
+library(ggh4x) 
+
+plot_tibble<-filter(occ2, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
+NumofTest<-length(unique(plot_tibble$Test) )
+default_colors <- hue_pal()(length(unique(plot_tibble$MVC_Stim_Cat)))
+plot_tibble<-plot_tibble%>%mutate(Feat=recode(Feat,
+                                             'EffortMea' = 'Hand Opening'))
+
+annotation_data1 <- data.frame(Feat = c("Hand Opening", "MAV"), 
+                              x = 20, 
+                              y = 100, 
+                              label = c("(a)", "(b)"))
+
+annotation_data2 <- data.frame(Feat = c("Hand Opening", "MAV"), 
+                              x = 20, 
+                              y = 80, 
+                              label = c("(c)", "(d)"))
+
+p1<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Cat)) +
+    geom_point(size = 2) +
+    geom_smooth(method = "lm", size = 2,se = FALSE) +
+    geom_segment(aes(x = 20, y = 20, xend = 50, yend = 50, color='No Occlusion Level'),size = 2) +
+ #   facet_grid(EffortType~Feat)+
+   #  facet_grid(~Feat, labeller =facet_labels)+
+    facet_grid(~Feat) +
+    coord_cartesian(ylim=c(-10,100)) + 
+    labs(x = expression("Volitional Hand Opening: V (% MFE)"),
+    y = expression("Maintained Hand Opening: V' (% MFE)"))+
+      theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position="top",
+    #legend.position = c(0.2, 0.4),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )+
+ scale_color_manual(
+    values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat)), 
+               "No Occlusion Level" = "black"))+
+       scale_color_manual(labels=c('No occlusion level','10% Stim', '20% Stim', '30% Stim'),name=expression(""),values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat)), 
+               "No Occlusion Level" = "black")
+  ) +
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat))), "dashed"))))+
+  geom_text(
+    data = annotation_data1, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black",fontface = "bold"
+  )
+
+p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat)) +
+    geom_point(size = 2) +
+    geom_smooth(method = "lm", size = 2,se = FALSE)+
+ #   facet_grid(EffortType~Feat)+
+     facet_grid(~Feat)+
+  coord_cartesian(ylim=c(-20, 80)) + 
+    labs(x = expression("Volitional Hand Opening: V (% MFE)"),
+    y = expression("Occluded Hand Opening (% MFE)")
+    ) +
+        theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    #legend.position="top",
+    legend.position = "none",  # Position legend inside the plot (top-right corner)
+   # legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )+
+ scale_color_manual(
+    values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat))))+
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat)))))))+
+  geom_text(
+    data = annotation_data2, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black",fontface = "bold"
+  )
+
+
+pdf("finger_occ_lines3.pdf", width = 8, height = 10) 
+suppressWarnings(print(p1/p2))
+dev.off()
+```
+
+
+```{r RMSE New}
+
+plot_rmse<-filter(rmse, Error_Type=="RMSE", Error!=0, Norm==TRUE) %>% 
+filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+  mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt)) %>% filter(Test == c("jan11","jan12","aug22_24","sep3_24","sep4_24","sep6_24" ))
+default_colors <- hue_pal()(length(unique(plot_rmse$MVC_Voli_Cat)))
+plot_rmse$Filt <- factor(plot_rmse$Filt, levels = c("Ref", "GS", "Comb", "Unfilt"))
+
+annotation_data <- data.frame(Effort_Type = c("Force", "Hand"), 
+  MVC_Voli_Cat = "Ref",   # Adjust this for the x position
+  y = c(0.038, 0.25), # Adjust this for the y position
+                              label = c("(a)", "(b)"))
+
+symnum.args <- list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, Inf), 
+                    symbols = c("**", "**", "**", "*", "ns"))
+
+# Create the bar plot with error bars
+p <- ggplot(plot_rmse, aes(x = Filt, y = Error, fill = MVC_Voli_Cat)) +
+  stat_summary(fun = mean, geom = "bar", position = "dodge", width = 0.7)+
+    stat_summary(fun.data = mean_se, geom = "errorbar", 
+               width = 0.2, position = position_dodge(0.7)) +
+  facet_wrap(~ Effort_Type,scales='free') +
+  labs(
+    x = "", 
+    y = "Normalized RMSE") +
+  theme_minimal(base_size = 13) +  
+  theme(
+    legend.position="top",
+    legend.background = element_rect()
+    ) +
+  
+  scale_fill_manual(
+    labels = c( '10% Volu.', '20% Volu.', '30% Volu.', '40% Volu.', '50% Volu.'), 
+    name = expression(""), 
+    values = setNames(default_colors, unique(plot_rmse$MVC_Voli_Cat)))+
+
+  stat_compare_means(
+  data =  filter(plot_rmse, Effort_Type == "Hand"),  # Use raw dataset for p-values
+  comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+  label = "p.signif",  # Show significance levels (*, **, ***)
+  method = "wilcox.test",
+  label.y = c(0.15, 0.19, 0.22),
+  tip.length = c(0.02, 0.02,0.02),
+  symnum.args = list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, Inf), 
+                    symbols = c("**", "**", "**", "*", "ns"))
+  )+
+    stat_compare_means(
+  data =  filter(plot_rmse, Effort_Type == "Force"),  # Use raw dataset for p-values
+  comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+  label = "p.signif",  # Show significance levels (*, **, ***)
+  method = "wilcox.test",
+  label.y = c(0.05, 0.06, 0.07)*0.5,
+  tip.length = c(0.03, 0.03,0.03),
+  symnum.args = list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, Inf), 
+                    symbols = c("**", "**", "**", "*", "ns"))
+  )+
+  geom_text(
+    data = annotation_data,  # Use the custom annotation data
+    aes(x = MVC_Voli_Cat, y = y, label = label),  # Map the x, y, and label from the data
+    size = 5, color = "black", fontface = "bold", 
+     hjust = 1.1
+
+  )
+p
+pdf("rmse_results2.pdf", width = 6, height = 4.5)  # specify dimensions in inches
+p
+dev.off()
+```
+
+
+```{r }
+
+filt="GS"
+type='Occ_Hybrid_mvc'
+Log=FALSE
+occ_err<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log)%>%
+  select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC,Filt)
+
+occ_err_wide<-occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
+
+occ_err_long<-occ_err_wide%>%pivot_longer(cols=c('Occ_mvc','Effort_e_Amp_err','Occ_Dropped_mvc'),
+                                    names_to='Occ_Error_Type',
+                                    values_to='Error')%>%mutate(Occ_Error_Type = as.factor(Occ_Error_Type)) %>%
+  mutate(
+    Occ_Error_Type = as.factor(Occ_Error_Type),
+    Error = case_when(
+      Occ_Error_Type == "Occ_Dropped_mvc" ~ Error + 7,
+      TRUE ~ Error  # Keep other values unchanged
+    )
+  )
+
+occ_err1<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log)
+
+occ_err_long <- occ_err_long %>%
+  mutate(Occ_Error_Type = relevel(Occ_Error_Type, ref = "Effort_e_Amp_err"))
+
+#my_labeller <- as_labeller(c(Occ_mvc="E[o]+E[e]", Effort_e_Amp_err="E[e]", Occ_Dropped_mvc="E[d]+E[e]"),
+ #                         default = label_parsed)
+
+my_labeller <- as_labeller(c(Occ_mvc="Corrected", Effort_e_Amp_err="Uncorrected",Occ_Dropped_mvc="DroppedFrames"),
+                           default = label_parsed)
+
+occ_err_long1<-filter(occ_err_long, Filt==filt)
+
+p1<-ggplot(occ_err_long1, aes(x =  VoliMVC, y = Error+5 , color = MVC_Stim_Cat)) +
+    geom_point( size = 3) +
+    geom_smooth(method = "lm", size = 2,se = FALSE)+ 
+    geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
+    facet_wrap(~Occ_Error_Type,labeller=my_labeller)+
+    ylim(-50, 25)+
+    #annotate("text", x=0.5, y=20, label= "(a)", size=6)+
+    labs(x = expression("Volitional Effort (V) "),
+    y = "Estimation Error (% Effort)",
+    #subtitle = sprintf('                          (a)                                                      (b)                           ',type, filt)
+    )+
+    scale_color_hue(labels=c('10% Stim', '20% Stim', '30% Stim','Zero Error'),name=expression("Stim. Effort (S)"))+
+    theme_minimal(base_size = 14) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.77, 0.25),
+    legend.background = element_rect(fill = alpha("white", 0.6)))
+#p1<-tag_facet(p1, size= 6,hjust = -1)
+
+occ_err_long1<-occ_err_long1%>%mutate(Occ_Error_Type=recode(Occ_Error_Type,
+                                             'Effort_e_Amp_err' = 'Uncorrected',
+                                             'Occ_mvc' = 'Force\nCorrected',
+                                             'Occ_Dropped_mvc' = 'Dropped\nFrames'
+  ))
+
+p2<-ggplot(occ_err_long1, aes(x =  Occ_Error_Type , y = Error+7, color=Occ_Error_Type )) +
+  geom_boxplot(notch=TRUE)+
+  geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
+  ylim(-50, 45)+
+  annotate("text", x=0.55, y=39, label= "(d)", size=6,fontface = "bold") +  
+  
+  geom_signif(comparisons = list(c("Uncorrected","Force\nCorrected")),
+              y_position = 30, 
+              tip_length = 0.02, 
+              vjust = 0.1, 
+              size = 0.8, 
+              textsize = 8, 
+              map_signif_level=TRUE,
+              annotation = c("*"),
+              color = "black"
+              ) +
+  geom_signif(comparisons = list(c("Uncorrected","Dropped\nFrames")), 
+              y_position = 15, 
+              tip_length = 0.02, 
+              vjust = 0.1, 
+              size = 0.8, 
+              textsize = 8, 
+              map_signif_level=TRUE,
+              annotation = c("*"),
+              color = "black"
+              ) +
+  labs(x = NULL,
+       y = "Estimation Error (% Effort)")+
+  #subtitle = "                           (c)  ")+
+  scale_color_hue(labels=c('Uncorrected','Dropped Frames\n Corrected', 'Force Corrected'),
+                  name="Correction Methods"
+                  )+
+  theme_minimal(base_size = 14
+                ) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.9, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+    )
+
+occ_err_long2<-filter(occ_err_long, Occ_Error_Type=="Occ_mvc")
+
+p3<-ggplot(occ_err_long2, aes(x =  Filt , y = Error+7, color = Filt)) +
+    geom_boxplot(notch=TRUE)+
+    geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
+    #geom_smooth(method = "lm")+ 
+    #geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
+  ylim(-50, 45)+
+    annotate("text", x=0.55, y=39, label= "(e)", size=6,fontface = "bold") +  
+    geom_signif(comparisons = list(c("Unfilt","GS")), 
+                y_position = 15, 
+                tip_length = 0.01, 
+                vjust = 0.1, 
+                size = 0.8, 
+                textsize = 8, 
+                map_signif_level=TRUE,
+                annotation = c("*"),
+                color = "black"
+                ) +
+  labs(x = NULL,
+       y = NULL
+       #title = "",
+       #subtitle = "                        (d)")+
+       ) + 
+  
+  scale_color_hue(labels=c('Comb', 'GS', 'Unfiltered'),
+                  name="Filter"
+                  )+
+  theme_minimal(base_size = 14
+                ) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.8, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6)),
+    axis.text.y = element_blank(),  # Removes y-axis text
+    axis.ticks.y = element_blank() # Removes y-axis ticks
+  )
+
+suppressWarnings(print(p1/(p2-p3)))
+
+#pdf("occerr_the2.pdf", width = 7, height = 8)  # specify dimensions in inches
+
+#suppressWarnings(print(p1/(p2-p3)))
+
+#dev.off()
+```
+
+
+
+```{r Plotting trial_stats}
+
+plot_trial_stats<-filter(trial_stats,TrialType=="Other")
+
+trial_stats_wide <- plot_trial_stats %>% select (Filt, MAV_Mean, Voli_MAV_Mean, Dropped_Mean, sMVC, Trial, Test)%>%  
+  pivot_wider(
+    names_from = Filt,
+    values_from = c(MAV_Mean, Dropped_Mean, Voli_MAV_Mean)
+  )
+
+# Compute the ratios by dividing mean_error of 'GS' and 'Comb' by 'Unfilt'
+trial_stats_wide <- trial_stats_wide %>%  group_by(sMVC,Test)%>%
+  mutate(
+    ratio_GS = MAV_Mean_GS / MAV_Mean_Unfilt,
+    ratio_Comb = MAV_Mean_Comb / MAV_Mean_Unfilt,
+    ratio_Unfilt = MAV_Mean_Unfilt / MAV_Mean_Unfilt,
+    sd_ratio_GS = sd(MAV_Mean_GS / MAV_Mean_Unfilt),
+    sd_ratio_Comb = sd(MAV_Mean_Comb / MAV_Mean_Unfilt),
+    sd_ratio_Unfilt = sd(MAV_Mean_Unfilt / MAV_Mean_Unfilt),
+    
+    dropped_ratio_GS = Dropped_Mean_GS / MAV_Mean_Unfilt,
+    dropped_ratio_Comb = Dropped_Mean_Comb / MAV_Mean_Unfilt,
+    dropped_ratio_Unfilt = Dropped_Mean_Unfilt / MAV_Mean_Unfilt,
+    dropped_sd_ratio_GS = sd(Dropped_Mean_GS / MAV_Mean_Unfilt),
+    dropped_sd_ratio_Comb = sd(Dropped_Mean_Comb / MAV_Mean_Unfilt),
+    dropped_sd_ratio_Unfilt = sd(Dropped_Mean_Unfilt / MAV_Mean_Unfilt),    
+    
+    voli_ratio_GS = MAV_Mean_GS  / Voli_MAV_Mean_Unfilt,
+    voli_ratio_Comb = MAV_Mean_Comb / Voli_MAV_Mean_Unfilt,
+    voli_ratio_Unfilt = MAV_Mean_Unfilt / Voli_MAV_Mean_Unfilt,
+    voli_sd_GS = sd(MAV_Mean_GS / Voli_MAV_Mean_Unfilt),
+    voli_sd_Comb= sd(MAV_Mean_Comb / Voli_MAV_Mean_Unfilt),
+    voli_sd_Unfilt= sd(MAV_Mean_Unfilt / Voli_MAV_Mean_Unfilt)
+  )
+
+# Reshape the ratios back to long format for plotting
+ratio_long <- trial_stats_wide %>%
+  select(starts_with("ratio_"), starts_with("sd_ratio_"),sMVC,Test) %>%
+  pivot_longer(
+    cols = c(starts_with("ratio_"),starts_with("sd_ratio_")),
+    names_to = c(".value", "Filt"),
+    names_pattern = "(ratio|sd_ratio)_(.*)")%>%
+  mutate(Type = "Regular")
+
+dropped_ratio_long <- trial_stats_wide %>%
+  select(starts_with("dropped_ratio_"), starts_with("dropped_sd_ratio_"), sMVC, Test) %>%
+  pivot_longer(
+    cols = c(starts_with("dropped_ratio_"), starts_with("dropped_sd_ratio_")),
+    names_to = c(".value", "Filt"),
+    names_pattern = "(dropped_ratio|dropped_sd_ratio)_(.*)"
+  ) %>%
+  mutate(Type = "Dropped")
+
+voli_ratio_long <- trial_stats_wide %>%
+  select(starts_with("voli_ratio_"), starts_with("voli_sd_"), sMVC, Test) %>%
+  pivot_longer(
+    cols = c(starts_with("voli_ratio"), starts_with("voli_sd")),
+    names_to = c(".value", "Filt"),
+    names_pattern = "(voli_ratio|voli_sd)_(.*)") %>%
+  mutate(Type = "Voli")
+
+
+voli_ratio_long_renamed <- voli_ratio_long %>%
+  rename(ratio = voli_ratio,
+         sd_ratio = voli_sd)
+dropped_ratio_long_renamed  <- dropped_ratio_long %>%
+  rename(ratio = dropped_ratio,
+         sd_ratio = dropped_sd_ratio)
+
+data_renamed<-plot_trial_stats%>%select( MAV_Mean, MAV_Std, Filt, sMVC, Test) %>% rename(ratio = MAV_Mean,
+         sd_ratio = MAV_Std) %>% mutate(Type = factor("MAV"))
+
+combined_dt <- bind_rows(ratio_long, voli_ratio_long_renamed ,dropped_ratio_long_renamed,data_renamed)
+
+dt_means<-combined_dt %>% group_by(Filt, sMVC, Test, Type) %>%
+  summarise(
+    mean_val = mean(ratio),
+    sd_val = sd(ratio))
+
+combined_dt_allstim<-combined_dt%>% filter(sMVC !="0",  Type == "Voli", Filt != "Unfilt")
+
+stats_dt <- combined_dt_allstim %>%
+  group_by(Filt, Test, Type) %>%
+  do({
+    model <- lm(ratio ~ sMVC, data = .)
+    data.frame(
+      Filt = unique(.$Filt),
+      Test = unique(.$Test),
+      Type = unique(.$Type),
+      r_squared = summary(model)$r.squared,
+      p_value = coef(summary(model))[2, 4],
+      max_sMVC = max(.$sMVC),
+      slope=coef(model)[2],
+      level=coef(model)[1],
+      intercept = coef[1, 1],  # Intercept
+      intercept_p = coef[1, 4], # P-value for intercept
+      slope_p = coef[2, 4],    # P-value for slope      
+      y_position = mean(.$ratio, na.rm = TRUE) 
+    )
+  })
+print(stats_dt)
+dt_means<-filter(dt_means, Type == c("Voli", "MAV") )%>% filter( !(sMVC == 0 & Filt != "Unfilt")) %>%
+ mutate(sMVC_ref=recode(sMVC,'0' = 'Ref\n(Stim=0)', "10"="10", "20"="20","30"="30","40"="40","50"="50","60"="60","70"="70","80"="80"))
+
+dt_means$sMVC_ref <- factor(dt_means$sMVC_ref, levels = c('Ref\n(Stim=0)', "10", "20","30","40","50","60","70","80"))
+
+subject_labeller <- function(variable, value) {
+  paste("Subject", seq_along(value))}
+
+g1<-ggplot(dt_means, aes(x = sMVC_ref  , y = mean_val, fill = Filt)) +
+  geom_col(position = position_dodge(width = 0.8), width = 0.8)+
+  geom_errorbar(aes(ymin = mean_val - sd_val, ymax = mean_val + sd_val),
+                position = position_dodge(0.8), width = 0.3) +    
+  facet_grid(Type~Test,scales = "free_x", labeller = labeller(Test = function(x) paste("Subject", seq_along(x)))) +
+    #ylim(-10,200)+
+    labs(x = "% MFE Stim",
+    y = "Mean MAV (V)",
+    #title = "Mean MAV of filtered and unfiltered EMG"
+    )+
+     theme_minimal() +
+    theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.1, 0.73),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+
+
+p1<-ggplot(combined_dt_allstim, aes(x = sMVC  , y = 100*ratio, color = Filt)) +
+  geom_point() +
+  geom_smooth(method = "lm")+
+  facet_grid(~Test,scales = "free_x", labeller = labeller(Test = function(x) paste("Subject", seq_along(x)))) +
+    #ylim(-10,200)+
+    labs(x = "% MFE Stim.",
+    y = "Mean MAV Rate",
+    #title = "MAV Rate"
+    )+
+   theme_minimal() +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = c(0.84, 0.84)
+  ) 
+
+
+g1/p1
+pdf("stk_occ_results2.pdf", width = 6, height = 6)  # specify dimensions in inches
+
+g1/p1
+
+dev.off()
+
+```

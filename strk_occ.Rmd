@@ -50,7 +50,7 @@ occraw<- read_csv("occlusion_v7.csv",show_col_types = FALSE)
 err_raw<- read_csv("occ_est_error4.csv",show_col_types = FALSE)
 rmse_raw<- read_csv("rmse2.csv",show_col_types = FALSE)
 
-trial_stats_raw<- read_csv("trial_stats.csv",show_col_types = FALSE)
+trial_stats_raw<- read_csv("trial_stats2.csv",show_col_types = FALSE)
 ```
 
 ```{r dataframe modifications}
@@ -257,10 +257,15 @@ stats_dt <- combined_dt_allstim %>%
       r_squared = summary(model)$r.squared,
       p_value = coef(summary(model))[2, 4],
       max_sMVC = max(.$sMVC),
+      slope=coef(model)[2],
+      level=coef(model)[1],
+      intercept = coef[1, 1],  # Intercept
+      intercept_p = coef[1, 4], # P-value for intercept
+      slope_p = coef[2, 4],    # P-value for slope      
       y_position = mean(.$ratio, na.rm = TRUE) 
     )
   })
-
+print(stats_dt)
 dt_means<-filter(dt_means, Type == c("Voli", "MAV") )%>% filter( !(sMVC == 0 & Filt != "Unfilt")) %>%
  mutate(sMVC_ref=recode(sMVC,'0' = 'Ref (Stim=0)', "10"="10", "20"="20","30"="30","40"="40","50"="50","60"="60","70"="70","80"="80"))
 
@@ -289,28 +294,37 @@ p1<-ggplot(combined_dt_allstim, aes(x = sMVC  , y = 100*ratio, color = Filt)) +
   facet_grid(~Test,scales = "free")+
     #ylim(-10,200)+
     labs(x = "% Stim MVC",
-    y = "Mean MAV",
-    title = "MAV Rate of Volitional and stimulation applied segments")+
+    y = "Mean MAV Rate",
+    title = "MAV Rate: MAV_e/MAV_v ")+
       theme(
     #strip.background = element_blank(),
     #strip.text = element_text(face = "bold"),
-    legend.position = c(0.1, 0.2),
+    legend.position = c(0.1, 0.1),
     #legend.background = element_rect(fill = alpha("white", 0.6))
   )+
-  geom_text(
-    data = stats_dt,
-    aes(x = max_sMVC, y = 100*y_position, 
-        label = paste("R² =", round(r_squared, 2), ", p =", round(p_value, 4))),
-    color = "black",
-    size = 3,
-    hjust = 01,  # Adjust horizontal alignment if needed
-    vjust = -1    # Adjust vertical alignment if needed
-  )
- pdf("stk_occ_results.pdf", width = 6, height = 8)  # specify dimensions in inches
+
+
+geom_text(
+  data = stats_dt,
+  aes(
+    x = max_sMVC,
+    y = 100 * y_position,
+    label = paste(
+      "R^2 = ", round(r_squared, 2), 
+      ", p = ", round(p_value, 4), 
+      ", slope = ", round(slope, 4)
+    )
+  ),
+  color = "black",
+  size = 3,
+  hjust = 01,  # Adjust horizontal alignment if needed
+  vjust = -1  # Adjust vertical alignment if needed
+)
+#pdf("stk_occ_results2.pdf", width = 6, height = 8)  # specify dimensions in inches
 
 g1/p1
 
-dev.off()
+#dev.off()
 ```
 
 ```{r }

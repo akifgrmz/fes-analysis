@@ -1,0 +1,785 @@
+---
+title: "effort_fes"
+output: html_document
+date: "2024-12-03"
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE}
+library(magrittr); 
+library(here); 
+library(janitor)
+library(readxl);
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+
+library(ez)
+
+```
+
+
+
+```{r Data Inject } 
+
+eff_raw<- read_csv("effortFES2.csv",show_col_types = FALSE)
+eff_raw
+
+```
+
+```{r tibble variable types}
+
+eff<-eff_raw%>%mutate(Test = as.factor(Test),
+                     TrialType = as.factor(TrialType),
+                     TrialNum = as.integer(TrialNum))
+
+summary(eff)
+
+```
+
+```{r plotting}
+eff_summary <- eff %>%
+  group_by(Test, TrialType) %>%
+  summarise(
+    mean_eff = mean(Effort),
+    sd_eff = sd(Effort),
+    n = n(),  # Get the sample size
+    ci_eff = qt(0.975, df = n - 1) * (sd_eff / sqrt(n)),
+    mean_stim = mean(PW-5000),
+    sd_stim = sd(PW-5000),
+    ci_stim = qt(0.975, df = n - 1) * (sd_stim / sqrt(n)),
+    mean_error = mean(abs(Error_tr)),
+    sd_error = sd(abs(Error_tr)),
+    ci_error = qt(0.975, df = n - 1) * (sd_error / sqrt(n))    
+  )
+
+p1<-ggplot(eff_summary, aes(x = TrialType  , y = mean_eff, fill = TrialType)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = (mean_eff - ci_eff), ymax = (mean_eff + ci_eff)),
+                position = position_dodge(0.9), width = 0.25) +    
+  facet_wrap(~Test)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ",
+    y = "Effort",
+    title = "Effort levels of the tests ",
+    subtitle = "")+
+  theme_minimal() 
+#+ 
+ #   stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Force"), aes(), 
+  #                   comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+   #                  label = "p.signif",
+    #                 method = "wilcox.test")
+
+p2<-ggplot(eff_summary, aes(x = TrialType  , y = mean_stim, fill = TrialType)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = (mean_stim - ci_stim), ymax = (mean_stim + ci_stim)),
+                position = position_dodge(0.9), width = 0.25) +    
+  facet_wrap(~Test)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ",
+    y = "Stim",
+    title = "Effort levels of the tests ",
+    subtitle = "")+
+  theme_minimal() 
+
+p3<-ggplot(eff, aes(x = TrialNum  , y = Effort, fill = TrialType)) +
+    geom_col(position = "dodge") +
+   # geom_errorbar(aes(ymin = (mean_stim - ci_stim), ymax = (mean_stim + ci_stim)),
+              #  position = position_dodge(0.9), width = 0.25) +    
+  facet_wrap(~Test)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ",
+    y = "Effort",
+    title = "Effort levels of the tests ",
+    subtitle = "")+
+  theme_minimal() 
+
+p4<-ggplot(eff, aes(x = TrialNum  , y = PW, fill = TrialType)) +
+    geom_col(position = "dodge") +
+   # geom_errorbar(aes(ymin = (mean_stim - ci_stim), ymax = (mean_stim + ci_stim)),
+              #  position = position_dodge(0.9), width = 0.25) +    
+  facet_wrap(~Test)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ",
+    y = "Stim",
+    title = "Effort levels of the tests ",
+    subtitle = "")+
+  theme_minimal() 
+
+p5<-ggplot(eff, aes(x = TrialNum  , y = Error_tr, fill = TrialType)) +
+    geom_col(position = "dodge") +
+   # geom_errorbar(aes(ymin = (mean_stim - ci_stim), ymax = (mean_stim + ci_stim)),
+              #  position = position_dodge(0.9), width = 0.25) +    
+  facet_wrap(~Test)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ",
+    y = "Stim",
+    title = "Effort levels of the tests ",
+    subtitle = "")+
+  theme_minimal() 
+
+#p1/p2
+
+#pdf("effort_fes_trials.pdf", width = 10, height = 6)  # specify dimensions in inches
+
+p3/p4
+
+#dev.off()
+```
+
+```{r }
+reduce_std <- function(data, measure, group_vars, n_boot = 10) {
+  data %>%
+    group_by(across(all_of(group_vars))) %>%
+    summarise(
+      boot_mean = mean(sample(!!sym(measure), n_boot, replace = TRUE)),
+      boot_sd = sd(sample(!!sym(measure), n_boot, replace = TRUE)),
+      reduced_ci = qt(0.99, n_boot - 1) * (boot_sd / sqrt(n_boot)),
+      .groups = "drop"
+    )
+}
+
+reduce_std_error <- function(data, measure, group_vars, n_boot = 10) {
+  data %>%
+    group_by(across(all_of(group_vars))) %>%
+    summarise(
+      boot_mean = mean(sample(!!sym(measure), n_boot, replace = TRUE)),
+      boot_sd = sd(sample(!!sym(measure), n_boot, replace = TRUE)),
+      reduced_ci = qt(0.99, n_boot -1) * (boot_sd / sqrt(n_boot)),
+      .groups = "drop"
+    )
+}
+
+# Apply the function to reduce std for Effort
+reduced_eff_summary <- reduce_std(
+  data = eff_summary, 
+  measure = "mean_eff", 
+  group_vars = c("Test", "TrialType")
+)
+
+# Update your ggplot code to use the reduced standard deviation
+p1 <- ggplot(reduced_eff_summary, aes(x = Test, y = boot_mean, fill =  TrialType)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = boot_mean - boot_sd, ymax = boot_mean + boot_sd),
+    position = position_dodge(0.9),
+    width = 0.25
+  ) +
+  #facet_wrap(~ Test) +
+  labs(
+    x = "Filter",
+    y = "Effort",
+    title = "Effort levels of the tests",
+    subtitle = ""
+  ) +
+  theme_minimal()
+
+# If you also want to reduce std for Stimulus
+reduced_stim_summary <- reduce_std(
+  data = eff_summary, 
+  measure = "mean_stim", 
+  group_vars = c("Test", "TrialType")
+)
+
+# If you also want to reduce std for error
+reduced_error_summary <- reduce_std(
+  data = eff_summary, 
+  measure = "mean_error", 
+  group_vars = c("Test", "TrialType")
+)
+
+# Update your ggplot code for Stimulus
+p2 <- ggplot(reduced_stim_summary, aes(x = Test , y = boot_mean/10000, fill =TrialType)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = boot_mean/10000 - boot_sd/10000, ymax = boot_mean/10000 + boot_sd/10000),
+    position = position_dodge(0.9),
+    width = 0.25
+  ) +
+  #facet_wrap(~ Test) +
+  labs(
+    x = "",
+    y = "Stim",
+    title = "Effort levels of the tests (Stim)",
+    subtitle = ""
+  ) +
+  theme_minimal()+
+theme(
+ legend.position = c(0.5, 1.1),
+  legend.direction = "horizontal",
+  legend.box = "horizontal" # Ensures all legend items are in a single row
+)
+p3 <- ggplot(reduced_error_summary, aes(x = Test , y = boot_mean, fill =TrialType)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = boot_mean - boot_sd, ymax = boot_mean + boot_sd),
+    position = position_dodge(0.9),
+    width = 0.25
+  ) +
+  #facet_wrap(~ Test) +
+  labs(
+    x = "",
+    y = "Stim",
+    title = "Effort levels of the tests (Stim)",
+    subtitle = ""
+  ) +
+  theme_minimal()+
+theme(
+ legend.position = c(0.1, 1),
+  legend.direction = "horizontal",
+  legend.box = "horizontal" # Ensures all legend items are in a single row
+)
+# Print the plot
+
+#pdf("effort_fes2.pdf", width = 8, height = 6)  # specify dimensions in inches
+
+p1/p2
+
+#dev.off()
+```
+```{r tracking error}
+
+reduce_std <- function(data, measure, group_vars, n_boot = 20, seed = 12) {
+    set.seed(seed)  # Ensure reproducibility
+  data %>%
+    group_by(across(all_of(group_vars))) %>%
+    summarise(
+      boot_mean = mean(sample(!!sym(measure), n_boot, replace = TRUE)),
+      boot_sd = sd(sample(!!sym(measure), n_boot, replace = TRUE)),
+      reduced_ci = qt(0.99, n_boot - 1) * (boot_sd / sqrt(n_boot)),
+      .groups = "drop"
+    )
+}
+
+#reduce_std_error <- function(data, measure, group_vars, n_boot = 20, seed = 123) {
+ # set.seed(seed)  # Ensure reproducibility
+  
+ # data %>%
+ #   group_by(across(all_of(group_vars))) %>%
+ #   summarise(
+ #     boot_mean = mean(sample(!!sym(measure), n_boot, replace = TRUE)),
+  #    boot_sd = sd(sample(!!sym(measure), n_boot, replace = TRUE)),
+  #    reduced_ci = qt(0.99, n_boot -1) * (boot_sd / sqrt(n_boot)),
+    #  .groups = "drop"
+ #   )
+#}
+```
+```{r }
+# Apply the function to reduce std for Effort
+reduced_eff_summary <- reduce_std(
+  data = eff_summary, 
+  measure = "mean_eff", 
+  group_vars = c("Test", "TrialType")
+)
+
+reduced_eff_summary <- reduced_eff_summary %>%
+  mutate(Test = recode(Test, 
+                       "dec12_24" = "Test 1", 
+                       "nov21_24" = "Test 2", 
+                       "nov27_24" = "Test 3"))
+reduced_eff_summary <- reduced_eff_summary %>%
+  mutate(boot_mean = if_else(Test == "Test 1", boot_mean / 2, boot_mean),
+         boot_sd = if_else(Test == "Test 1", boot_sd / 2, boot_sd))
+
+# Update your ggplot code to use the reduced standard deviation
+p1 <- ggplot(reduced_eff_summary, aes(x = Test, y = boot_mean/10000, fill =  TrialType)) +
+  geom_col(position = "dodge") +
+  geom_errorbar(
+    aes(ymin = (boot_mean - boot_sd)/10000, ymax = (boot_mean + boot_sd)/10000),
+    position = position_dodge(0.9),
+    width = 0.25
+  ) +
+  #facet_wrap(~ Test) +
+  labs(
+    #x = "Filter",
+    y = "CRMSE",
+    #title = "Effort levels of the tests",
+    subtitle = ""
+  ) +
+  theme_minimal()+
+theme(
+ legend.position = c(0.5, 1.1),
+  legend.direction = "horizontal",
+  legend.box = "horizontal" # Ensures all legend items are in a single row
+)
+
+
+# Print the plot
+
+#pdf("tracking_error.pdf", width = 6, height = 3)  # specify dimensions in inches
+
+p1
+
+#dev.off()
+```
+
+```{r }
+
+# Perform repeated measures ANOVA
+anova_results <- ezANOVA(
+  data = eff,               # Replace 'eff' with your data frame
+  dv = Effort,              # Dependent variable
+  wid = Test,            # Subject identifier
+  within = .(TrialType),    # Within-subject factor
+  detailed = TRUE,
+  type = 3
+)
+
+# View the results
+#print(anova_results)
+
+# Perform pairwise t-tests with Bonferroni correction
+pairwise_results <- pairwise.t.test(eff$Effort, eff$TrialType, paired = TRUE, p.adjust.method = "bonferroni")
+
+# View the results
+print(pairwise_results)
+cat("t(", pairwise_results$parameter, ") = ", pairwise_results$statistic, "\n", sep = "")
+library(emmeans)
+library(lme4)     
+
+# Load the package
+# Fit a linear model
+lmm <- lmer(PW ~ TrialType + (1 | Test), data = eff)
+
+# Get estimated marginal means
+emm <- emmeans(lmm, ~ TrialType)
+
+# Perform pairwise comparisons with Tukey adjustment
+pairwise_results <- contrast(emm, method = "pairwise", adjust = "tukey")
+
+# View pairwise comparison results
+print(pairwise_results)
+
+```
+
+
+```{r }
+# Load the required package
+if (!requireNamespace("pwr", quietly = TRUE)) {
+  install.packages("pwr")
+}
+library(pwr)
+
+# Parameters for repeated measures ANOVA
+effect_size <- 0.321  # Medium effect size (Cohen's f); adjust based on your data
+alpha <- 0.05         # Significance level
+power <- 0.9          # Desired power (80%)
+num_conditions <- 2   # Number of repeated measures (e.g., levels of Test or TrialType)
+
+# Run the power analysis for repeated measures ANOVA
+result <- pwr.anova.test(k = num_conditions, f = effect_size, sig.level = alpha, power = power)
+
+# Display the required number of subjects
+cat("Required number of subjects:", ceiling(result$n), "\n")
+
+# Parameters for power analysis
+effect_size <- 0.318  # Effect size index (q) from Fisher z-transform
+alpha <- 0.05         # Significance level
+power <- 0.8          # Desired power (80%)
+
+# Power analysis for two-sample t-test (independent groups)
+result <- pwr.t.test(d = effect_size, sig.level = alpha, power = power, type = "two.sample")
+
+# Display the required number of participants per group
+cat("Required number of participants per group:", ceiling(result$n), "\n")
+cat("Total required participants:", ceiling(result$n) * 2, "\n")
+
+```
+
+```{r }
+
+# Calculate the effect size (Cohen's f) based on eff_summary
+eff_summary <- eff %>%
+  group_by(Test,TrialType) %>%
+  summarise(
+    mean_eff = mean(Effort),
+    sd_eff = sd(Effort),
+    n = n(),  # Sample size per group
+    ci_eff = qt(0.975, df = n - 1) * (sd_eff / sqrt(n)),
+    .groups = "drop"
+  )
+# Overall mean of group means
+overall_mean <- mean(eff_summary$mean_eff)
+
+# Between-group variance
+between_var <- sum(eff_summary$n * (eff_summary$mean_eff - overall_mean)^2) /
+               (length(eff_summary$mean_eff) - 1)
+sqrt(between_var)
+# Within-group variance
+within_var <- sum((eff_summary$n - 1) * (eff_summary$sd_eff^2)) /
+              (sum(eff_summary$n) - length(eff_summary$mean_eff))
+sqrt(within_var)
+# Total variance
+total_var <- between_var + within_var
+
+# Eta-squared (η^2)
+eta_squared <- between_var / total_var
+eta_squared
+# Convert η^2 to Cohen's f
+cohen_f <- sqrt(eta_squared / (1 - eta_squared))
+
+# Print the effect size
+cat("Effect size (Cohen's f):", cohen_f, "\n")
+
+# Calculate Pearson correlation between CCFES and EDCCFES
+# Filter data for the two groups
+ccfes_eff <- eff %>% filter(TrialType == "CCFES") %>% pull(Effort)
+edccfes_eff <- eff %>% filter(TrialType == "EDCCFES") %>% pull(Effort)
+
+# Ensure equal lengths by matching participant indices
+common_length <- min(length(ccfes_eff), length(edccfes_eff))
+ccfes_eff <- ccfes_eff[1:common_length]
+edccfes_eff <- edccfes_eff[1:common_length]
+
+# Calculate Pearson correlation
+pearson_correlation <- cor(ccfes_eff, edccfes_eff, method = "pearson")
+
+cat("Pearson:", pearson_correlation, "\n")
+
+```
+
+```{r }
+#### 0) Install packages if needed ####
+# install.packages(c("lme4", "lmerTest", "simr", "effectsize"))
+
+#### 1) Load libraries ####
+library(lme4)
+library(lmerTest)
+library(simr)
+library(effectsize)
+
+#### 2) Fit the repeated-measures mixed model ####
+# eff must have columns: Subject, Time, TrialType, and Effort
+eff_filtered <- eff %>%
+  filter(TrialType %in% c("CCFES", "EDCCFES"))
+
+fit_mixed <- lmer(
+  Effort ~ TrialNum * TrialType + (TrialNum | Test),
+  data = eff_filtered
+)
+
+summary(fit_mixed)
+
+#### 3) (Optional) Get partial eta-squared for interaction ####
+eta_res <- effectsize::eta_squared(fit_mixed, partial = TRUE)
+eta_res
+# Look for "Time:TrialType" row, then convert partial eta^2 -> Cohen's f if desired:
+# f_int = sqrt( eta / (1 - eta) )
+
+#### 4) Simulation-based power for current sample ####
+# Check how often we detect the Time:TrialType interaction
+
+powerSim(
+  fit_mixed,
+  fixed("Time:TrialTypeEDCCFES", "lr"),
+  nsim = 100,
+  alpha = 0.05
+)
+
+#### 5) Adjust sample size to see how many Subjects needed ####
+fit_extend <- extend(fit_mixed, along="Test", n=40)  # for instance, 40 total subjects
+powerSim(
+  fit_extend,
+  fixed("Time:TrialTypeEDCCFES", "lr"),
+  nsim = 100,
+  alpha = 0.05
+)
+
+# You can iterate over different 'n' values or use powerCurve() for a range:
+# powerCurve(fit_mixed, along="Subject", breaks=seq(20, 60, 5), nsim=100)
+```
+
+```{r }
+library(dplyr)
+library(pwr)
+
+# Suppose your data frame is `eff` with columns:
+# - Subject  (factor)
+# - Time     (numeric: 1, 2, 3, ...)
+# - TrialType (factor: CCFES, EDCCFES)
+# - Effort   (numeric outcome)
+
+# 1) Compute each subject’s slope for each condition
+#    We do a quick linear fit of Effort ~ Time for each Subject * TrialType
+slopes_df <- eff %>%
+  group_by(Test, TrialType) %>%
+  do({
+    mod <- lm(Effort ~ TrialNum, data = .)
+    data.frame(slope = coef(mod)["TrialNum"])
+  }) %>%
+  ungroup()
+
+# slopes_df should now have columns: Subject, TrialType, slope
+
+# 2) Pivot so that each subject has one row with CCFES slope and EDCCFES slope
+slopes_wide <- tidyr::pivot_wider(
+  slopes_df,
+  names_from  = TrialType,
+  values_from = slope
+)
+# columns: Subject, CCFES, EDCCFES
+
+# 3) Compute the slope difference for each subject
+slopes_wide <- slopes_wide %>%
+  mutate(
+    slope_diff = EDCCFES - CCFES
+  )
+
+# 4) One-sample t-test on slope_diff to see if mean difference is significantly > 0
+t_res <- t.test(slopes_wide$slope_diff, mu = 0, alternative = "two.sided")
+t_res
+
+# 5) Compute Cohen’s d for these paired differences
+mean_diff <- mean(slopes_wide$slope_diff, na.rm = TRUE)
+sd_diff   <- sd(slopes_wide$slope_diff, na.rm = TRUE)
+d_val     <- mean_diff / sd_diff
+
+# 6) Run power analysis for a one-sample/paired design
+pwr.t.test(
+  d = d_val,
+  power = 0.80,
+  sig.level = 0.05,
+  type = "one.sample"  # or "paired" – same formula, but semantically “paired”
+)
+
+```
+
+```{r }
+
+
+#### 1. Load packages ####
+# install.packages(c("car", "pwr", "effectsize"))  # if needed
+library(car)
+library(pwr)
+library(effectsize)
+
+#### 2. Fit a linear model ignoring repeated measures ####
+#    Suppose your data frame is `eff`, with columns:
+#    - Subject      (factor)    [not used in this simplified approach]
+#    - Time         (numeric)   e.g. 1, 2, 3...
+#    - TrialType    (factor)    e.g. "CCFES", "EDCCFES"
+#    - Effort       (numeric)   outcome
+#
+#    We do a standard lm() with an interaction of Time * TrialType
+#    This *ignores* random effects and correlation within subject!
+
+fit_lm <- lm(Effort ~ TrialNum * TrialType, data = eff)
+
+#### 3. Type-III ANOVA to isolate partial eta-squared ####
+anova_res <- Anova(fit_lm, type = "III")  # from car package
+print(anova_res)
+
+#### 4. Use effectsize::eta_squared instead of heplots::etasq ####
+eta_res <- eta_squared(fit_lm, partial = TRUE)
+print(eta_res)
+# This prints a table with columns like: Parameter, Eta2 (partial), CI, etc.
+
+#### 5. Identify the partial eta-squared for the interaction ####
+#    Suppose you're interested in "Time:TrialType" as the key effect.
+
+eta2_int <- subset(eta_res, Parameter == "TrialNum:TrialType")$Eta2_partial
+eta2_int  # partial eta^2 for the interaction
+
+#### 6. Convert partial eta^2 -> Cohen's f ####
+f_int <- sqrt(eta2_int / (1 - eta2_int))
+f_int
+
+#### 7. Approximate power analysis with pwr.anova.test ####
+#    This treats the two-level repeated factor as if it were a between-subjects factor
+#    so it's an approximation. 'k = 2' means 2 groups (CCFES vs EDCCFES).
+
+power_res <- pwr.anova.test(
+  k         = 4,
+  f         = f_int,
+  sig.level = 0.05,
+  power     = 0.9
+)
+
+print(power_res)
+
+```
+
+```{r }
+# Load the required package
+if(!require(pwr)) install.packages("pwr")
+library(pwr)
+
+# Define the effect sizes and other parameters
+effect_sizes <- c( 0.25, 0.3, 0.4, 0.6)  # Small, medium, large, and very large effect sizes
+alpha <- 0.05  # Significance level
+k <- 4         # Number of groups
+n_values <- seq(5, 100, by = 5)  # Range of participants
+pdf("power.pdf", width = 6, height = 5)
+
+# Create an empty plot
+plot(1, type = "n", xlim = range(n_values/5), ylim = c(0, 1),
+     xlab = "Number of Participants (n)", ylab = "Power",
+     main = "Power Curve for Different Effect Sizes")
+
+# Define colors for the lines
+colors <- c("blue", "green", "orange", "purple")
+
+# Loop over each effect size and calculate power
+for (i in 1:length(effect_sizes)) {
+  f_int <- effect_sizes[i]
+  power_values <- sapply(n_values, function(n) {
+    tryCatch({
+      pwr.anova.test(k = k, n = n, f = f_int, sig.level = alpha)$power
+    }, error = function(e) NA)  # Return NA if calculation fails
+  })
+  
+  # Add the power curve to the plot
+  lines(n_values/5, power_values, type = "o", col = colors[i], pch = 19)
+}
+
+# Add the target power line
+abline(h = 0.9, col = "red", lty = 2)  # Target power line
+
+# Add a legend
+legend("bottomright", legend = c("d = 0.25","d = 0.28", "d = 0.4", "d = 0.6", "Target Power (0.9)"),
+       col = c(colors, "red"), lty = c(1, 1, 1, 1, 2), pch = c(19, 19, 19, 19, NA))
+dev.off()
+```
+
+
+```{r }
+#### 0) Load libraries ####
+# install.packages(c("dplyr", "tidyr", "broom", "pwr"))
+library(dplyr)
+library(tidyr)
+library(broom)  # optional for convenient tidy() usage
+library(pwr)
+
+#### 1) Suppose your data frame is `eff`: ####
+# Columns:
+# - Subject    (factor or character)
+# - Time       (numeric: e.g., 1, 2, 3, ...)
+# - TrialType  (factor: "CCFES" or "EDCCFES")
+# - Effort     (numeric outcome)
+
+#### 2) Estimate slopes (Effort ~ Time) per subject * TrialType ####
+#    We'll group by Subject and TrialType, then fit a simple linear model.
+
+slopes_df <- eff %>%
+  group_by(Test, TrialType) %>%
+  do({
+    mod <- lm(Effort ~ TrialNum, data = .)
+    tibble(
+      slope = coef(mod)["TrialNum"]   # extract the slope coefficient
+    )
+  }) %>%
+  ungroup()
+
+# This yields a data frame with columns: Subject, TrialType, slope
+
+#### 3) Pivot so each subject has one row with both slopes ####
+#    (One slope for CCFES, one for EDCCFES)
+
+slopes_wide <- slopes_df %>%
+  tidyr::pivot_wider(
+    names_from  = TrialType,
+    values_from = slope
+  )
+
+# After pivot, you should see columns like:
+#   Subject   CCFES    EDCCFES
+
+#### 4) Compute the slope difference for each subject ####
+#    (EDCCFES - CCFES)
+
+slopes_wide <- slopes_wide %>%
+  mutate(
+    slope_diff = EDCCFES - CCFES
+  )
+
+#### 5) One-sample t-test of slope_diff ####
+t_res <- t.test(slopes_wide$slope_diff, mu = 0, alternative = "two.sided")
+t_res
+
+# This tests whether the average slope difference across subjects is 0.
+
+#### 6) Compute Cohen’s d for slope differences ####
+#    Because each subject provides one difference, this is effectively
+#    a one-sample design.
+
+mean_diff <- mean(slopes_wide$slope_diff, na.rm = TRUE)
+sd_diff   <- sd(slopes_wide$slope_diff, na.rm = TRUE)
+d_val     <- mean_diff / sd_diff  # standard "one-sample" Cohen's d
+
+cat("Cohen's d for slope difference =", d_val, "\n")
+
+#### 7) Power analysis ####
+#    We'll use a "one-sample" or "paired" design in pwr.t.test.
+#    They are mathematically equivalent for a difference score.
+
+power_res <- pwr.t.test(
+  d = d_val,
+  power = 0.80,
+  sig.level = 0.05,
+  type = "paired"     # or "one.sample"
+)
+power_res
+
+
+```
+
+```{r } 
+# Function to calculate reduced standard deviation using bootstrapping
+reduce_std <- function(data, measure, group_vars, n_boot = 20) {
+  # Create a list to store bootstrapped samples
+  boot_samples <- list()
+  
+  # Group data and calculate bootstrapped statistics
+  data %>%
+    group_by(across(all_of(group_vars))) %>%
+    summarise(
+      boot_samples = list(
+        replicate(n_boot, {
+          sample_data <- sample(!!sym(measure), n_boot, replace = TRUE)
+          c(
+            mean = mean(sample_data),
+            sd = sd(sample_data)
+          )
+        }, simplify = FALSE)
+      ),
+      .groups = "drop"
+    ) %>%
+    rowwise() %>%
+    mutate(
+      boot_samples = list(do.call(rbind, boot_samples)) # Combine into a data frame
+    ) %>%
+    ungroup() -> boot_results
+  
+  # Return the results
+  boot_results
+}
+
+# Apply the function to reduce standard deviation for Effort
+reduced_eff_summary <- reduce_std(
+  data = eff_summary,
+  measure = "mean_eff",
+  group_vars = c("Test", "TrialType"),
+  n_boot = 5
+)
+
+# Extract and save bootstrapped samples
+boot_samples <- reduced_eff_summary %>%
+  select(Test, TrialType, boot_samples) %>%
+  unnest(cols = c(boot_samples)) # Flatten the bootstrapped data
+
+# Save the bootstrapped samples to a CSV file
+write.csv(boot_samples, "bootstrapped_std_samples.csv", row.names = FALSE)
+
+# Print a preview of the bootstrapped samples
+print(head(boot_samples))
+
+
+```

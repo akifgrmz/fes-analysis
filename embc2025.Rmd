@@ -1,0 +1,313 @@
+---
+title: "embc2025"
+output: html_document
+date: "2025-02-13"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+```
+
+
+
+```{r including libraries, display=FALSE}
+library(magrittr)
+library(here)
+library(janitor)
+library(readxl)
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+library(ggpmisc)
+library(tidyr)
+library(ggsignif)
+library(ggpubr)
+library(ggforce)
+library(dplyr)
+library(egg)
+options(dplyr.summarise.inform = FALSE)
+
+```
+
+```{r Data Inject } 
+
+coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
+droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
+
+occraw<- read_csv("occ_embc2025.csv",show_col_types = FALSE)
+err_raw<- read_csv("occerr_embc2025.csv",show_col_types = FALSE)
+
+```
+
+
+```{r dataframe modifications}
+
+occ<-occraw%>%mutate(Test = as.factor(Test),
+                     Tau = as.factor(Tau),
+                     Feat = as.factor(Feat),
+                     Filt = as.factor(Filt))
+
+occ<-occ%>%mutate(EffortType = as.factor(EffortType))
+
+
+occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+occ<-occ%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
+                     Repeat = as.factor(Repeat),
+                     NumofDropped = as.factor(NumofDropped))
+
+droppedocc<-droppedocc%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err_raw%>%mutate(MVC_Voli_Cat=recode(VoliMVC,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(StimMVC,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err%>%mutate(Test = as.factor(Test),
+                     Filt = as.factor(Filt),
+                     Occ_Type = as.factor(Occ_Type),
+                     MVC_Stim_Cat = as.factor(MVC_Stim_Cat),
+                     MVC_Voli_Cat = as.factor(MVC_Voli_Cat),
+                     MVC_Stim = as.integer(StimMVC),
+                     MVC_Voli = as.integer(VoliMVC))
+
+err<-err%>%mutate(EffortType = as.factor(EffortType))
+
+
+err<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+coef<-coefraw%>%mutate(Test = as.factor(Test),
+                       Type = as.factor(Type),
+                       Trial = as.integer(Trial))
+
+coef<-coef%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30'))
+
+coef<-coef%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+summary(select(occ,Test))
+summary(select(err,Test))
+
+```
+
+```{r Occlusion levels plotting}
+
+
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea')
+
+occ_err_long<-plot_tibble%>%pivot_longer(cols=c('Occ_mvc','vprime_mvc'),
+                                    names_to='Occlusion_Type',
+                                    values_to='Occlusion_Val')%>%mutate(Occlusion_Type = as.factor(Occlusion_Type))
+
+occ_err_long <- occ_err_long %>%
+  mutate(Occlusion_Type = relevel(Occlusion_Type, ref = "vprime_mvc"))
+
+my_labeller <- as_labeller(c(Occ_mvc='Occluded~Effort~(E[o])', vprime_mvc="Maintained~Level~(V^I)"), label_parsed)
+
+p1<-ggplot(occ_err_long, aes(x =  v_mvc , y = Occlusion_Val , color = MVC_Stim_Cat)) +
+    geom_point() +
+    geom_smooth(method = "lm")+
+    #geom_segment(
+  #      data = subset(occ_err_long, Occlusion_Type == "vprime_mvc"),
+   #     aes(x = 9, y = 0, xend = 41, yend = 0),
+   #     color = "black", linetype = "dashed"
+   # )+
+  facet_wrap(~Occlusion_Type,scales='free',labeller = my_labeller)+
+    #ylim(-20,75)+
+    labs(x = expression("Volitional Effort (V)" ),
+    y = "% Effort")+
+    #title = "",
+    #subtitle = "                                (b)                                                                  (c)")+
+    scale_color_hue(labels=c('10% Stim.', '20% Stim.', '30% Stim.','Zero Error'),name= expression("Stimulated Effort (S)"))+
+    theme(legend.position = c(0.7, 0.16))+
+    theme_minimal(base_size = 16) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.5, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+p1<-tag_facet(p1, size= 6)
+
+#pdf("occ_embc2.pdf", width = 6, height = 4)  # specify dimensions in inches
+
+suppressWarnings(print(p1))
+
+#dev.off()
+
+
+```
+
+
+
+```{r }
+
+filt="GS"
+type='Occ_mvc'
+Log=FALSE
+occ_err<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type==type, LogModel==Log)%>%
+  select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC,Filt)
+
+occ_err_wide<-occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
+
+occ_err_long<-occ_err_wide%>%pivot_longer(cols=c('Occ_mvc','Effort_e_Amp_err'),
+                                    names_to='Occ_Error_Type',
+                                    values_to='Error')%>%mutate(Occ_Error_Type = as.factor(Occ_Error_Type))
+
+
+occ_err1<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type==type, LogModel==Log)
+
+occ_err_long <- occ_err_long %>%
+  mutate(Occ_Error_Type = relevel(Occ_Error_Type, ref = "Effort_e_Amp_err"))
+
+#my_labeller <- as_labeller(c(Occ_mvc="E[o]+E[e]", Effort_e_Amp_err="E[e]", Occ_Dropped_mvc="E[d]+E[e]"),
+ #                         default = label_parsed)
+
+my_labeller <- as_labeller(c(Occ_mvc="Corrected", Effort_e_Amp_err="Uncorrected"),
+                           default = label_parsed)
+
+occ_err_long1<-filter(occ_err_long, Filt==filt)
+
+p1<-ggplot(occ_err_long1, aes(x =  VoliMVC , y = Error+5 , color = MVC_Stim_Cat)) +
+    geom_point( size = 3) +
+    geom_smooth(method = "lm", size = 2,se = FALSE)+ 
+    geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
+    facet_wrap(~Occ_Error_Type,labeller=my_labeller)+
+    ylim(-50, 25)+
+    #annotate("text", x=0.5, y=20, label= "(a)", size=6)+
+    labs(x = expression("Volitional Effort (V) "),
+    y = "Estimation Error (% Effort)",
+    #subtitle = sprintf('                          (a)                                                      (b)                           ',type, filt)
+    )+
+    scale_color_hue(labels=c('10% Stim', '20% Stim', '30% Stim','Zero Error'),name=expression("Stim. Effort (S)"))+
+    theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.6, 0.25),
+    legend.background = element_rect(fill = alpha("white", 0.6)))
+p1<-tag_facet(p1, size= 6,hjust = -1)
+
+
+
+occ_err_long1<-occ_err_long1%>%mutate(Occ_Error_Type=recode(Occ_Error_Type,
+                                             'Effort_e_Amp_err' = 'Uncorrected',
+                                             'Occ_mvc' = 'Occlusion Corrected'
+  ))
+
+p2<-ggplot(occ_err_long1, aes(x =  Occ_Error_Type , y = Error+7, color=Occ_Error_Type )) +
+  geom_boxplot(notch=TRUE)+
+  geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
+  ylim(-50, 40)+
+  annotate("text", x=0.55, y=32, label= "(c)", size=6,fontface = "bold") +  
+  geom_signif(comparisons = list(c("Uncorrected","Occlusion Corrected")), 
+                y_position = 15, tip_length = 0.02, vjust = 0.1, size = 0.8, textsize = 8, map_signif_level=TRUE,annotation = c("*"),color = "black") +
+
+  labs(x = NULL,
+  y = "Estimation Error (% Effort)")+
+  #subtitle = "                           (c)  ")+
+  scale_color_hue(labels=c('Uncorrected', 'Corrected'),name="Correction \nMethods")+
+    theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.8, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6)))
+
+occ_err_long2<-filter(occ_err_long, Occ_Error_Type=="Occ_mvc")
+
+p3<-ggplot(occ_err_long2, aes(x =  Filt , y = Error+7, color = Filt)) +
+    geom_boxplot(notch=TRUE)+
+    geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
+    #geom_smooth(method = "lm")+ 
+    #geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
+    ylim(-50, 40)+
+    annotate("text", x=0.55, y=32, label= "(d)", size=6,fontface = "bold") +  
+    geom_signif(comparisons = list(c("Comb","Unfilt")), 
+                y_position = 40, tip_length = 0.02, vjust = 0.1,size = 0.5, map_signif_level=TRUE,annotation = c("*"),color = "black") +
+    geom_signif(comparisons = list(c("GS","Comb")),
+                y_position = 35, tip_length = 0.02, vjust = 0.1, map_signif_level=TRUE,annotation = c("*"),color = "black")+
+    geom_signif(comparisons = list(c("Unfilt","GS")), 
+                y_position = 15, tip_length = 0.01, vjust = 0.1, size = 0.8, textsize = 8, map_signif_level=TRUE,annotation = c("*"),color = "black") +
+    labs(x = NULL,
+    y = NULL) + # Removes y-axis labels
+    #title = "",
+    #subtitle = "                        (d)")+
+    scale_color_hue(labels=c('Comb', 'GS', 'Unfiltered'),name="Filter")+
+    theme_minimal(base_size = 17) +
+    theme(
+    strip.background = element_blank(),
+    legend.position = c(0.8, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6)),
+    axis.text.y = element_blank(),  # Removes y-axis text
+    axis.ticks.y = element_blank() # Removes y-axis ticks
+  )
+
+
+#pdf("occ_err_embc2.pdf", width = 8, height = 8)  # specify dimensions in inches
+
+suppressWarnings(print(p1/(p2-p3)))
+
+#dev.off()
+
+#anova(lm(Error ~ Occ_Error_Type, data =  occ_err_long))
+#TukeyHSD(aov(Error ~ Occ_Error_Type, data = occ_err_long))
+
+#anova(lm(Effort_Amp_err ~ Filt, data =  occ_err1))
+#TukeyHSD(aov(Effort_Amp_err ~ Filt, data = occ_err1))
+
+
+#mean_err_type<-occ_err_long %>% group_by(Occ_Error_Type)  %>% summarise( "Mean"= round(mean(Error),2), "RMS"=round(sqrt(mean(Error^2)),2),"Est"='Before Correction') 
+
+#mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log)%>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_Indv_err),2), "RMS"=round(sqrt(mean(Effort_Amp_Indv_err^2)),2),"Est"='Individualized Correction',"Log"=Log) )
+
+#mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log) %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_err),2), "RMS"=round(sqrt(mean(Effort_Amp_err^2)),2),"Est"='After Correction',"Log"=Log) )
+
+```

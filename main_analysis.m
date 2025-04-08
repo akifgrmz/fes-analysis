@@ -40,6 +40,9 @@ TestFolders=["feb28_24" "feb29_24" "mar18_24"  "mar20_24" ];
 TestFolders=[ "jan7" "jan11" "jan12" "aug22_24" "aug26_24"];
 TestFolders=[ "jan7" "jan11" "jun20_24" "jul9_24" "jul21_24" "jul31_24" "aug19_24" "jan12" "aug22_24" "aug26_24" "aug29_24"];
 % TestFolders=["aug29_24"]
+
+TestFolders=[ "jan7" "jan11" "jan12" "aug22_24" "nov15_24" "aug29_24"];
+
 for iTest=1:length(TestFolders)
     TestFiles(iTest)=sprintf("%s_test",TestFolders{iTest});
 end
@@ -1804,7 +1807,7 @@ for iTest=1:length(TestFolders)
     
 end
 
-writetable(S.(AnaLabel).(ExpLabel).MVCTable,'mvc_table.csv')
+% writetable(S.(AnaLabel).(ExpLabel).MVCTable,'mvc_table.csv')
 
 %% Plotting the MVC_ MAV levels
 

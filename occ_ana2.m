@@ -21,6 +21,7 @@ TestFolders=[ "aug22_24" "aug26_24" "aug29_24"];
 TestFolders=["jan7" "jan11" "jan12" "aug22_24" "sep3_24" "sep4_24" "sep6_24" "oct17_24" "oct18_24"];
 
 TestFolders=["sep6_24" "oct17_24" "oct18_24"];
+TestFolders=[ "jan7" "jan11" "jan12" "aug22_24" "nov15_24" "aug29_24"];
 
 NumofTests=length(TestFolders);
 DroppedFrameFilts=strings(1,NumofTests)+"GS";
@@ -435,7 +436,7 @@ OccTable=array2table(Occ,'VariableNames', [ "Occ" "vprime" "sprime" "v" "Occ_Dro
             "sprime_mvc" "v_mvc" "Occ_Dropped_mvc" "Occ_Hybrid_mvc" "DroppedMAV" "NoStimMAV" "MAV_max" "Target_mvc" "Test" ...
             "EffortType" "Tau" "Feat" "Filt" "Target_Level" "Stim_Force" "Voli_Force" "MVC_Voli" "MVC_Stim" "PW" "Done" "Trial"]);
 
-writetable( OccTable,'occlusion_v7.csv')
+% writetable( OccTable,'occlusion_v7.csv')
 
 %% Occlusion Fitting  
 %linear modeling for individual occ predictions 

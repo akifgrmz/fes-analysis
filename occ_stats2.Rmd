@@ -11,10 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r including libraries, display=FALSE}
-library(magrittr); 
-library(here); 
+library(magrittr)
+library(here)
 library(janitor)
-library(readxl);
+library(readxl)
 library(tidyverse)
 library(rmdformats)
 library(Epi)
@@ -27,21 +27,19 @@ library(ggplot2)
 library(ggpmisc)
 library(tidyr)
 library(ggsignif)
-
 library(ggpubr)
-
+library(egg)
 options(dplyr.summarise.inform = FALSE)
 
 ```
 
-
 ```{r Data Inject } 
 
 coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
-droppedocc<- read_csv("dropped_occ6.csv",show_col_types = FALSE)
+droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
 
-occraw<- read_csv("occlusion_v7.csv",show_col_types = FALSE)
-err_raw<- read_csv("occ_est_error4.csv",show_col_types = FALSE)
+occraw<- read_csv("occlusion_v10.csv",show_col_types = FALSE)
+err_raw<- read_csv("occ_est_error6.csv",show_col_types = FALSE)
 rmse_raw<- read_csv("rmse3.csv",show_col_types = FALSE)
 
 trial_stats_raw<- read_csv("trial_stats.csv",show_col_types = FALSE)
@@ -53,6 +51,9 @@ occ<-occraw%>%mutate(Test = as.factor(Test),
                      Tau = as.factor(Tau),
                      Feat = as.factor(Feat),
                      Filt = as.factor(Filt))
+
+occ<-occ%>%mutate(EffortType = as.factor(EffortType))
+
 
 occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
                                 '10' = 'Voli_10',
@@ -108,6 +109,9 @@ err<-err%>%mutate(Test = as.factor(Test),
                      MVC_Stim = as.integer(StimMVC),
                      MVC_Voli = as.integer(VoliMVC))
 
+err<-err%>%mutate(EffortType = as.factor(EffortType))
+
+
 err<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
 
 coef<-coefraw%>%mutate(Test = as.factor(Test),
@@ -147,16 +151,17 @@ rmse<-rmse%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
                                 '30' = 'Stim_30',
                                 '40' = 'Stim_40',
                                 '50' = 'Stim_50',
-                                '60' = 'Stim_60'))
+                                '60' = 'Stim_60',
+                                '70' = 'Stim_70',
+                                '80' = 'Stim_80'))
 
 trial_stats<-trial_stats_raw%>%mutate(Test = as.factor(Test),
                        Exp = as.factor(Exp),
                        Filt = as.factor(Filt),
                        Test = as.factor(Test))
 
-#summary(occ)
+summary(occ)
 ```
-
 
 ```{r Plotting rmse}
 
@@ -173,6 +178,14 @@ plot_rmse_summary <- plot_rmse %>%
     n = n(),  # Get the sample size
     conf_int = qt(0.975, df = n - 1) * (sd_error / sqrt(n))
   )
+plot_rmse_summary_test <- plot_rmse %>%
+  group_by(Filt, Effort_Type, MVC_Voli_Cat,Test, MVC_Stim_Cat) %>%
+  summarise(
+    mean_error = mean(Error),
+    sd_error = sd(Error),
+    n = n(),  # Get the sample size
+    conf_int = qt(0.975, df = n - 1) * (sd_error / sqrt(n))
+  )
 
 f_tibble<-filter(plot_rmse_summary, Effort_Type == "Force")
 parti_tibble<-filter(plot_rmse, Effort_Type == "Force")
@@ -180,23 +193,24 @@ parti_tibble<-filter(plot_rmse, Effort_Type == "Force")
 g1<-ggplot(f_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
     geom_col(position = "dodge") +
     geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
-                position = position_dodge(0.9), width = 0.25) +    
+                position = position_dodge(0.9), width = 0.25) +   
   #facet_wrap(~Effort_Type)+ 
   #coord_cartesian(ylim=c(0,0.5)) + 
     labs(x = "Filter ",
-    y = "NRMSE (% MVC MAV)",
-    title = "NRMSE ",
+    y = "Norm. Roort Mean Squared Error",
+    title = "Isometric Force Experiments",
     subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
   theme_minimal() +
   theme(
     strip.background = element_blank(),
     #strip.text = element_text(face = "bold"),
-    legend.position = c(22, 0.75),  # Position legend inside the plot (top-right corner)
+    legend.position = c(0.23, 0.48),  # Position legend inside the plot (top-right corner)
     legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
   ) + 
     stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Force"), aes(), 
                      comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
-                     label = "p.signif",
+    label = "p",  # Display exact p-values
+                     
                      method = "wilcox.test")
 
 h_tibble<-filter(plot_rmse_summary, Effort_Type == "Hand")
@@ -205,9 +219,113 @@ g2<-ggplot(h_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
     geom_col(position = "dodge") +
     geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
                 position = position_dodge(0.9), width = 0.25) +    
-  #facet_wrap(~Effort_Type)+ 
+  facet_wrap(~Effort_Type)+ 
   #coord_cartesian(ylim=c(0,0.5)) + 
     labs(x = "Filter ",
+    y = "Norm. Roort Mean Squared Error",
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.23, 0.48),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )+
+  stat_compare_means(
+    data = h_tibble,  # Use raw data for comparisons
+    aes(x = Filt, y = Error),  # Specify x and y axes for p-values
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),  # Define comparisons
+    label = "p",  # Show exact p-values
+    method = "wilcox.test"  # Wilcoxon test for comparisons
+  )
+
+#pdf("rmse_results.pdf", width = 6, height = 6)  # specify dimensions in inches
+
+g1+g2
+
+#dev.off()
+
+```
+```{r }
+library(ggplot2)
+library(dplyr)
+library(ggpubr)
+
+# Filter for specific Effort_Type: "Hand"
+h_tibble <- filter(plot_rmse, Effort_Type == "Hand")
+
+# Plot for Hand Experiments
+g2 <- ggplot(h_tibble, aes(x = Filt, y = Error, fill = MVC_Voli_Cat)) +
+  geom_boxplot(position = position_dodge(0.9)) +  # Use boxplots for raw data
+  labs(
+    x = "Filter",
+    y = "Normalized Root Mean Squared Error",
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants", length(unique(h_tibble$Test)))
+  ) +
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.23, 0.48),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  ) +
+  stat_compare_means(
+    data = h_tibble,  # Use raw data for comparisons
+    aes(x = Filt, y = Error),  # Specify x and y axes for p-values
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),  # Define comparisons
+    label = "p",  # Show exact p-values
+    method = "wilcox.test"  # Wilcoxon test for comparisons
+  )
+
+# Filter for specific Effort_Type: "Force"
+f_tibble <- filter(plot_rmse, Effort_Type == "Force")
+
+# Plot for Force Experiments
+g1 <- ggplot(f_tibble, aes(x = Filt, y = Error, fill = MVC_Voli_Cat)) +
+  geom_boxplot(position = position_dodge(0.9)) +  # Use boxplots for raw data
+  labs(
+    x = "Filter",
+    y = "Normalized Root Mean Squared Error",
+    title = "Isometric Force Experiments",
+    subtitle = sprintf("%d participants", length(unique(f_tibble$Test)))
+  ) +
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.23, 0.48),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  ) +
+  stat_compare_means(
+    data = f_tibble,  # Use raw data for comparisons
+    aes(x = Filt, y = Error),  # Specify x and y axes for p-values
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),  # Define comparisons
+    label = "p.signif",  # Show exact p-values
+    method = "wilcox.test"  # Wilcoxon test for comparisons
+  )
+
+# Display both plots side by side
+library(patchwork)  # For combining plots
+#pdf("rmse_pval.pdf", width = 6, height = 6)  # specify dimensions in inches
+
+g1 + g2
+
+#dev.off()
+
+```
+
+```{r}
+
+f_tibble<-filter(plot_rmse_summary_test, Effort_Type == "Force")
+parti_tibble<-filter(plot_rmse, Effort_Type == "Force")
+
+p1<-ggplot(f_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
+                position = position_dodge(0.9), width = 0.25) +    
+  facet_grid(MVC_Stim_Cat~Test)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ", 
     y = "NRMSE (% MVC MAV)",
     title = "NRMSE ",
     subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
@@ -215,54 +333,115 @@ g2<-ggplot(h_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
   theme(
     strip.background = element_blank(),
     #strip.text = element_text(face = "bold"),
-    legend.position = c(22, 0.75),  # Position legend inside the plot (top-right corner)
+    legend.position = c(0.23, 0.48),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  ) + 
+    stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Force"), aes(), 
+                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+                     label = "p.signif",
+                     method = "wilcox.test")
+
+
+h_tibble<-filter(plot_rmse_summary_test, Effort_Type == "Hand")
+parti_tibble<-filter(plot_rmse, Effort_Type == "Hand")
+p2<-ggplot(h_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
+    geom_col(position = "dodge") +
+    geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
+                position = position_dodge(0.9), width = 0.25) +    
+  facet_grid(MVC_Stim_Cat~Test)+ 
+  #coord_cartesian(ylim=c(0,0.5)) + 
+    labs(x = "Filter ",
+    y = "NRMSE (% MVC MAV)",
+    title = "NRMSE ", 
+    subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.23, 0.46),  # Position legend inside the plot (top-right corner)
     legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
   ) + 
     stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Hand"), aes(), 
                      comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
                      label = "p.signif",
                      method = "wilcox.test")
-#pdf("rmsu_results.pdf", width = 6, height = 6)  # specify dimensions in inches
+#pdf("rmse_tests.pdf", width = 12, height = 8)  # specify dimensions in inches
 
-#g1+g2
+#p1/p2
 
 #dev.off()
+
 ```
 
 
 ```{r Plotting: maintain section}
 
 plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
-NumofTest<-length(unique(plot_tibble$Test) )
-ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Cat)) +
-    geom_point() +
-    geom_smooth(method = "lm")+ 
-    geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
-    facet_grid(EffortType~Feat)+
-    ylim(-10,200)
-    labs(x = "Volitional Effort: E_v (% MVC)",
-    y = "Maintained Volitional effort: E_vprime (% MVC)",
-    title = "Maintained force and MAV for different effort levels and stim levels",
-    subtitle = sprintf("%d able-body participants",length(unique(plot_tibble$Test) )))
 
-lm_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea')
+NumofTest<-length(unique(plot_tibble$Test) )
+
+p1<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Cat)) +
+    geom_point() +
+    geom_smooth(method = "lm")+
+    #geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color='No Occlusion Level'))+
+ #   facet_grid(EffortType~Feat)+
+     facet_grid(~Feat)+
+    coord_cartesian(ylim=c(-10,80)) + 
+    labs(x = "Volitional Effort: E_v (% MVC)",
+    y = "Maintained Volitional effort: E_vprime (% MVC)") +
+      theme_minimal(base_size = 15) +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position="top",
+    #legend.position = c(0.2, 0.4),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+    )
+p1<-tag_facet(p1, size= 6,hjust = -1)
+    
+p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat)) +
+    geom_point() +
+    geom_smooth(method = "lm")+
+ #   facet_grid(EffortType~Feat)+
+     facet_grid(~Feat)+
+  coord_cartesian(ylim=c(-20,50)) + 
+    labs(x = "Volitional Effort: E_v (% MVC)",
+    y = "Maintained Volitional effort: E_vprime (% MVC)"
+    ) +
+        theme_minimal(base_size = 15) +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position="top",
+    #legend.position = c(0.2, 0.4),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )
+p2<-tag_facet(p2, size= 6,hjust = -1)
+
+#pdf("finger_occ_lines.pdf", width = 8, height = 10) 
+suppressWarnings(print(p1/p2))
+
+#dev.off()
+
+lm_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=="EffortMea")
 
 #lm_tibble <- lm_tibble %>%
-#  mutate(Test = relevel(Test, ref = "jan7"))
-# m1 <- lm(Occ_mvc ~ MVC_Voli + MVC_Stim , data = lm_tibble)
-#tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+  #mutate(Test = relevel(Test, ref = "jan7"))
+m1 <- lm(Occ_mvc ~ MVC_Voli + MVC_Stim , data = lm_tibble)
+tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
-# m2 <- lm(Occ_Dropped_mvc ~ (MVC_Voli + MVC_Stim), data = lm_tibble) 
-#tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+summary(lm_tibble)
+
+ m2 <- lm(Occ_Dropped_mvc ~ (MVC_Voli + MVC_Stim), data = lm_tibble) 
+tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
 
 
-
-
 ```{r }
 
-plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul',EffortType=="Hand")
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
+#plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul',EffortType=="Hand")
 
 tibblelong<-plot_tibble%>%pivot_longer(cols=c('Occ_mvc','Occ_Dropped_mvc','Occ_Hybrid_mvc'),
                                     names_to='Occlusion_Type',
@@ -293,8 +472,60 @@ p1/p2
 
 ```
 
+```{r EMBC2025 figure}
 
-```{r Plotting for EMBC  }
+plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
+#plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul',EffortType=="Hand")
+
+tibblelong<-plot_tibble%>%pivot_longer(cols=c('Occ_mvc','Occ_Dropped_mvc','Occ_Hybrid_mvc'),
+                                    names_to='Occlusion_Type',
+                                    values_to='Occlusion_Val')%>%mutate(Occlusion_Type = as.factor(Occlusion_Type))
+
+tibblelong2<-filter(tibblelong, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea',Occlusion_Type!='Occ_Hybrid_mvc')%>%
+  mutate(
+    Occlusion_Type = as.factor(Occlusion_Type),
+    Occlusion_Type = forcats::fct_relevel(Occlusion_Type, "Occ_mvc")
+  )
+
+p1<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat  )) +
+    geom_point() +
+    geom_smooth(method = "lm")+
+    facet_wrap(~Feat)+
+    coord_cartesian(ylim=c(-20,100)) + 
+    labs(x = "Volitional Effort: E_v (% MVC)",
+    y = "Occlusion (% MVC)",
+    title = "Occluded force and MAV",
+    subtitle = sprintf("%d people without stroke",length(unique(plot_tibble$Test) ))) +
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.1, 0.8),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+
+p2<-ggplot(tibblelong2, aes(x =  v_mvc , y = Occlusion_Val , color = MVC_Stim_Cat  )) +
+    geom_point() +
+    geom_smooth(method = "lm")+
+    facet_wrap(~Occlusion_Type,scales="free")+
+    labs(x = "Volitional Effort: E_v (% MVC)",
+    y = "Occlusion (% MVC)",
+    title = "Occluded force and MAV",
+    subtitle = sprintf("%d able-body participants",length(unique(plot_tibble$Test) ))) +
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.1, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+
+p1
+
+```
+
+
+```{r Plotting for EMBC 2024 (updated for 2025) }
+library(ggforce)  # If `tag_facet()` is used
+library(dplyr)
 
 plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea')
 
@@ -302,37 +533,43 @@ occ_err_long<-plot_tibble%>%pivot_longer(cols=c('Occ_mvc','vprime_mvc'),
                                     names_to='Occlusion_Type',
                                     values_to='Occlusion_Val')%>%mutate(Occlusion_Type = as.factor(Occlusion_Type))
 
-#%>%mutate(Occlusion_Type=recode(
- #                                    Occlusion_Type,'Occ_mvc' = 'Force Occlusion (E_o)' ,
-  #                                               'vprime_mvc' = 'Maintained Levels (E_v^prime)'))
-
-
 occ_err_long <- occ_err_long %>%
   mutate(Occlusion_Type = relevel(Occlusion_Type, ref = "vprime_mvc"))
 
-my_labeller <- as_labeller(c(Occ_mvc="E[o]", vprime_mvc="E[v]^I"),
-                           default = label_parsed)
- 
+my_labeller <- as_labeller(c(Occ_mvc='Occluded~Effort~(E[o])', vprime_mvc="Maintained~Level~(V^I)"), label_parsed)
 
 p1<-ggplot(occ_err_long, aes(x =  v_mvc , y = Occlusion_Val , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+
-    facet_wrap(~Occlusion_Type,scales='free',labeller = my_labeller)+
+    #geom_segment(
+  #      data = subset(occ_err_long, Occlusion_Type == "vprime_mvc"),
+   #     aes(x = 9, y = 0, xend = 41, yend = 0),
+   #     color = "black", linetype = "dashed"
+   # )+
+  facet_wrap(~Occlusion_Type,scales='free',labeller = my_labeller)+
     #ylim(-20,75)+
-    labs(x = expression("Volitional Effort (E"[v]*") ") ,
-    y = "% Effort",
-    title = "",
-    subtitle = "                        (b)                                                      (c)")+
-    scale_color_hue(labels=c('10% Stim', '20% Stim', '30% Stim'),name= expression("Stimulated Effort (E"[s]*")"))+
-    theme(legend.position = c(0.7, 0.16))
+    labs(x = expression("Volitional Effort (V)" ),
+    y = "% Effort")+
+    #title = "",
+    #subtitle = "                                (b)                                                                  (c)")+
+    scale_color_hue(labels=c('10% Stim.', '20% Stim.', '30% Stim.','Zero Error'),name= expression("Stimulated Effort (S)"))+
+    theme(legend.position = c(0.7, 0.16))+
+    theme_minimal(base_size = 16) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.5, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+p1<-tag_facet(p1, size= 6)
 
-#pdf("conf1_ver4.pdf") 
+#pdf("occ_embc2.pdf", width = 6, height = 4)  # specify dimensions in inches
+
 suppressWarnings(print(p1))
 
 #dev.off()
 
-```
 
+```
 
 
 ```{r }
@@ -359,7 +596,6 @@ p1<-ggplot(simp_tipple, aes(x =  MVC_Voli , y = MAV , color = MVC_Stim_Cat)) +
     scale_color_hue(labels=c('10% Stim', '20% Stim', '30% Stim'),name="Stimulated Effort")+
     theme(legend.position = c(0.1, 0.17))
 
-
 #pdf("conf1_ver2.pdf") 
 
 suppressWarnings(print(p1/p2))
@@ -371,8 +607,6 @@ suppressWarnings(print(p1/p2))
  #m2<- lm(MAV ~ (MVC_Voli + MVC_Stim), data = filter(simp_tipple, Occ_Type=='Dropped Frames-Based Occlusion')) 
 #tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 ```
-
-
 
 ```{r Occlusion Heat Map}
 plot_tibble<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt')
@@ -417,15 +651,15 @@ coef_filt<-filter(coef, MVC_Stim_Cat!="Stim_0" &Type==type & Log==Log )
 g1<-ggplot(coef_filt, aes(x = MVC_Voli, y = Effort_o-Occ,  color = MVC_Stim_Cat))+
   geom_point()+
   geom_smooth(method = "lm")+
-  facet_wrap(~Test)
+  facet_grid(~Test)
 g2<-ggplot(coef_filt, aes(x =  MVC_Voli, y = Occ, color = MVC_Stim_Cat))+
   geom_point()+
   geom_smooth(method = "lm")+
-  facet_wrap(~Test)
+  facet_grid(~Test)
 g3<-ggplot(coef_filt, aes(x =  MVC_Voli, y = Occ, color = MVC_Stim_Cat))+
   geom_point()+
   geom_smooth(method = "lm")+
-  facet_wrap(~Test)
+  facet_grid(~Test)
 
 g1/g2/g3
 
@@ -460,7 +694,7 @@ tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 filt="GS"
 occ_type="Occ_mvc"
 log_model=FALSE
-effort_type="Hand"
+effort_type="Force"
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type==occ_type,EffortType==effort_type, LogModel==log_model)
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0", Occ_Type==occ_type, EffortType==effort_type, LogModel==log_model)
 
@@ -505,7 +739,7 @@ p1/p2 -p3
 
 filt="GS"
 log_model=FALSE
-effort_type="Hand"
+effort_type="Force"
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0", Occ_Type!="Occ_Hybrid_mvc", LogModel==log_model, Filt==filt)
 
 long_tibble<-occ_err%>%pivot_longer(cols=c('Effort_e_MAV','Effort_MAV','Effort_MAV_Indv'),
@@ -524,6 +758,21 @@ long_tibble<-long_tibble%>%mutate(Error_Names=recode(Corrected_Errors,
 long_tibble <- long_tibble %>%
   mutate(Error_Names = relevel(factor(Error_Names), ref = "Before_Correction"))
 
+filtered_data <- long_tibble %>%
+  filter(EffortType %in% c("Force", "Hand"))
+filtered_data <- filtered_data %>%
+  filter(!is.na(Error_Val)) 
+# Group by variables and calculate mean and standard deviation of Error_Val
+summary_data <- filtered_data %>%
+  group_by(Test, Error_Names, Occlusion_Names, EffortType) %>%
+  summarise(
+    avg_error = mean(Error_Val, na.rm = TRUE),
+    n = n(), # Count of observations
+    se = sd(Error_Val, na.rm = TRUE) / sqrt(n), # Standard error of the mean
+    ci_lower = avg_error - qt(0.975, df = n - 1) * se, # 95% CI lower bound
+    ci_upper = avg_error + qt(0.975, df = n - 1) * se  # 95% CI upper bound
+  )
+
 p1<-ggplot(filter(long_tibble,EffortType==effort_type, Error_Names!='Individualized_Correction'), aes(x =  VoliMVC , y = Error_Val , color = MVC_Stim_Cat)) +
     geom_point() +
     geom_smooth(method = "lm")+ 
@@ -533,18 +782,50 @@ p1<-ggplot(filter(long_tibble,EffortType==effort_type, Error_Names!='Individuali
     labs(x = "Volitional Effort: F_v (% MVC)",
     y = "Effort Estimation Error (% MVC)",
     title = "Effort Estimation Error BEFORE Occlusion Correction",
-    subtitle = sprintf(' %s filtered, Log:%s, %s experiments', filt,log_model, effort_type))
+    subtitle = sprintf(' %s filtered, Log:%s, %s experiments', filt,log_model, effort_type))+
+      theme(legend.position = c(0.8, 0))
+
 
 p2<-ggplot(long_tibble, aes(x =  Test , y = Error_Val , color = Error_Names)) +
     geom_boxplot(notch = FALSE) +
-    facet_wrap(   ~ Occlusion_Names)+
+    facet_grid(  Occlusion_Names ~ . )+
     ylim(-100, 40)+
     labs(x = "Volitional Effort: F_v (% MVC)",
     y = "Effort Estimation Error (% MVC)",
-    title = "Effort Estimation Error BEFORE Occlusion Correction",
-    subtitle = sprintf(' %s filtered, Log:%s', filt,log_model))
+    title = "Effort Estimation Error Before and After Occlusion Correction",
+    subtitle = sprintf(' %s filtered, Log:%s', filt,log_model))+
+theme(
+ legend.position = c(0.5, 0.1),
+  legend.direction = "horizontal",
+  legend.box = "horizontal" # Ensures all legend items are in a single row
+)
+p3 <- ggplot(summary_data, aes(x = Test, y = avg_error, fill = Error_Names)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper),
+                width = 0.2, position = position_dodge(0.9)) +
+  facet_wrap(~Occlusion_Names) +
+  labs(
+    x = "Test",
+    y = "Average Error (± CI)",
+    title = "Average Errors and 95% Confidence Intervals",
+    fill = "Effort Type"
+  ) +
+     theme(
+ legend.position = c(0.5, 0.1),
+  legend.direction = "horizontal",
+  legend.box = "horizontal" # Ensures all legend items are in a single row
+ )
+
+#pdf("occ_tests.pdf", width = 8, height = 10)  # specify dimensions in inches
+
+#p2
+
+#dev.off()
 
 p1/p2
+
+p2
+
 ```
 ```{r }
 
@@ -560,7 +841,7 @@ ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = MAV_Type))+
 
 filt="GS"
 type='Occ_mvc'
-occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type==type)
+occ_err<-filter(err,EffortType=="Hand", MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type==type)
 Log=FALSE
 occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0")
 
@@ -631,8 +912,8 @@ p1/p2/p3-p4/p5
 
 ```{r }
 filt="GS"
-type='Occ_mvc'
-Log=TRUE
+type='Occ_Hybrid_mvc'
+Log=FALSE
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type!=type,LogModel==Log)%>%
   select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC)
 occ_err_wide<-occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
@@ -665,7 +946,7 @@ p2<-ggplot(occ_err_long, aes(x =  Occ_Error_Type , y = Error,color=Occ_Error_Typ
     geom_signif(comparisons = list(c("Before Correction","Dropped Frames\nBased")), 
                 y_position = 10, tip_length = 0.02, vjust = 0.1, map_signif_level=TRUE,annotation = c("*"),color = "black") +
     geom_signif(comparisons = list(c("Dropped Frames\nBased","Force Based")),
-                y_position = 14, tip_length = 0.02, vjust = 0.1, map_signif_level=TRUE,annotation = c("**"),color = "black")+
+                y_position = 14, tip_length = 0.02, vjust = 0.1, map_signif_level=TRUE,annotation = c(""),color = "black")+
     geom_signif(comparisons = list(c("Before Correction","Force Based")), 
                 y_position = 17, tip_length = 0.02, vjust = 0.1, map_signif_level=TRUE,annotation = c("*"),color = "black") +
     labs(x = "Volitional Effort: E_v (% Effort)",
@@ -693,7 +974,7 @@ p3<-ggplot(occ_err1, aes(x =  Filt , y = Effort_Amp_err , color = Filt)) +
     theme(legend.position = c(0.8, 0.2))
 
 
-#pdf("conf2.pdf") 
+#pdf("occ_cor.pdf") 
 
 suppressWarnings(print(p1/(p2-p3)))
 
@@ -711,8 +992,8 @@ mean_err_type<-occ_err_long %>% group_by(Occ_Error_Type)  %>% summarise( "Mean"=
 filt="GS"
 type='Occ_Hybrid_mvc'
 Log=FALSE
-occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type!=type,LogModel==Log)%>%
-  select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC)
+occ_err<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0",Filt==filt, Occ_Type!=type,LogModel==Log)%>%
+  select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC,Test)
 
 occ_err_wide<-occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
 
@@ -726,16 +1007,17 @@ occ_err_long<-occ_err_wide%>%pivot_longer(cols=c('Occ_mvc','Occ_Dropped_mvc','Ef
    #                                   'Occ_Dropped_mvc' = 'Dropped Frames\nBased'
     #                                  ))
 
-occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0",Occ_Type=="Occ_mvc")
+occ_err1<-filter(err, MVC_Stim_Cat!="Stim_0", Occ_Type=="Occ_mvc")
 
-occ_err_long<-filter(occ_err_long, Occ_Error_Type!="Occ_Dropped_mvc")
+summary(occ_err1)
 
 occ_err_long <- occ_err_long %>%
   mutate(Occ_Error_Type = relevel(Occ_Error_Type, ref = "Effort_e_Amp_err"))
 
-my_labeller <- as_labeller(c(Occ_mvc="E[o]+E[e]", Effort_e_Amp_err="E[e]"),
+my_labeller <- as_labeller(c(Occ_mvc="E[o]+E[e]", Effort_e_Amp_err="E[e]", Occ_Dropped_mvc="E[d]+E[e]"),
                           default = label_parsed)
 
+#occ_err_long<-filter(occ_err_long, Occ_Error_Type!="Occ_Dropped_mvc")
 
 p1<-ggplot(occ_err_long, aes(x =  VoliMVC , y = Error , color = MVC_Stim_Cat)) +
     geom_point() +
@@ -752,6 +1034,7 @@ p1<-ggplot(occ_err_long, aes(x =  VoliMVC , y = Error , color = MVC_Stim_Cat)) +
 
 p2<-ggplot(occ_err_long, aes(x =  Occ_Error_Type , y = Error,color=Occ_Error_Type )) +
     geom_boxplot(notch=TRUE)+
+  geom_jitter(width = 0.2, alpha = 0.5) +  # Add scatter points with jitter
     ylim(-55, 25)+
     geom_signif(comparisons = list(c("Occ_mvc","Effort_e_Amp_err")), 
                 y_position = 15, tip_length = 0.02, vjust = 0.1, map_signif_level=TRUE,annotation = c("*"),color = "black") +
@@ -759,12 +1042,13 @@ p2<-ggplot(occ_err_long, aes(x =  Occ_Error_Type , y = Error,color=Occ_Error_Typ
     labs(x = "Volitional Effort: E_v (% Effort)",
     y = "Effort Estimation Error (% Effort)",
      subtitle = "                                 (c)  ")+
-    scale_color_hue(labels=c('Occlusion Corrected', 'Uncorrected', 'Force Based'),name="Correction")+
+    scale_color_hue(labels=c('Uncorrected', 'Dropped Frames', 'Force Based'),name="Correction Methods")+
     theme(legend.position = c(0.7, 0.2))
 
 
 p3<-ggplot(occ_err1, aes(x =  Filt , y = Effort_Amp_err , color = Filt)) +
     geom_boxplot(notch=TRUE)+
+    geom_jitter(width = 0.2, alpha = 0.5) +  # Add scatter points with jitter
     #geom_smooth(method = "lm")+ 
    # geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
     ylim(-50, 50)+
@@ -780,22 +1064,61 @@ p3<-ggplot(occ_err1, aes(x =  Filt , y = Effort_Amp_err , color = Filt)) +
     subtitle = "                              (d)")+
     scale_color_hue(labels=c('Comb', 'GS', 'Unfiltered'),name="Filter")+
     theme(legend.position = c(0.8, 0.2))
-#pdf("conf2_ver2.pdf") 
+
+pdf("non_isometric.pdf") 
 
 suppressWarnings(print(p1/(p2-p3)))
 
-#dev.off()
+dev.off()
 
 anova(lm(Error ~ Occ_Error_Type, data =  occ_err_long))
 TukeyHSD(aov(Error ~ Occ_Error_Type, data = occ_err_long))
 
 anova(lm(Effort_Amp_err ~ Filt, data =  occ_err1))
 TukeyHSD(aov(Effort_Amp_err ~ Filt, data = occ_err1))
-#mean_err_type<-occ_err_long %>% group_by(Occ_Error_Type)  %>% summarise( "Mean"= round(mean(Error),2), "RMS"=round(sqrt(mean(Error^2)),2),"Est"='Before Correction') 
+mean_err_type<-occ_err_long %>% group_by(Occ_Error_Type)  %>% summarise( "Mean"= round(mean(Error),2), "RMS"=round(sqrt(mean(Error^2)),2),"Est"='Before Correction') 
 
 #mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log)%>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_Indv_err),2), "RMS"=round(sqrt(mean(Effort_Amp_Indv_err^2)),2),"Est"='Individualized Correction',"Log"=Log) )
 
 #mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log) %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_err),2), "RMS"=round(sqrt(mean(Effort_Amp_err^2)),2),"Est"='After Correction',"Log"=Log) )
+
+mean_err_type <- occ_err_long %>%
+  group_by(Occ_Error_Type) %>%
+  summarise(
+    "Mean" = round(mean(Error), 2),
+    "RMS" = round(sqrt(mean(Error^2)), 2),
+    "Std" = round(sd(Error), 2),  # Standard deviation
+    "Est" = 'Before Correction'
+  )
+
+# Step 2: Add rows for individualized correction
+mean_err <- mean_err %>%
+  add_row(
+    occ_err %>%
+      group_by(MVC_Voli_Cat) %>%
+      summarise(
+        "Mean" = round(mean(Effort_Amp_Indv_err), 2),
+        "RMS" = round(sqrt(mean(Effort_Amp_Indv_err^2)), 2),
+        "Std" = round(sd(Effort_Amp_Indv_err), 2),  # Standard deviation
+        "Est" = 'Individualized Correction',
+        "Log" = Log
+      )
+  )
+
+# Step 3: Add rows for after correction
+mean_err <- mean_err %>%
+  add_row(
+    occ_err %>%
+      filter(LogModel == Log) %>%
+      group_by(MVC_Voli_Cat) %>%
+      summarise(
+        "Mean" = round(mean(Effort_Amp_err), 2),
+        "RMS" = round(sqrt(mean(Effort_Amp_err^2)), 2),
+        "Std" = round(sd(Effort_Amp_err), 2),  # Standard deviation
+        "Est" = 'After Correction',
+        "Log" = Log
+      )
+  )
 
 ```
 

@@ -327,7 +327,7 @@ for iExp=1:length(Lbl)
         NumofTrials=S.(ExpStruct).(ExpLabel).ListedNumofTrials;
     end
     RedoTrials=S.(ExpStruct).(ExpLabel).RedoTrials;
-
+    
     for iTrial=1:NumofTrials
         TrialLabel=sprintf('Trial_%d',iTrial);
         

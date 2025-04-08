@@ -369,6 +369,40 @@ function manu_add()
     str=sprintf("%s.mat is created",TestFile);
     disp(str)    
 
+%% 15- oct11
+    
+    FolderName=["oct11"];
+    TestFile=sprintf("%s_test",FolderName);
+    S=tidy_data(FolderName,false);
+    
+    % Additions 
+
+    ExpLabel="OccTrials";
+    S.(TestFile).(ExpLabel).StimMVCVec=[0 10 20 30];
+    % S.(TestFile).(ExpLabel).StimConstantRange=StimConstantRange;
+    str=sprintf('%s/%s',FolderName,TestFile);
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)    
 
 
+%% 16- feb27
+    
+    FolderName=["feb27"];
+    TestFile=sprintf("%s_test",FolderName);
+    S=tidy_data(FolderName,false);
+    
+    % Additions 
+
+    ExpLabel="RCCurveTrials";
+    S.(TestFile).(ExpLabel).dropped=0;
+    ExpLabel="OccTrials";
+
+    S.(TestFile).(ExpLabel).StimConstantRange=StimConstantRange;
+    
+    str=sprintf('%s/%s',FolderName,TestFile);
+    save(str,'-struct','S',TestFile)
+    str=sprintf("%s.mat is created",TestFile);
+    disp(str)    
+    
 end

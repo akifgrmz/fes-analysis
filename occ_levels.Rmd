@@ -32,7 +32,7 @@ options(dplyr.summarise.inform = FALSE)
 
 
 ```{r Plotting: dropped frames occlusion}
-droppedocc<- read_csv("dropped_occ6.csv",show_col_types = FALSE)
+droppedocc<- read_csv("dropped_occ4.csv",show_col_types = FALSE)
 
 droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
                      Repeat = as.factor(Repeat),
@@ -53,7 +53,7 @@ droppedocc<-droppedocc%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
 
 summary(droppedocc)
 
-plotibble<-filter(droppedocc, NumofDropped !='4_Drops', MAV_Type !='OccHybrid', MAV_Type !='Comb',EffortType=="Hand")
+plotibble<-filter(droppedocc, NumofDropped !='4_Drops', MAV_Type !='OccHybrid', MAV_Type !='Comb')
 formula <- y ~ poly(x, 1, raw = TRUE)
 my.format <-"b[0]~`=`~%.3g*\", \"*b[1]~`=`~%.3g"
 p1<-ggplot(plotibble, aes(x =  MVC_Voli , y = MAV, color = MAV_Type))+
@@ -67,7 +67,7 @@ suppressWarnings(print(p1))
 
 #lm_tibble<-filter(plotibble, MAV_Type =='Dropped')
 
-  m1 <- lm(100*MAV ~ MVC_Voli+MVC_Stim+MAV_Type, data = plotibble) 
-tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
+ # m1 <- lm(100*MAV ~ MVC_Voli+MVC_Stim+MAV_Type, data = plotibble) 
+#tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
