@@ -247,7 +247,7 @@ p1/p2
 ```
 ```{r tracking error}
 
-reduce_std <- function(data, measure, group_vars, n_boot = 20, seed = 12) {
+reduce_std <- function(data, measure, group_vars, n_boot = 20, seed = 123) {
     set.seed(seed)  # Ensure reproducibility
   data %>%
     group_by(across(all_of(group_vars))) %>%
@@ -271,15 +271,21 @@ reduce_std <- function(data, measure, group_vars, n_boot = 20, seed = 12) {
     #  .groups = "drop"
  #   )
 #}
-```
-```{r }
+
 # Apply the function to reduce std for Effort
+
+
 reduced_eff_summary <- reduce_std(
   data = eff_summary, 
   measure = "mean_eff", 
   group_vars = c("Test", "TrialType")
 )
+write.csv(reduced_eff_summary, "reduced_eff_summary.csv", row.names = FALSE)
 
+```
+```{r }
+
+reduced_eff_summary <- read.csv("reduced_eff_summary.csv")
 reduced_eff_summary <- reduced_eff_summary %>%
   mutate(Test = recode(Test, 
                        "dec12_24" = "Test 1", 
@@ -314,11 +320,11 @@ theme(
 
 # Print the plot
 
-#pdf("tracking_error.pdf", width = 6, height = 3)  # specify dimensions in inches
+pdf("tracking_error.pdf", width = 6, height = 3)  # specify dimensions in inches
 
 p1
 
-#dev.off()
+dev.off()
 ```
 
 ```{r }
