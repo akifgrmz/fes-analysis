@@ -155,60 +155,93 @@ S_idx=1;
 S_mat=zeros(num_kf*num_kh*length(e_tr_values)*length(e_h_values),6);
 for i_kf=1:num_kf
     kf=kf_values(i_kf);
-
     for i_kh=1:num_kh
         kh=kh_values(i_kh);
-        for i_E=1:num_kE
-            kE=kE_values(i_E); 
-            for i_etr = 1:length(e_tr_values)
-                for i_hand = 1:length(e_h_values)
-                    sigmoid_f(i_etr,i_hand) = func_f(e_tr_values(i_etr),thres_c,kf);
-                    sigmoid_h(i_etr,i_hand) = func_h(e_h_values(i_hand),thres_h,kh);  
+        for i_etr = 1:length(e_tr_values)
+            for i_hand = 1:length(e_h_values)
+                sigmoid_f(i_etr,i_hand) = func_f(e_tr_values(i_etr),thres_c,kf);
+                sigmoid_h(i_etr,i_hand) = func_h(e_h_values(i_hand),thres_h,kh);  
 
-                    for i_effort = 1:length(Ef_values)
-                        sigmoid_E(i_etr,i_hand,i_effort) = func_E(Ef_values(i_effort),thres_E,kE);
-    
-                        S_values(i_etr,i_hand,i_effort) =sigmoid_E(i_etr,i_hand,i_effort)*theta_np*sigmoid_f(i_etr,i_hand) *sigmoid_h(i_etr,i_hand) ;
-                        S_values2(i_etr,i_hand,i_effort) =sigmoid_E(i_etr,i_hand,i_effort)*theta_np*(w_f*sigmoid_f(i_etr,i_hand) + w_h*sigmoid_h(i_etr,i_hand)) ;
-                        % S_val_E(i_etr,i_effort) =Ef_values(i_effort)*theta_np*(w_f*sigmoid_f(i_etr,i_hand) + w_h*1) ;
-                        
-                        % S_mat(S_idx,:)=[S_values(i_etr,i_hand,i_effort) S_values2(i_etr,i_hand,i_effort) kf kh  thres_c thres_h] ;
-                        S_idx=S_idx+1;
-                    end
-                end
+                S_values(i_etr,i_hand) =theta_np*sigmoid_f(i_etr,i_hand) *sigmoid_h(i_etr,i_hand) ;
+                S_values2(i_etr,i_hand) =theta_np*(w_f*sigmoid_f(i_etr,i_hand) + w_h*sigmoid_h(i_etr,i_hand)) ;
+                % S_val_E(i_etr,i_effort) =Ef_values(i_effort)*theta_np*(w_f*sigmoid_f(i_etr,i_hand) + w_h*1) ;
+                
+                % S_mat(S_idx,:)=[S_values(i_etr,i_hand,i_effort) S_values2(i_etr,i_hand,i_effort) kf kh  thres_c thres_h] ;
+                S_idx=S_idx+1;
             end
-                                            figure(13);
-            set(gcf,'Position', [100, 100, 1400, 1000]);
-            subplot(num_kf,num_kh,plot_idx)
-            imagesc(e_h_values, e_tr_values, S_values(:,:,end));
-            title(sprintf("k_f=%.2f, k_h=%.2f",kf,kh))
-            xlabel('e_{Hand}')
-            ylabel('e_{track}')
-            caxis([0 1]); % Fix color axis
-            % 
-                    figure(14);
-            set(gcf,'Position', [100, 100, 1400, 1000]);
-            subplot(num_kf,num_kh,plot_idx)
-            imagesc(e_h_values, e_tr_values, S_values2(:,:,end));
-            title(sprintf("k_f=%.2f, k_h=%.2f",kf,kh))
-            xlabel('e_{Hand}')
-            ylabel('e_{track}')
-            caxis([0 1]); % Fix color axis
-    
-            figure(15);
-            set(gcf,'Position', [100, 100, 1400, 1000]);
-            subplot(num_kE,num_kf,plot_idx)
-            imagesc(Ef_values,e_tr_values,squeeze(S_values2(:,100,:)));
-            title(sprintf("k_f=%.2f, k_E=%.2f",kf,kE))
-            xlabel('e_{Effort}')
-            ylabel('e_{track}')
-            caxis([0 1]); % Fix color axis
-            plot_idx=plot_idx+1;
         end
+                    figure(13);
+        set(gcf,'Position', [100, 100, 1400, 1000]);
+        subplot(num_kf,num_kh,plot_idx)
+        imagesc(e_h_values, e_tr_values, S_values);
+        title(sprintf("k_f=%.2f, k_h=%.2f",kf,kh))
+        xlabel('e_{Hand}')
+        ylabel('e_{track}')
+        caxis([0 1]); % Fix color axis
+
+                    figure(14);
+        set(gcf,'Position', [100, 100, 1400, 1000]);
+        subplot(num_kf,num_kh,plot_idx)
+        imagesc(e_h_values, e_tr_values, S_values2(:,:,end));
+        title(sprintf("k_f=%.2f, k_h=%.2f",kf,kh))
+        xlabel('e_{Hand}')
+        ylabel('e_{track}')
+        caxis([0 1]); % Fix color axis
+        plot_idx=plot_idx+1;
+
     end
     colorbar
 end
+%% 
 
+S_values = zeros(length(e_tr_values), length(kE_values));
+S_values2 = zeros(length(e_tr_values), length(kE_values));
+theta_np=1;
+num_kf=length(kf_values);
+num_kh=length(kh_values);
+num_kE=length(kE_values);
+plot_idx=1;
+S_idx=1;
+S_mat=zeros(num_kf*num_kh*length(e_tr_values)*length(kE_values),6);
+for i_kf=1:num_kf
+    kf=kf_values(i_kf);
+    for i_E=1:num_kE
+        kE=kE_values(i_E); 
+        for i_etr = 1:length(e_tr_values)
+            for i_effort = 1:length(Ef_values)
+                sigmoid_f(i_etr,i_effort) = func_f(e_tr_values(i_etr),thres_c,kf);
+                sigmoid_E(i_etr,i_effort) = func_E(Ef_values(i_effort),thres_E,kE);
+
+                S_values(i_etr,i_effort) =sigmoid_E(i_etr,i_effort)*theta_np*sigmoid_f(i_etr,i_effort) * 1;
+                S_values2(i_etr,i_effort) =sigmoid_E(i_etr,i_effort)*theta_np*(w_f*sigmoid_f(i_etr,i_effort) + w_h*1);
+                
+                % S_mat(S_idx,:)=[S_values(i_etr,i_hand,i_effort) S_values2(i_etr,i_hand,i_effort) kf kh  thres_c thres_h] ;
+                S_idx=S_idx+1;
+            end
+        end
+
+                figure(13);
+        set(gcf,'Position', [100, 100, 1400, 1000]);
+        subplot(num_kf,num_kE,plot_idx)
+        imagesc(Ef_values,e_tr_values , S_values);
+        title(sprintf("k_f=%.2f, k_E=%.2f",kf,kE))
+        xlabel('Effort')
+        ylabel('e_{track}')
+        caxis([0 1]); % Fix color axis
+        % % 
+                figure(14);
+        set(gcf,'Position', [100, 100, 1400, 1000]);
+        subplot(num_kf,num_kh,plot_idx)
+        imagesc(Ef_values, e_tr_values, S_values2);
+        title(sprintf("k_f=%.2f, k_h=%.2f",kf,kh))
+        xlabel('Effort')
+        ylabel('e_{track}')
+        caxis([0 1]); % Fix color axis
+
+        plot_idx=plot_idx+1;
+    end
+    % colorbar
+end
 %% smooth cont plotting
 close all
 Trials=[12]; %% 12 and 15 is the good examples 
