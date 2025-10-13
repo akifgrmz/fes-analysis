@@ -338,9 +338,9 @@ p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat))
   )
 
 
-pdf("finger_occ_lines3.pdf", width = 8, height = 10) 
+#pdf("finger_occ_lines3.pdf", width = 8, height = 10) 
 suppressWarnings(print(p1/p2))
-dev.off()
+#dev.off()
 ```
 
 
@@ -479,13 +479,13 @@ p2<-ggplot(occ_err_long1, aes(x =  Occ_Error_Type , y = Error+7, color=Occ_Error
   ylim(-50, 45)+
   annotate("text", x=0.55, y=39, label= "(d)", size=6,fontface = "bold") +  
   
-  geom_signif(comparisons = list(c("Uncorrected","Force\nCorrected")),
-              y_position = 30, 
-              tip_length = 0.02, 
-              vjust = 0.1, 
-              size = 0.8, 
+ # geom_signif(comparisons = list(c("Uncorrected","Force\nCorrected")),
+#              y_position = 30, 
+   #           tip_length = 0.02, 
+   #           vjust = 0.1, 
+    #          size = 0.8, 
               textsize = 8, 
-              map_signif_level=TRUE,
+   #           map_signif_level=TRUE,
               annotation = c("*"),
               color = "black"
               ) +
