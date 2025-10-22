@@ -253,11 +253,11 @@ geom_text(
     size = 7, color = "black",fontface = "bold"
   )
 
-pdf("force_occ_lines2.pdf", width = 8, height = 10) 
+#pdf("force_occ_lines2.pdf", width = 8, height = 10) 
 
 suppressWarnings(print(p1/p2))
 
-dev.off()
+#dev.off()
 ```
 
 ```{r Hand occlusion results}

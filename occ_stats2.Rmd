@@ -39,7 +39,7 @@ coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
 droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
 
 occraw<- read_csv("occlusion_v10.csv",show_col_types = FALSE)
-err_raw<- read_csv("occ_est_error6.csv",show_col_types = FALSE)
+err_raw<- read_csv("occ_est_error7.csv",show_col_types = FALSE)
 rmse_raw<- read_csv("rmse3.csv",show_col_types = FALSE)
 
 trial_stats_raw<- read_csv("trial_stats.csv",show_col_types = FALSE)
@@ -160,10 +160,10 @@ trial_stats<-trial_stats_raw%>%mutate(Test = as.factor(Test),
                        Filt = as.factor(Filt),
                        Test = as.factor(Test))
 
-summary(occ)
+summary(rmse$Test)
 ```
 
-```{r Plotting rmse}
+```{r Bar Plots Plotting rmse}
 
 plot_rmse<-filter(rmse, Error_Type=="RMSE", Error!=0, Norm==TRUE) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
   mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
@@ -178,8 +178,9 @@ plot_rmse_summary <- plot_rmse %>%
     n = n(),  # Get the sample size
     conf_int = qt(0.975, df = n - 1) * (sd_error / sqrt(n))
   )
+
 plot_rmse_summary_test <- plot_rmse %>%
-  group_by(Filt, Effort_Type, MVC_Voli_Cat,Test, MVC_Stim_Cat) %>%
+  group_by(Filt, Effort_Type, MVC_Voli_Cat, MVC_Stim_Cat, Test) %>%
   summarise(
     mean_error = mean(Error),
     sd_error = sd(Error),
@@ -206,12 +207,9 @@ g1<-ggplot(f_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
     #strip.text = element_text(face = "bold"),
     legend.position = c(0.23, 0.48),  # Position legend inside the plot (top-right corner)
     legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
-  ) + 
-    stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Force"), aes(), 
-                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
-    label = "p",  # Display exact p-values
-                     
-                     method = "wilcox.test")
+    ) + 
+    stat_compare_means(data = h_tibble,  # Use raw data for comparisons
+comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")))
 
 h_tibble<-filter(plot_rmse_summary, Effort_Type == "Hand")
 parti_tibble<-filter(plot_rmse, Effort_Type == "Hand")
@@ -247,72 +245,60 @@ g1+g2
 #dev.off()
 
 ```
-```{r }
-library(ggplot2)
-library(dplyr)
-library(ggpubr)
 
-# Filter for specific Effort_Type: "Hand"
-h_tibble <- filter(plot_rmse, Effort_Type == "Hand")
+```{r Box plots and Means compares for RMSE}
 
-# Plot for Hand Experiments
-g2 <- ggplot(h_tibble, aes(x = Filt, y = Error, fill = MVC_Voli_Cat)) +
-  geom_boxplot(position = position_dodge(0.9)) +  # Use boxplots for raw data
+g1 <-  ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.5))+
+  facet_wrap(~Effort_Type)+
   labs(
     x = "Filter",
     y = "Normalized Root Mean Squared Error",
     title = "Finger Extension Experiments",
-    subtitle = sprintf("%d participants", length(unique(h_tibble$Test)))
-  ) +
+    subtitle = sprintf("%d participants", length(unique(plot_rmse$Test)))) +  
   theme_minimal() +
+  stat_compare_means(label = "p.signif",  # Show exact p-values
+    method = "wilcox.test",  # Wilcoxon test for comparisons 
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+        label.y = c(0.3, 0.33, 0.38)  # Adjust these values to position each comparison
+)+
   theme(
     strip.background = element_blank(),
-    legend.position = c(0.23, 0.48),
-    legend.background = element_rect(fill = alpha("white", 0.6))
-  ) +
-  stat_compare_means(
-    data = h_tibble,  # Use raw data for comparisons
-    aes(x = Filt, y = Error),  # Specify x and y axes for p-values
-    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),  # Define comparisons
-    label = "p",  # Show exact p-values
-    method = "wilcox.test"  # Wilcoxon test for comparisons
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.15, 0.35),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
   )
 
-# Filter for specific Effort_Type: "Force"
-f_tibble <- filter(plot_rmse, Effort_Type == "Force")
-
-# Plot for Force Experiments
-g1 <- ggplot(f_tibble, aes(x = Filt, y = Error, fill = MVC_Voli_Cat)) +
-  geom_boxplot(position = position_dodge(0.9)) +  # Use boxplots for raw data
+g2<-  ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.5))+
+  facet_grid(~Effort_Type+Test)+
   labs(
     x = "Filter",
     y = "Normalized Root Mean Squared Error",
-    title = "Isometric Force Experiments",
-    subtitle = sprintf("%d participants", length(unique(f_tibble$Test)))
-  ) +
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants", length(unique(plot_rmse$Test)))) +  
   theme_minimal() +
+  stat_compare_means(label = "p.signif",  # Show exact p-values
+    method = "wilcox.test",  # Wilcoxon test for comparisons 
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+        label.y = c(0.3, 0.33, 0.38)  # Adjust these values to position each comparison
+)+
   theme(
     strip.background = element_blank(),
-    legend.position = c(0.23, 0.48),
-    legend.background = element_rect(fill = alpha("white", 0.6))
-  ) +
-  stat_compare_means(
-    data = f_tibble,  # Use raw data for comparisons
-    aes(x = Filt, y = Error),  # Specify x and y axes for p-values
-    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),  # Define comparisons
-    label = "p.signif",  # Show exact p-values
-    method = "wilcox.test"  # Wilcoxon test for comparisons
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.15, 0.35),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
   )
 
-# Display both plots side by side
-library(patchwork)  # For combining plots
+
+g1/g2
+
+
 #pdf("rmse_pval.pdf", width = 6, height = 6)  # specify dimensions in inches
 
-g1 + g2
+#g1 + g2
 
 #dev.off()
-
 ```
+
 
 ```{r}
 
@@ -367,7 +353,7 @@ p2<-ggplot(h_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
                      method = "wilcox.test")
 #pdf("rmse_tests.pdf", width = 12, height = 8)  # specify dimensions in inches
 
-#p1/p2
+p1/p2
 
 #dev.off()
 
