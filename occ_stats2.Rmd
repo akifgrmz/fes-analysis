@@ -33,7 +33,7 @@ options(dplyr.summarise.inform = FALSE)
 
 ```
 
-```{r Data Inject } 
+```{r Data Inject }
 
 coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
 droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
@@ -238,17 +238,17 @@ g2<-ggplot(h_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
     method = "wilcox.test"  # Wilcoxon test for comparisons
   )
 
-#pdf("rmse_results.pdf", width = 6, height = 6)  # specify dimensions in inches
 
-g1+g2
+ggsave("figures/rmse_signif.pdf", plot = g1, width = 6, height = 6, dpi = 300)
 
-#dev.off()
+
 
 ```
 
 ```{r Box plots and Means compares for RMSE}
 
-g1 <-  ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.5))+
+
+g1 <- ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.7))+
   facet_wrap(~Effort_Type)+
   labs(
     x = "Filter",
@@ -259,15 +259,15 @@ g1 <-  ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette
   stat_compare_means(label = "p.signif",  # Show exact p-values
     method = "wilcox.test",  # Wilcoxon test for comparisons 
     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
-        label.y = c(0.3, 0.33, 0.38)  # Adjust these values to position each comparison
+        label.y = c(0.44, 0.52, 0.6)  # Adjust these values to position each comparison
 )+
   theme(
     strip.background = element_blank(),
     #strip.text = element_text(face = "bold"),
-    legend.position = c(0.15, 0.35),  # Position legend inside the plot (top-right corner)
+    legend.position = c(0.15, 0.45),  # Position legend inside the plot (top-right corner)
     legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
   )
-
+g1
 g2<-  ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.5))+
   facet_grid(~Effort_Type+Test)+
   labs(
@@ -289,76 +289,110 @@ g2<-  ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette 
   )
 
 
+g1
 g1/g2
 
-
-#pdf("rmse_pval.pdf", width = 6, height = 6)  # specify dimensions in inches
-
-#g1 + g2
-
-#dev.off()
-```
-
-
-```{r}
-
-f_tibble<-filter(plot_rmse_summary_test, Effort_Type == "Force")
-parti_tibble<-filter(plot_rmse, Effort_Type == "Force")
-
-p1<-ggplot(f_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
-    geom_col(position = "dodge") +
-    geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
-                position = position_dodge(0.9), width = 0.25) +    
-  facet_grid(MVC_Stim_Cat~Test)+ 
-  #coord_cartesian(ylim=c(0,0.5)) + 
-    labs(x = "Filter ", 
-    y = "NRMSE (% MVC MAV)",
-    title = "NRMSE ",
-    subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
-  theme_minimal() +
-  theme(
-    strip.background = element_blank(),
-    #strip.text = element_text(face = "bold"),
-    legend.position = c(0.23, 0.48),  # Position legend inside the plot (top-right corner)
-    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
-  ) + 
-    stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Force"), aes(), 
-                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
-                     label = "p.signif",
-                     method = "wilcox.test")
-
-
-h_tibble<-filter(plot_rmse_summary_test, Effort_Type == "Hand")
-parti_tibble<-filter(plot_rmse, Effort_Type == "Hand")
-p2<-ggplot(h_tibble, aes(x = Filt  , y = mean_error, fill = MVC_Voli_Cat)) +
-    geom_col(position = "dodge") +
-    geom_errorbar(aes(ymin = (mean_error - conf_int), ymax = (mean_error + conf_int)),
-                position = position_dodge(0.9), width = 0.25) +    
-  facet_grid(MVC_Stim_Cat~Test)+ 
-  #coord_cartesian(ylim=c(0,0.5)) + 
-    labs(x = "Filter ",
-    y = "NRMSE (% MVC MAV)",
-    title = "NRMSE ", 
-    subtitle = sprintf("%d participants",length(unique(parti_tibble$Test) )))+
-  theme_minimal() +
-  theme(
-    strip.background = element_blank(),
-    #strip.text = element_text(face = "bold"),
-    legend.position = c(0.23, 0.46),  # Position legend inside the plot (top-right corner)
-    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
-  ) + 
-    stat_compare_means(data = filter(plot_rmse_summary, Effort_Type == "Hand"), aes(), 
-                     comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
-                     label = "p.signif",
-                     method = "wilcox.test")
-#pdf("rmse_tests.pdf", width = 12, height = 8)  # specify dimensions in inches
-
-p1/p2
-
-#dev.off()
+ggsave("figures/rmse_signif.pdf", plot = g1, width = 6, height = 6, dpi = 300)
 
 ```
 
+```{r }
+library(dplyr)
+library(ggplot2)
+
+# Calculate means and 95% confidence intervals
+summary_data <- plot_rmse %>%
+  group_by(Effort_Type, Filt, MVC_Voli_Cat) %>%
+  summarise(
+    mean_error = mean(Error, na.rm = TRUE),
+    sd_error = sd(Error, na.rm = TRUE),
+    n = n(),
+    se = sd_error / sqrt(n),
+    ci_lower = mean_error - qt(0.975, df = n - 1) * se,
+    ci_upper = mean_error + qt(0.975, df = n - 1) * se,
+    .groups = "drop"
+  )
+
+# Calculate p-values for each participant and effort type
+pvals <- plot_rmse %>%
+  group_by(Effort_Type) %>%
+  summarise(
+    p_GS = wilcox.test(Error[Filt == "Ref"], Error[Filt == "GS"])$p.value,
+    p_Comb = wilcox.test(Error[Filt == "Ref"], Error[Filt == "Comb"])$p.value,
+    p_Unfilt = wilcox.test(Error[Filt == "Ref"], Error[Filt == "Unfilt"])$p.value,
+    .groups = "drop"
+  ) %>%
+  mutate(
+    sig_GS = case_when(
+      p_GS < 0.001 ~ "***",
+      p_GS < 0.01 ~ "**",
+      p_GS < 0.05 ~ "*",
+      TRUE ~ "ns"
+    ),
+    sig_Comb = case_when(
+      p_Comb < 0.001 ~ "***",
+      p_Comb < 0.01 ~ "**",
+      p_Comb < 0.05 ~ "*",
+      TRUE ~ "ns"
+    ),
+    sig_Unfilt = case_when(
+      p_Unfilt < 0.001 ~ "***",
+      p_Unfilt < 0.01 ~ "**",
+      p_Unfilt < 0.05 ~ "*",
+      TRUE ~ "ns"
+    )
+  )
+
+# Create annotation data
+annotations <- pvals %>%
+  pivot_longer(cols = starts_with("sig_"), 
+               names_to = "comparison", 
+               values_to = "label",
+               names_prefix = "sig_") %>%
+  mutate(
+    x = case_when(
+      comparison == "GS" ~ 2,
+      comparison == "Comb" ~ 3,
+      comparison == "Unfilt" ~ 4
+    ),
+    y = case_when(
+      comparison == "GS" ~ 0.42,
+      comparison == "Comb" ~ 0.46,
+      comparison == "Unfilt" ~ 0.50
+    )
+  )
+
+# Create bar plot with error bars
+g1 <- ggplot(summary_data, aes(x = Filt, y = mean_error, fill = MVC_Voli_Cat)) +
+  geom_bar(stat = "identity", position = position_dodge(0.9), width = 0.8) +
+  geom_errorbar(aes(ymin = ci_lower, ymax = ci_upper), 
+                position = position_dodge(0.9), 
+                width = 0.25) +
+  facet_wrap(~Effort_Type, ncol = 4) +
+#  scale_fill_jco() +
+  labs(
+    x = "Filter",
+    y = "Normalized Root Mean Squared Error",
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants", length(unique(plot_rmse$Test))),
+    fill = "MVC_Voli_Cat"
+  ) +
+  coord_cartesian(ylim = c(0, 0.5)) +
+  theme_minimal() +
+  geom_text(data = annotations, 
+            aes(x = x, y = y, label = label),
+            inherit.aes = FALSE,
+            size = 4, 
+            vjust = -0.5) +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(size = 8),
+    legend.position = "top",
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+
+g1
+```
 
 ```{r Plotting: maintain section}
 
@@ -422,7 +456,6 @@ summary(lm_tibble)
 tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
-
 
 ```{r }
 
@@ -508,7 +541,6 @@ p1
 
 ```
 
-
 ```{r Plotting for EMBC 2024 (updated for 2025) }
 library(ggforce)  # If `tag_facet()` is used
 library(dplyr)
@@ -557,7 +589,6 @@ suppressWarnings(print(p1))
 
 ```
 
-
 ```{r }
 simp_tipple<-filter(occ, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat=='EffortMea')%>%
   select(Occ_mvc,Occ_Dropped_mvc,MVC_Stim_Cat,MVC_Voli,MVC_Stim,v_mvc,Feat)
@@ -603,7 +634,6 @@ ggplot(plot_tibble, aes(x = MVC_Stim_Cat , y =  MVC_Voli_Cat, fill = Occ_mvc)) +
     facet_wrap(~Feat)
 
 ```
-
 
 ```{r}
 
@@ -652,7 +682,6 @@ g1/g2/g3
 filter(plot_tibble,Test=="oct18"  )%>% group_by(MVC_Stim_Cat)%>%summarise(count = n(),v_mvc)%>% arrange(desc(count))
 ```
 
-
 ```{r Plotting: dropped frames occlusion}
 plotibble<-filter(droppedocc, NumofDropped !='4_Drops', MAV_Type !='OccHybrid', MAV_Type !='Comb',EffortType=="Hand")
 formula <- y ~ poly(x, 1, raw = TRUE)
@@ -672,9 +701,6 @@ suppressWarnings(print(p1))
 tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
-
-
-
 
 ```{r Plotting: maintain section}
 filt="GS"
@@ -719,7 +745,6 @@ p1/p2 -p3
 
 
 ```
-
 
 ```{r Individualized vs Avg occ errors}
 
@@ -813,6 +838,7 @@ p1/p2
 p2
 
 ```
+
 ```{r }
 
 ggplot(plotibble, aes(x =  VoliMVC , y = MAV*100, color = MAV_Type))+
@@ -1139,7 +1165,6 @@ p1/p2
 filter(occ_err1,Test=="oct25" & LogModel==Log)%>% group_by(MVC_Stim_Cat,Test)%>%summarise(count = n(), Effort_Amp_Indv_err)
 ```
 
-
 ```{r occ errors of different methods }
 filt="GS"
 occ_err<-filter(err, MVC_Stim_Cat!="Stim_0",Filt==filt)
@@ -1156,6 +1181,7 @@ p1<-ggplot(occ_err, aes(x =  VoliMVC)) +
 p1
 
 ```
+
 ```{r }
 
 occ_err%>% mutate(Diff=decode('Occ_type',filter(occ_err,Occ_Type=='Occ_mvc')-filter(occ_err, Occ_Type=='Occ_dropped_mvc')))
@@ -1164,7 +1190,6 @@ p2<-ggplot(occ_err, aes(x =  VoliMVC)) +
   geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))
   #facet_wrap(LogModel~)
 ```
-
 
 ```{r occ errors of different methods }
 filt="GS"
@@ -1200,6 +1225,7 @@ ggplot(mean_err, aes(x =  Est , y = Mean , color = Est)) +
     subtitle = sprintf('%s filtered results',filt))
 
 ```
+
 ```{r linear models}
 occ_err_lm<-filter(err, MVC_Stim_Cat!="Stim_0",Filt!="Unfilt" , LogModel==FALSE)
 occ_err_lm <- occ_err_lm %>%
@@ -1216,8 +1242,6 @@ tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
 
-
-
 ```{r linear models}
 occ_err_lm<-filter(err, MVC_Stim_Cat!="Stim_0",Filt!="Unfilt" , LogModel==TRUE)
 occ_err_lm <- occ_err_lm %>%
@@ -1230,6 +1254,7 @@ tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 tidy(m2,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
+
 The average error for GS is -1.5 while Comb filter estimates an average of -1.5+7.6=6.1. a0 and a1 values are -1.5 and 7.6.
 
 Effort estimation error with comb filter is higher with and average of 6.4 compared to GS filter.
@@ -1253,8 +1278,6 @@ tidy(m1,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
 
-
-
 ```{r Dropeed frames error }
 
 dropped_err<-filter(droppedocc, NumofDropped =='1_Drops')
@@ -1271,7 +1294,6 @@ p3<-ggplot(dropped_err, aes(x =  VoliMVC , y = Occ_MAV, color = StimMVC))+
 p3
 ```
 
-
 ```{r linear models }
 #dropped_err <- dropped_err %>%
 #  mutate(Filt = relevel(Filt, ref = "Comb"))
@@ -1280,8 +1302,6 @@ p3
 tidy(m4,conf.int = TRUE ,conf.level =0.95) %>% knitr::kable(digits = 3)
 
 ```
-
-
 
 ```{r  averaging the occlusion }
 
@@ -1344,10 +1364,3 @@ geom_boxplot() +
 labs(title = "Normalized EMG MAV Values", y = "Norm. MAV")
    
 ```
-
-
-
-
-
-
-

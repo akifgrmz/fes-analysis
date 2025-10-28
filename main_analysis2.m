@@ -53,6 +53,7 @@ TestFolders=[ "jan7" "jan11" "jan12" "aug22_24" "aug26_24" "aug29_24" "sep3_24" 
 TestFolders=["oct29_24" "oct31_24" "nov14_24" ];
 TestFolders=["sep6_24" "sep4_24" "aug26_24" "aug22_24" ];
 
+TestFolders=["jan7" "jan11" "jan12" "aug22_24" "sep3_24" "sep4_24" "sep6_24" "oct17_24" "oct18_24"];
 NumofTests=length(TestFolders);
 DroppedFiltLabels=strings(1,NumofTests)+"GS";
 NoStimFiltLabels=strings(1,NumofTests)+"Unfilt";
@@ -1476,7 +1477,7 @@ end
 
 % writetable(S.(AnaLabel).(ExpLabel).MVCTable,'mvc_table.csv')
 
-%%Evaluate the filter accuracy
+%% Evaluate the filter accuracy
 % NRMSE_s= sqrt(sum((MAV_voli-MAV_filt)^2)/T)/std(MAV_voli)
 % NRMSE_v= sqrt(sum((MAV_voli_1-MAV_voli_2)^2)/T)/std(MAV_voli_1)
 % TestFolders=["jan7" "jan11" "jan12" ];
@@ -1528,6 +1529,10 @@ for iTest=1:length(TestFolders)
             FiltLabel=FiltLabels(iFilt);
 
             MAV_filt=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameRangeInd,:).('MAV_vEMG');
+
+            Error_Type="MAV";
+            T=[T; mean(MAV_filt) Error_Type "false" MVC_Voli MVC_Stim iTrial 1 FiltLabel EffortType TestFolders(iTest)];
+                
             clear MAV_ref
             for iRefTrial=1:length(RefIndTrial)
                 TrialLabel2=sprintf("Trial_%d",RefIndTrial(iRefTrial));
@@ -1555,6 +1560,7 @@ for iTest=1:length(TestFolders)
                 Error=mav_diff_norm(iRefTrial);
                 Error_Type="MAV_Diff";
                 T=[T; Error Error_Type "true" MVC_Voli MVC_Stim iTrial RefIndTrial(iRefTrial) FiltLabel EffortType TestFolders(iTest)];                
+                
             end
             
             S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).RMSE=mean(rmse);
@@ -1563,12 +1569,13 @@ for iTest=1:length(TestFolders)
         end  
     end
     % end
-    RMSETable=array2table(T,'VariableNames',["Error",...
-       "Error_Type" "Norm" "MVC_Voli" "MVC_Stim" "Trial" "Ref_Trial" "Filt" "Effort_Type" "Test"]);
+    RMSETable=array2table(T,'VariableNames',[ "Error",...
+       "Error_Type" "Norm" "MVC_Voli" "MVC_Stim" "Trial" ...
+       "Ref_Trial" "Filt" "Effort_Type" "Test"]);
     S.(AnaLabel).(ExpLabel).RMSETable=RMSETable;    
 end
 
-% writetable(RMSETable,'rmse3.csv')
+ writetable(RMSETable,'rmse4.csv')
 
 %%
 suffix="-jan3-";

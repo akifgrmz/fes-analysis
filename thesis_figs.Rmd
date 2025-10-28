@@ -408,9 +408,9 @@ p <- ggplot(plot_rmse, aes(x = Filt, y = Error, fill = MVC_Voli_Cat)) +
 
   )
 p
-pdf("rmse_results2.pdf", width = 6, height = 4.5)  # specify dimensions in inches
-p
-dev.off()
+# pdf("rmse_results2.pdf", width = 6, height = 4.5)  # specify dimensions in inches
+# p
+# dev.off()
 ```
 
 
@@ -707,10 +707,10 @@ p1<-ggplot(combined_dt_allstim, aes(x = sMVC  , y = 100*ratio, color = Filt)) +
 
 
 g1/p1
-pdf("stk_occ_results2.pdf", width = 6, height = 6)  # specify dimensions in inches
-
-g1/p1
-
-dev.off()
+# pdf("stk_occ_results2.pdf", width = 6, height = 6)  # specify dimensions in inches
+# 
+# g1/p1
+# 
+# dev.off()
 
 ```

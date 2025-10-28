@@ -1,0 +1,428 @@
+---
+title: "occlusion_paper2025"
+author: "akifg"
+date: "2025-10-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r including libraries, display=FALSE}
+library(magrittr)
+library(here)
+library(janitor)
+library(readxl)
+library(tidyverse)
+library(rmdformats)
+library(Epi)
+library(vcd)
+library(broom)
+library(patchwork)
+library(vcd)
+library(dplyr)
+library(ggplot2)
+library(ggpmisc)
+library(tidyr)
+library(ggsignif)
+library(ggpubr)
+library(egg)
+library(rstatix)
+library(kableExtra)
+options(dplyr.summarise.inform = FALSE)
+
+```
+
+```{r Data Inject }
+
+coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
+droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
+
+occraw<- read_csv("occlusion_v10.csv",show_col_types = FALSE)
+err_raw<- read_csv("occ_est_error7.csv",show_col_types = FALSE)
+rmse_raw<- read_csv("rmse4.csv",show_col_types = FALSE)
+
+trial_stats_raw<- read_csv("trial_stats.csv",show_col_types = FALSE)
+```
+
+```{r dataframe setup}
+occ<-occraw%>%mutate(Test = as.factor(Test),
+                     Tau = as.factor(Tau),
+                     Feat = as.factor(Feat),
+                     Filt = as.factor(Filt))
+
+occ<-occ%>%mutate(EffortType = as.factor(EffortType))
+
+
+occ<-occ%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+occ<-occ%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+droppedocc<-droppedocc%>%mutate(Test = as.factor(Test),
+                     Repeat = as.factor(Repeat),
+                     NumofDropped = as.factor(NumofDropped))
+
+droppedocc<-droppedocc%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err_raw%>%mutate(MVC_Voli_Cat=recode(VoliMVC,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(StimMVC,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40'))
+
+err<-err%>%mutate(Test = as.factor(Test),
+                     Filt = as.factor(Filt),
+                     Occ_Type = as.factor(Occ_Type),
+                     MVC_Stim_Cat = as.factor(MVC_Stim_Cat),
+                     MVC_Voli_Cat = as.factor(MVC_Voli_Cat),
+                     MVC_Stim = as.integer(StimMVC),
+                     MVC_Voli = as.integer(VoliMVC))
+
+err<-err%>%mutate(EffortType = as.factor(EffortType))
+
+
+err<-err%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+coef<-coefraw%>%mutate(Test = as.factor(Test),
+                       Type = as.factor(Type),
+                       Trial = as.integer(Trial))
+
+coef<-coef%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30'))
+
+coef<-coef%>%filter(Test!="mar7",Test!="mar16",Test!="feb27",Test!="apr20")
+
+
+
+
+rmse<-rmse_raw%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
+                                '10' = 'Voli_10',
+                                '20' = 'Voli_20',
+                                '30' = 'Voli_30',
+                                '40' = 'Voli_40',
+                                '50' = 'Voli_50')) %>%
+            mutate(MVC_Stim_Cat=recode(MVC_Stim,
+                                 '0' = 'Stim_0',
+                                '10' = 'Stim_10',
+                                '20' = 'Stim_20',
+                                '30' = 'Stim_30',
+                                '40' = 'Stim_40',
+                                '50' = 'Stim_50',
+                                '60' = 'Stim_60',
+                                '70' = 'Stim_70',
+                                '80' = 'Stim_80'))
+
+
+rmse<-rmse%>%mutate(Test = as.factor(Test),
+                       Effort_Type = as.factor(Effort_Type),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test),
+                       Ref_Trial = as.integer(Ref_Trial),
+                       MVC_Voli_Cat=as.factor(MVC_Voli_Cat),
+                       MVC_Stim_Cat=as.factor(MVC_Stim_Cat))
+
+
+trial_stats<-trial_stats_raw%>%mutate(Test = as.factor(Test),
+                       Exp = as.factor(Exp),
+                       Filt = as.factor(Filt),
+                       Test = as.factor(Test))
+
+
+
+summary(rmse$Test)
+```
+
+
+```{r Box plots and Means compares for RMSE}
+
+plot_rmse<-filter(rmse, Error_Type=="RMSE", Error!=0, Norm==TRUE) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+  mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
+
+plot_rmse$Filt <- factor(plot_rmse$Filt, levels = c("Ref", "GS", "Comb", "Unfilt"))
+
+
+g1 <- ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.7))+
+  facet_wrap(~Effort_Type)+
+  labs(
+    x = "Filter",
+    y = "Normalized Root Mean Squared Error",
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants", length(unique(plot_rmse$Test)))) +  
+  theme_minimal() +
+  stat_compare_means(label = "p.signif",  # Show exact p-values
+    method = "wilcox.test",  # Wilcoxon test for comparisons 
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+        label.y = c(0.44, 0.52, 0.6)  # Adjust these values to position each comparison
+)+
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.15, 0.45),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )
+g1
+g2<-  ggboxplot(plot_rmse,x = "Filt",y = "Error",fill = "MVC_Voli_Cat", palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.5))+
+  facet_grid(~Effort_Type+Test)+
+  labs(
+    x = "Filter",
+    y = "Normalized Root Mean Squared Error",
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants", length(unique(plot_rmse$Test)))) +  
+  theme_minimal() +
+  stat_compare_means(label = "p.signif",  # Show exact p-values
+    method = "wilcox.test",  # Wilcoxon test for comparisons 
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt")),
+        label.y = c(0.3, 0.33, 0.38)  # Adjust these values to position each comparison
+)+
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position = c(0.15, 0.35),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )
+
+
+g1
+g1/g2
+
+# ggsave("figures/rmse_signif.pdf", plot = g1, width = 6, height = 6, dpi = 300)
+
+```
+
+```{r individual tests}
+
+plot_rmse<-filter(rmse, Error_Type=="RMSE", Error!=0, Norm==TRUE) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+  mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
+
+plot_rmse %>%
+  group_by(Effort_Type, MVC_Voli_Cat, Test) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  arrange(Effort_Type, Test)
+
+plot_rmse %>%
+  group_by(Effort_Type, Test) %>%
+  summarise(Count = n(), .groups = "drop") %>%
+  arrange(Effort_Type, Test)
+
+plot_rmse %>%
+  group_by(Effort_Type, Test, Filt) %>%
+  summarise(Count = n() ) %>%
+  arrange(Effort_Type, Test)
+
+```
+
+```{r Invistigate with historgrams}
+df_summary <- plot_rmse %>%
+  group_by(Effort_Type, MVC_Stim_Cat, MVC_Voli_Cat, Test, Filt) %>%
+  summarise(Count = n()) %>% mutate(Count = as.integer(Count))
+
+ggplot(df_summary, aes(x = MVC_Stim_Cat, y = Count, fill = MVC_Voli_Cat)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_y_continuous(breaks = scales::pretty_breaks(n = 10)) +  # auto integer-like breaks
+  facet_wrap(~Effort_Type+Test) +
+  theme_minimal() +
+  labs(
+    title = "Counts by Stim and Voli Category per Effort Type",
+    x = "Stim Category",
+    y = "Count"
+  )
+
+```
+
+``` {r anova_results wit tukey HSD comparing Filters}
+
+tb_force<-plot_rmse %>%filter(Effort_Type=="Force")
+model <- aov(Error ~  Filt * MVC_Voli_Cat, data = tb_force)
+
+tidy_results <- tidy(model) %>%
+  mutate(across(where(is.numeric), round, 4)) %>%
+  select(term, df, sumsq, meansq, statistic, p.value)
+
+print(tidy_results)
+# Post-hoc for Filt
+TukeyHSD(model, "Filt")
+# Post-hoc for MVC_Voli_Cat
+TukeyHSD(model, "MVC_Voli_Cat")
+
+```
+
+```{r Latex table }
+library(broom)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+# Function to add significance stars
+add_sig_stars <- function(p_value) {
+  case_when(
+    p_value < 0.001 ~ "***",
+    p_value < 0.01 ~ "**",
+    p_value < 0.05 ~ "*",
+    TRUE ~ ""
+  )
+}
+
+# ============================================
+# HAND EXPERIMENT
+# ============================================
+tb_hand <- plot_rmse %>% filter(Effort_Type == "Hand")
+model_hand <- aov(Error ~ Filt, data = tb_hand)
+
+# Tukey HSD for Filt (Hand)
+tukey_filt_hand <- TukeyHSD(model_hand, "Filt")
+tukey_filt_hand_df <- as.data.frame(tukey_filt_hand$Filt)
+tukey_filt_hand_df <- tukey_filt_hand_df %>%
+  mutate(across(where(is.numeric), ~round(., 4))) %>%
+  mutate(sig = add_sig_stars(`p adj`)) %>%
+  select(diff, lwr, upr, `p adj`, sig)
+
+# ============================================
+# FORCE EXPERIMENT
+# ============================================
+tb_force <- plot_rmse %>% filter(Effort_Type == "Force")
+model_force <- aov(Error ~ Filt, data = tb_force)
+
+# Tukey HSD for Filt (Force)
+tukey_filt_force <- TukeyHSD(model_force, "Filt")
+tukey_filt_force_df <- as.data.frame(tukey_filt_force$Filt)
+tukey_filt_force_df <- tukey_filt_force_df %>%
+  mutate(across(where(is.numeric), ~round(., 4))) %>%
+  mutate(sig = add_sig_stars(`p adj`)) %>%
+  select(diff, lwr, upr, `p adj`, sig)
+
+# ============================================
+# COMBINE INTO ONE TABLE
+# ============================================
+tukey_combined <- rbind(tukey_filt_hand_df, tukey_filt_force_df)
+
+# View results
+print(tukey_combined)
+
+# Create combined LaTeX table with row names
+latex_combined <- kable(tukey_combined,
+                        format = "latex",
+                        booktabs = TRUE,
+                        escape = FALSE,
+                        align = c("r", "r", "r", "r", "c"),
+                        col.names = c("Difference", "Lower CI", "Upper CI", 
+                                     "Adj. p-value", "Sig."),
+                        caption = "Tukey HSD Post-hoc Comparisons for Filter Type",
+                        label = "tukey-filt-combined",
+                        row.names = TRUE) %>%  # Include row names
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                full_width = FALSE) %>%
+  pack_rows("Hand Experiment", 1, nrow(tukey_filt_hand_df)) %>%
+  pack_rows("Force Experiment", nrow(tukey_filt_hand_df) + 1, nrow(tukey_combined)) %>%
+  footnote(general = "*** p < 0.001, ** p < 0.01, * p < 0.05",
+           general_title = "Note:",
+           footnote_as_chunk = TRUE,
+           escape = FALSE)
+
+# Print and save
+cat(latex_combined)
+cat(latex_combined, file = "tukey_filt_combined.tex")
+
+cat("\n=== FILE CREATED ===\n")
+cat("tukey_filt_combined.tex\n")
+```
+``` {r anova results with wilcox}
+
+tb_force<-plot_rmse %>%filter(Effort_Type=="Force")
+model <- aov(Error ~  Filt * MVC_Voli_Cat, data = tb_force)
+
+tidy_results <- tidy(model) %>%
+  mutate(across(where(is.numeric), round, 4)) %>%
+  select(term, df, sumsq, meansq, statistic, p.value)
+
+print(tidy_results)
+
+pairwise_wilcox_filt <- tb_force %>%
+  pairwise_wilcox_test(
+    Error ~ Filt,
+    p.adjust.method = "bonferroni"  # or "holm", "BH", "BY"
+  )
+
+pairwise_wilcox_filt
+```
+```{r anova}
+
+anova_results <- plot_rmse %>%
+  group_by(Effort_Type, Filt)
+anova_results <- list()
+    comparisons = list(c("Ref", "GS"), c("Ref", "Comb"), c("Ref", "Unfilt"))
+
+for (effort in unique(plot_rmse$Effort_Type)) {
+  effort_data <- plot_rmse %>% filter(Effort_Type == effort)
+  
+  for (pair in comparisons) {
+    filt_levels <- pair
+    
+    df <- effort_data %>%
+      filter(Filt %in% filt_levels)
+    
+    # skip if missing levels
+    if (length(unique(df$Filt)) < 2) next
+    
+    model <- aov(Error ~ MVC_Voli_Cat * Filt, data = df)
+    
+    res <- tidy(model) %>%
+      mutate(
+        Effort_Type = effort,
+        Comparison = paste(filt_levels, collapse = " vs ")
+      )
+    
+    anova_results[[length(anova_results) + 1]] <- res
+  }
+}
+
+anova_results <- bind_rows(anova_results)
+
+anova_summary <- anova_results %>%
+  select(Effort_Type, Comparison, term, statistic, p.value) %>%
+  filter(term %in% c("MVC_Voli_Cat", "Filt", "MVC_Voli_Cat:Filt")) %>%
+  arrange(Effort_Type, Comparison, term)
+
+print(anova_summary)
+```
+
+
+
