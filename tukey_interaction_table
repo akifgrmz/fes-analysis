@@ -1,0 +1,31 @@
+\begin{table}[!h]
+\centering
+\caption{Tukey HSD Post-hoc Comparisons for Interaction: EffortType × Occ\_Error\_Type}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\fontsize{8}{10}\selectfont
+\begin{tabular}[t]{llrrrrc}
+\toprule
+  & Comparison & Difference & Lower CI & Upper CI & Adj. p-value & Sig.\\
+\midrule
+\cellcolor{gray!10}{Hand:Effort_e_Amp_err-Force:Effort_e_Amp_err} & \cellcolor{gray!10}{Hand:Effort_e_Amp_err-Force:Effort_e_Amp_err} & \cellcolor{gray!10}{-4.16e+00} & \cellcolor{gray!10}{-1.57e+01} & \cellcolor{gray!10}{7.40e+00} & \cellcolor{gray!10}{0.9083105} & \cellcolor{gray!10}{ns}\\
+Force:Occ_Dropped_mvc-Force:Effort_e_Amp_err & Force:Occ_Dropped_mvc-Force:Effort_e_Amp_err & 4.23e+00 & -9.03e+00 & 1.75e+01 & 0.9438135 & ns\\
+\cellcolor{gray!10}{Hand:Occ_Dropped_mvc-Force:Effort_e_Amp_err} & \cellcolor{gray!10}{Hand:Occ_Dropped_mvc-Force:Effort_e_Amp_err} & \cellcolor{gray!10}{1.67e+01} & \cellcolor{gray!10}{5.11e+00} & \cellcolor{gray!10}{2.82e+01} & \cellcolor{gray!10}{0.0005891} & \cellcolor{gray!10}{***}\\
+Force:Occ_mvc-Force:Effort_e_Amp_err & Force:Occ_mvc-Force:Effort_e_Amp_err & 1.36e+01 & 3.05e-01 & 2.68e+01 & 0.0414900 & *\\
+\cellcolor{gray!10}{Hand:Occ_mvc-Force:Effort_e_Amp_err} & \cellcolor{gray!10}{Hand:Occ_mvc-Force:Effort_e_Amp_err} & \cellcolor{gray!10}{1.95e+01} & \cellcolor{gray!10}{7.94e+00} & \cellcolor{gray!10}{3.11e+01} & \cellcolor{gray!10}{0.0000249} & \cellcolor{gray!10}{***}\\
+\addlinespace
+Force:Occ_Dropped_mvc-Hand:Effort_e_Amp_err & Force:Occ_Dropped_mvc-Hand:Effort_e_Amp_err & 8.39e+00 & -3.17e+00 & 1.99e+01 & 0.3025010 & ns\\
+\cellcolor{gray!10}{Hand:Occ_Dropped_mvc-Hand:Effort_e_Amp_err} & \cellcolor{gray!10}{Hand:Occ_Dropped_mvc-Hand:Effort_e_Amp_err} & \cellcolor{gray!10}{2.08e+01} & \cellcolor{gray!10}{1.13e+01} & \cellcolor{gray!10}{3.04e+01} & \cellcolor{gray!10}{0.0000000} & \cellcolor{gray!10}{***}\\
+Force:Occ_mvc-Hand:Effort_e_Amp_err & Force:Occ_mvc-Hand:Effort_e_Amp_err & 1.77e+01 & 6.16e+00 & 2.93e+01 & 0.0001931 & ***\\
+\cellcolor{gray!10}{Hand:Occ_mvc-Hand:Effort_e_Amp_err} & \cellcolor{gray!10}{Hand:Occ_mvc-Hand:Effort_e_Amp_err} & \cellcolor{gray!10}{2.37e+01} & \cellcolor{gray!10}{1.41e+01} & \cellcolor{gray!10}{3.32e+01} & \cellcolor{gray!10}{0.0000000} & \cellcolor{gray!10}{***}\\
+Hand:Occ_Dropped_mvc-Force:Occ_Dropped_mvc & Hand:Occ_Dropped_mvc-Force:Occ_Dropped_mvc & 1.24e+01 & 8.88e-01 & 2.40e+01 & 0.0262797 & *\\
+\addlinespace
+\cellcolor{gray!10}{Force:Occ_mvc-Force:Occ_Dropped_mvc} & \cellcolor{gray!10}{Force:Occ_mvc-Force:Occ_Dropped_mvc} & \cellcolor{gray!10}{9.33e+00} & \cellcolor{gray!10}{-3.92e+00} & \cellcolor{gray!10}{2.26e+01} & \cellcolor{gray!10}{0.3369426} & \cellcolor{gray!10}{ns}\\
+Hand:Occ_mvc-Force:Occ_Dropped_mvc & Hand:Occ_mvc-Force:Occ_Dropped_mvc & 1.53e+01 & 3.72e+00 & 2.68e+01 & 0.0023530 & **\\
+\cellcolor{gray!10}{Force:Occ_mvc-Hand:Occ_Dropped_mvc} & \cellcolor{gray!10}{Force:Occ_mvc-Hand:Occ_Dropped_mvc} & \cellcolor{gray!10}{-3.12e+00} & \cellcolor{gray!10}{-1.47e+01} & \cellcolor{gray!10}{8.44e+00} & \cellcolor{gray!10}{0.9724681} & \cellcolor{gray!10}{ns}\\
+Hand:Occ_mvc-Hand:Occ_Dropped_mvc & Hand:Occ_mvc-Hand:Occ_Dropped_mvc & 2.83e+00 & -6.74e+00 & 1.24e+01 & 0.9591864 & ns\\
+\cellcolor{gray!10}{Hand:Occ_mvc-Force:Occ_mvc} & \cellcolor{gray!10}{Hand:Occ_mvc-Force:Occ_mvc} & \cellcolor{gray!10}{5.95e+00} & \cellcolor{gray!10}{-5.61e+00} & \cellcolor{gray!10}{1.75e+01} & \cellcolor{gray!10}{0.6843247} & \cellcolor{gray!10}{ns}\\
+\bottomrule
+\multicolumn{7}{l}{\rule{0pt}{1em}\textit{Note:} *** p < 0.001, ** p < 0.01, * p < 0.05, ns = not significant}\\
+\end{tabular}}
+\end{table}

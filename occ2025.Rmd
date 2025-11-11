@@ -39,7 +39,7 @@ options(dplyr.summarise.inform = FALSE)
 coefraw<- read_csv("occ_coef2.csv",show_col_types = FALSE)
 droppedocc<- read_csv("dropped_occ5.csv",show_col_types = FALSE)
 
-occraw<- read_csv("occlusion_v10.csv",show_col_types = FALSE)
+occraw<- read_csv("occ_embc2025.csv",show_col_types = FALSE)
 err_raw<- read_csv("occ_est_error7.csv",show_col_types = FALSE)
 rmse_raw<- read_csv("rmse4.csv",show_col_types = FALSE)
 
@@ -154,6 +154,7 @@ rmse<-rmse_raw%>%mutate(MVC_Voli_Cat=recode(MVC_Voli,
 
 rmse<-rmse%>%mutate(Test = as.factor(Test),
                        Effort_Type = as.factor(Effort_Type),
+                       Error_Type = as.factor(Error_Type),
                        Filt = as.factor(Filt),
                        Test = as.factor(Test),
                        Ref_Trial = as.integer(Ref_Trial),
@@ -167,8 +168,7 @@ trial_stats<-trial_stats_raw%>%mutate(Test = as.factor(Test),
                        Test = as.factor(Test))
 
 
-
-summary(rmse$Test)
+summary(occ$Test)
 ```
 
 
@@ -268,9 +268,9 @@ ggplot(df_summary, aes(x = MVC_Stim_Cat, y = Count, fill = MVC_Voli_Cat)) +
 
 ```
 
-``` {r anova_results wit tukey HSD comparing Filters}
+``` {r ANOVA for RMSE with tukey HSD comparing Filters}
 
-tb_force<-plot_rmse %>%filter(Effort_Type=="Force")
+tb_force<-plot_rmse %>%filter(Effort_Type=="Hand")
 model <- aov(Error ~  Filt * MVC_Voli_Cat, data = tb_force)
 
 tidy_results <- tidy(model) %>%
@@ -425,4 +425,556 @@ print(anova_summary)
 ```
 
 
+```{r }
+plot_rmse<-filter(rmse, Error_Type=="MAV", Norm==FALSE) %>% filter(!(MVC_Stim==0 & Filt!="Unfilt"))%>%
+    mutate(Filt = if_else(MVC_Stim == 0, "Ref", Filt))
 
+g1 <- ggboxplot(plot_rmse, x = "MVC_Voli_Cat", y = "Error", fill = "Filt", palette = "jco", short.panel.labs = FALSE,ylim=c(0,0.0003))+
+  facet_wrap(~Effort_Type)+
+  labs(
+    x = "Percent Voluntary Effort (%)",
+    y = "MAV (V)",
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants", length(unique(plot_rmse$Test)))) +  
+  theme_minimal() +
+  theme(
+    strip.background = element_blank(),
+    strip.text = element_text(size = 16),  # Facet labels
+    legend.position = c(0.5, 0.7),
+    legend.background = element_rect(fill = alpha("white", 0.6)),
+    legend.title = element_text(size = 14),  # Legend title
+    legend.text = element_text(size = 12),   # Legend text
+    axis.title.x = element_text(size = 16),  # X-axis label
+    axis.title.y = element_text(size = 16),  # Y-axis label
+    axis.text.x = element_text(size = 14),   # X-axis tick labels
+    axis.text.y = element_text(size = 14),   # Y-axis tick labels
+    plot.title = element_text(size = 18, face = "bold"),     # Title
+    plot.subtitle = element_text(size = 14)  # Subtitle
+  )+
+    # Significance lines for Force facet
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 1, xend = 2, y = 2.2e-04, yend = 2.2e-04), color = "black") +
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 1, xend = 1, y = 2.2e-04, yend = 2.1e-04), color = "black") +
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 2, xend = 2, y = 2.2e-04, yend = 2.1e-04), color = "black") +
+  annotate("text", x = 1.5, y = 2.3e-04, label = "**", size = 5, 
+           data = data.frame(Effort_Type = "Force")) +
+  
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 2, xend = 3, y = 2.5e-04, yend = 2.5e-04), color = "black") +
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 2, xend = 2, y = 2.5e-04, yend = 2.4e-04), color = "black") +
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 3, xend = 3, y = 2.5e-04, yend = 2.4e-04), color = "black") +
+  annotate("text", x = 2.5, y = 2.6e-04, label = "***", size = 5, 
+           data = data.frame(Effort_Type = "Force")) +
+  
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 3, xend = 4, y = 2.7e-04, yend = 2.7e-04), color = "black") +
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 3, xend = 3, y = 2.7e-04, yend = 2.6e-04), color = "black") +
+  geom_segment(data = data.frame(Effort_Type = "Force"), 
+               aes(x = 4, xend = 4, y = 2.7e-04, yend = 2.6e-04), color = "black") +
+  annotate("text", x = 3.5, y = 2.8e-04, label = "***", size = 5, 
+           data = data.frame(Effort_Type = "Force")) 
+  
+  
+g1
+ggsave("figures/mav_signif.pdf", plot = g1, width = 8, height = 6, dpi = 300)
+
+```
+
+
+```{r }
+g2 <- ggboxplot(plot_rmse, x = "MVC_Voli_Cat", y = "Error", fill = "Filt", 
+                palette = "jco", short.panel.labs = FALSE, ylim = c(0, 0.0005)) +
+  labs(
+    x = "MVC Voluntary Category",
+    y = "Normalized Root Mean Squared Error",
+    title = "Finger Extension Experiments",
+    subtitle = sprintf("%d participants", length(unique(plot_rmse$Test)))) +  
+  theme_minimal() +
+  facet_wrap(~Filt) +  # Or use whatever variable you want to facet by
+
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.15, 0.35),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+
+g2
+g1/g2
+
+```
+
+``` {r ANOVA for MAV with tukey HSD comparing Filters}
+
+tb_force<-plot_rmse %>%filter(Effort_Type=="Force")
+
+model <- aov(Error ~  MVC_Voli_Cat, data = tb_force)
+
+tidy_results <- tidy(model) %>%
+  mutate(across(where(is.numeric), round, 4)) %>%
+  select(term, df, sumsq, meansq, statistic, p.value)
+
+print(tidy_results)
+# Post-hoc for Filt
+# TukeyHSD(model, "Filt")
+# Post-hoc for MVC_Voli_Cat
+TukeyHSD(model, "MVC_Voli_Cat")
+
+
+library(broom)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+# Function to add significance stars
+add_sig_stars <- function(p_value) {
+  case_when(
+    p_value < 0.001 ~ "***",
+    p_value < 0.01 ~ "**",
+    p_value < 0.05 ~ "*",
+    TRUE ~ ""
+  )
+}
+
+# ============================================
+# FORCE EXPERIMENT - MVC_Voli_Cat
+# ============================================
+tb_force <- plot_rmse %>% filter(Effort_Type == "Force")
+model_force_mvc <- aov(Error ~ MVC_Voli_Cat, data = tb_force)
+
+# Tukey HSD for MVC_Voli_Cat (Force)
+tukey_mvc_force <- TukeyHSD(model_force_mvc, "MVC_Voli_Cat")
+tukey_mvc_force_df <- as.data.frame(tukey_mvc_force$MVC_Voli_Cat)
+tukey_mvc_force_df <- tukey_mvc_force_df %>%
+  mutate(across(where(is.numeric), ~round(., 6))) %>%  # 6 decimals for scientific notation
+  mutate(sig = add_sig_stars(`p adj`)) %>%
+  select(diff, lwr, upr, `p adj`, sig)
+
+# ============================================
+# HAND EXPERIMENT - MVC_Voli_Cat (if applicable)
+# ============================================
+tb_hand <- plot_rmse %>% filter(Effort_Type == "Hand")
+model_hand_mvc <- aov(Error ~ MVC_Voli_Cat, data = tb_hand)
+
+# Tukey HSD for MVC_Voli_Cat (Hand)
+tukey_mvc_hand <- TukeyHSD(model_hand_mvc, "MVC_Voli_Cat")
+tukey_mvc_hand_df <- as.data.frame(tukey_mvc_hand$MVC_Voli_Cat)
+tukey_mvc_hand_df <- tukey_mvc_hand_df %>%
+  mutate(across(where(is.numeric), ~round(., 6))) %>%
+  mutate(sig = add_sig_stars(`p adj`)) %>%
+  select(diff, lwr, upr, `p adj`, sig)
+
+# ============================================
+# COMBINE INTO ONE TABLE
+# ============================================
+tukey_mvc_combined <- rbind(tukey_mvc_hand_df, tukey_mvc_force_df)
+
+# View results
+print(tukey_mvc_combined)
+
+# Create combined LaTeX table with row names
+latex_mvc_combined <- kable(tukey_mvc_combined,
+                        format = "latex",
+                        booktabs = TRUE,
+                        escape = FALSE,
+                        align = c("r", "r", "r", "r", "c"),
+                        col.names = c("Difference", "Lower CI", "Upper CI", 
+                                     "Adj. p-value", "Sig."),
+                        caption = "Tukey HSD Post-hoc Comparisons for Voluntary Effort Level",
+                        label = "tukey-mvc-combined",
+                        row.names = TRUE) %>%  # Include row names
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                full_width = FALSE) %>%
+  pack_rows("Hand Experiment", 1, nrow(tukey_mvc_hand_df)) %>%
+  pack_rows("Force Experiment", nrow(tukey_mvc_hand_df) + 1, nrow(tukey_mvc_combined)) %>%
+  footnote(general = "*** p < 0.001, ** p < 0.01, * p < 0.05",
+           general_title = "Note:",
+           footnote_as_chunk = TRUE,
+           escape = FALSE)
+
+# Print and save
+cat(latex_mvc_combined)
+cat(latex_mvc_combined, file = "tukey_mvc_combined.tex")
+
+cat("\n=== FILE CREATED ===\n")
+cat("tukey_mvc_combined.tex\n")
+
+```
+
+
+```{r }
+
+tb_force <- plot_rmse %>% filter(Effort_Type == "Hand")
+model <- aov(Error ~ MVC_Voli_Cat*Filt, data = tb_force)
+tidy_results <- tidy(model) %>%
+  mutate(across(where(is.numeric), round, 4)) %>%
+  select(term, df, sumsq, meansq, statistic, p.value)
+print(tidy_results)
+
+# Post-hoc for MVC_Voli_Cat
+TukeyHSD(model, "MVC_Voli_Cat")
+
+library(broom)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+
+# Function to add significance stars
+add_sig_stars <- function(p_value) {
+  case_when(
+    p_value < 0.001 ~ "***",
+    p_value < 0.01 ~ "**",
+    p_value < 0.05 ~ "*",
+    TRUE ~ ""
+  )
+}
+
+# ============================================
+# FORCE EXPERIMENT - MVC_Voli_Cat
+# ============================================
+tb_force <- plot_rmse %>% filter(Effort_Type == "Force")
+model_force_mvc <- aov(Error ~ MVC_Voli_Cat, data = tb_force)
+
+# Tukey HSD for MVC_Voli_Cat (Force)
+tukey_mvc_force <- TukeyHSD(model_force_mvc, "MVC_Voli_Cat")
+tukey_mvc_force_df <- as.data.frame(tukey_mvc_force$MVC_Voli_Cat)
+tukey_mvc_force_df <- tukey_mvc_force_df %>%
+  mutate(across(where(is.numeric), ~round(., 6))) %>%  # 6 decimals for scientific notation
+  mutate(sig = add_sig_stars(`p adj`)) %>%
+  select(diff, lwr, upr, `p adj`, sig)
+
+# Remove underscores from row names
+rownames(tukey_mvc_force_df) <- gsub("Voli_", "Voli ", rownames(tukey_mvc_force_df))
+
+# ============================================
+# HAND EXPERIMENT - MVC_Voli_Cat (if applicable)
+# ============================================
+tb_hand <- plot_rmse %>% filter(Effort_Type == "Hand")
+model_hand_mvc <- aov(Error ~ MVC_Voli_Cat, data = tb_hand)
+
+# Tukey HSD for MVC_Voli_Cat (Hand)
+tukey_mvc_hand <- TukeyHSD(model_hand_mvc, "MVC_Voli_Cat")
+tukey_mvc_hand_df <- as.data.frame(tukey_mvc_hand$MVC_Voli_Cat)
+tukey_mvc_hand_df <- tukey_mvc_hand_df %>%
+  mutate(across(where(is.numeric), ~round(., 6))) %>%
+  mutate(sig = add_sig_stars(`p adj`)) %>%
+  select(diff, lwr, upr, `p adj`, sig)
+
+# Remove underscores from row names
+rownames(tukey_mvc_hand_df) <- gsub("Voli_", "Voli ", rownames(tukey_mvc_hand_df))
+
+# ============================================
+# COMBINE INTO ONE TABLE
+# ============================================
+tukey_mvc_combined <- rbind(tukey_mvc_hand_df, tukey_mvc_force_df)
+
+# View results
+print(tukey_mvc_combined)
+
+# Create combined LaTeX table with row names
+latex_mvc_combined <- kable(tukey_mvc_combined,
+                        format = "latex",
+                        booktabs = TRUE,
+                        escape = FALSE,
+                        align = c("r", "r", "r", "r", "c"),
+                        col.names = c("Difference", "Lower CI", "Upper CI", 
+                                     "Adj. p-value", "Sig."),
+                        caption = "Tukey HSD Post-hoc Comparisons for Voluntary Effort Level",
+                        label = "tukey-mvc-combined",
+                        row.names = TRUE) %>%  # Include row names
+  kable_styling(latex_options = c("hold_position", "scale_down"),
+                full_width = FALSE) %>%
+  pack_rows("Hand Experiment", 1, nrow(tukey_mvc_hand_df)) %>%
+  pack_rows("Force Experiment", nrow(tukey_mvc_hand_df) + 1, nrow(tukey_mvc_combined)) %>%
+  footnote(general = "*** p < 0.001, ** p < 0.01, * p < 0.05",
+           general_title = "Note:",
+           footnote_as_chunk = TRUE,
+           escape = FALSE)
+
+# Print and save
+cat(latex_mvc_combined)
+cat(latex_mvc_combined, file = "tukey_mvc_combined.tex")
+
+cat("\n=== FILE CREATED ===\n")
+cat("tukey_mvc_combined.tex\n")
+```
+
+```{r }
+
+library(broom)
+library(dplyr)
+library(patchwork)
+
+
+
+annotation_data1 <- data.frame(Feat = c("Hand Opening", "MAV"), 
+                              x = 20, 
+                              y = 95, 
+                              label = c("(a)", "(b)"))
+
+annotation_data2 <- data.frame(Feat = c("Hand Opening", "MAV"), 
+                              x = 20, 
+                              y = 75, 
+                              label = c("(c)", "(d)"))
+
+# Calculate linear regression statistics for each condition and feature
+get_slope_stats <- function(data, response_var) {
+  data %>%
+    group_by(MVC_Stim_Cat, Feat) %>%
+    do({
+      formula_str <- paste(response_var, "~ MVC_Voli")
+      model <- lm(as.formula(formula_str), data = .)
+      
+      # Get model statistics
+      model_summary <- glance(model)
+      coef_summary <- tidy(model) %>% filter(term == "MVC_Voli")
+      
+      data.frame(
+        n = nrow(.),
+        slope = coef_summary$estimate,
+        r_squared = model_summary$r.squared,
+        p.value = coef_summary$p.value
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(
+      p_label = case_when(
+        p.value < 0.001 ~ "p < 0.001***",
+        p.value < 0.01 ~ sprintf("p = %.3f**", p.value),
+        p.value < 0.05 ~ sprintf("p = %.3f*", p.value),
+        TRUE ~ sprintf("p = %.3f", p.value)
+      )
+    )
+}
+
+# Calculate statistics for both response variables
+stats_data1 <- get_slope_stats(plot_tibble, "vprime_mvc")
+stats_data2 <- get_slope_stats(plot_tibble, "Occ_mvc")
+
+# Create p-value annotations (left box)
+create_pval_annotation <- function(stats_data, colors) {
+  stats_data %>%
+    group_by(Feat) %>%
+    summarise(
+      pval_text = paste(
+        paste(sprintf("%s (n=%d):, s=%.3f,", c("10% Stim", "20% Stim", "30% Stim"), n, slope), 
+              p_label, collapse = "\n"),
+        sep = "\n"
+      ),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      x = 23,  # Center-left position
+      y = 110   # Top of plot
+    )
+}
+
+# # Create R-squared and slope annotations (right box)
+# create_rsq_slope_annotation <- function(stats_data) {
+#   stats_data %>%
+#     group_by(Feat) %>%
+#     summarise(
+#       rsq_slope_text = paste(
+#         "R² and Slope:",
+#         paste(sprintf("%s: R²=%.3f, β=%.3f", 
+#                       c("10% Stim", "20% Stim", "30% Stim"), 
+#                       r_squared, slope), 
+#               collapse = "\n"),
+#         sep = "\n"
+#       ),
+#       .groups = "drop"
+#     ) %>%
+#     mutate(
+#       x = 36,  # Center-right position (side by side with p-values)
+#       y = 110   # Same y position as p-values
+#     )
+# }
+
+pval_annotation1 <- create_pval_annotation(stats_data1)
+# rsq_annotation1 <- create_rsq_slope_annotation(stats_data1)
+
+pval_annotation2 <- create_pval_annotation(stats_data2) %>%
+  mutate(y = 85)  # Adjust for second plot
+# rsq_annotation2 <- create_rsq_slope_annotation(stats_data2) %>%
+  # mutate(y = 75)  # Adjust for second plot
+
+# Update plot 1 with annotations
+p1 <- ggplot(plot_tibble, aes(x = MVC_Voli, y = vprime_mvc, color = MVC_Stim_Cat)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", size = 2, se = FALSE) +
+  geom_segment(aes(x = 20, y = 20, xend = 50, yend = 50, color = 'No Occlusion Level'), size = 2) +
+  facet_grid(~Feat) +
+  coord_cartesian(ylim = c(0, 110)) +  # Extended upper limit for annotations
+  labs(
+    x = expression("Volitional Hand Opening: V (% MFE)"),
+    y = expression("Maintained Effort: V' (% MFE)")
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = "top",
+    legend.background = element_rect(fill = alpha("white", 0.6)),
+    axis.title.y = element_text(size = 14),
+        axis.title.x = element_blank(),      # Remove x-axis label
+    axis.text.x = element_blank(),       # Remove x-axis tick labels
+  ) +
+  scale_color_manual(
+    labels = c('No occlusion level', '10% Stim', '20% Stim', '30% Stim'),
+    name = expression(""),
+    values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat)), 
+               "No Occlusion Level" = "black")
+  ) +
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat))), "dashed")))) +
+  geom_text(
+    data = annotation_data1, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black", fontface = "bold"
+  ) +
+  # Add p-value annotations (left box)
+  geom_label(
+    data = pval_annotation1,
+    aes(x = x, y = y, label = pval_text),
+    inherit.aes = FALSE,
+    hjust = 0,
+    vjust = 1,
+    size = 4,  # Matched to base_size (15pt / 3.75 ≈ 4)
+    fill = alpha("white", 0.85),
+    label.padding = unit(0.5, "lines"),
+    label.size = 0.25,
+    color = "black",
+  ) 
+
+# Update plot 2 with annotations
+p2 <- ggplot(plot_tibble, aes(x = MVC_Voli, y = Occ_mvc, color = MVC_Stim_Cat)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", size = 2, se = FALSE) +
+  facet_grid(~Feat) +
+  coord_cartesian(ylim = c(-10, 90)) +  # Extended upper limit for annotations
+  labs(
+    x = expression("Volitional Hand Opening: V (% MFE)"),
+    y = expression("Occluded Effort (% MFE)")
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = "none",
+    axis.title.x = element_text(size = 14),  
+    axis.title.y = element_text(size = 14)   
+  ) +
+  scale_color_manual(
+    values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat)))
+  ) +
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat))))))) +
+  geom_text(
+    data = annotation_data2,
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black", fontface = "bold"
+  ) +
+  # Add p-value annotations (left box)
+  geom_label(
+    data = pval_annotation2,
+    aes(x = x, y = y, label = pval_text),
+    inherit.aes = FALSE,
+    hjust = 0,
+    vjust = 1,
+    size = 4,  # Matched to base_size
+    fill = alpha("white", 0.85),
+    label.padding = unit(0.4, "lines"),
+    label.size = 0.25,
+    color = "black"
+  ) 
+
+# Combine plots
+combined_plot <- p1 / p2
+combined_plot
+ggsave("figures/hand_occ.pdf", plot = combined_plot, width = 8, height = 10, dpi = 300)
+
+```
+
+
+```{r }
+plot_tibble<-filter(occ2, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
+NumofTest<-length(unique(plot_tibble$Test) )
+default_colors <- hue_pal()(length(unique(plot_tibble$MVC_Stim_Cat)))
+plot_tibble<-plot_tibble%>%mutate(Feat=recode(Feat,
+                                             'EffortMea' = 'Hand Opening'))
+
+annotation_data1 <- data.frame(Feat = c("Hand Opening", "MAV"), 
+                              x = 20, 
+                              y = 100, 
+                              label = c("(a)", "(b)"))
+
+annotation_data2 <- data.frame(Feat = c("Hand Opening", "MAV"), 
+                              x = 20, 
+                              y = 80, 
+                              label = c("(c)", "(d)"))
+
+p1<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Cat)) +
+    geom_point(size = 2) +
+    geom_smooth(method = "lm", size = 2,se = FALSE) +
+    geom_segment(aes(x = 20, y = 20, xend = 50, yend = 50, color='No Occlusion Level'),size = 2) +
+ #   facet_grid(EffortType~Feat)+
+   #  facet_grid(~Feat, labeller =facet_labels)+
+    facet_grid(~Feat) +
+    coord_cartesian(ylim=c(-10,100)) + 
+    labs(x = expression("Volitional Hand Opening: V (% MFE)"),
+    y = expression("Maintained Hand Opening: V' (% MFE)"))+
+      theme_minimal(base_size = 15) +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    legend.position="top",
+    #legend.position = c(0.2, 0.4),  # Position legend inside the plot (top-right corner)
+    legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )+
+ scale_color_manual(
+    values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat)), 
+               "No Occlusion Level" = "black"))+
+       scale_color_manual(labels=c('No occlusion level','10% Stim', '20% Stim', '30% Stim'),name=expression(""),values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat)), 
+               "No Occlusion Level" = "black")
+  ) +
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat))), "dashed"))))+
+  geom_text(
+    data = annotation_data1, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black",fontface = "bold"
+  )
+
+p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat)) +
+    geom_point(size = 2) +
+    geom_smooth(method = "lm", size = 2,se = FALSE)+
+ #   facet_grid(EffortType~Feat)+
+     facet_grid(~Feat)+
+  coord_cartesian(ylim=c(-20, 80)) + 
+    labs(x = expression("Volitional Hand Opening: V (% MFE)"),
+    y = expression("Occluded Hand Opening (% MFE)")
+    )+
+        theme_minimal(base_size = 15) +
+  theme(
+    strip.background = element_blank(),
+    #strip.text = element_text(face = "bold"),
+    #legend.position="top",
+    legend.position = "none",  # Position legend inside the plot (top-right corner)
+   # legend.background = element_rect(fill = alpha("white", 0.6))  # Semi-transparent background for readability
+  )+
+ scale_color_manual(
+    values = c(setNames(default_colors, unique(plot_tibble$MVC_Stim_Cat))))+
+  guides(color = guide_legend(override.aes = list(linetype = c(rep("solid", length(unique(plot_tibble$MVC_Stim_Cat)))))))+
+  geom_text(
+    data = annotation_data2, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black",fontface = "bold"
+  )
+
+#pdf("finger_occ_lines3.pdf", width = 8, height = 10) 
+suppressWarnings(print(p1/p2))
+#dev.off()
+
+# ggsave("figures/hand_occ.pdf", plot = p1/p2, width = 11, height = 8, dpi = 300)
+
+
+```

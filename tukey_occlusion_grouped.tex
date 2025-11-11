@@ -1,0 +1,23 @@
+\begin{table}[!h]
+\centering
+\caption{TUKEY HSD POST-HOC COMPARISONS FOR OCCLUSION CORRECTION METHODS}
+\centering
+\fontsize{10}{12}\selectfont
+\begin{tabular}[t]{llrrrrc}
+\toprule
+  &  & Difference & Lower CI & Upper CI & Adj. p-value & Sig.\\
+\midrule
+\addlinespace[0.5em]
+\multicolumn{7}{l}{\textit{Force Experiment}}\\
+\hspace{1em}Occ_Dropped_mvc-Effort_e_Amp_err...1 & Dropped Frames-Uncorrected & 4.2e+00 & -7.0e-01 & 9.2e+00 & 0.108956 & ns\\
+\hspace{1em}Occ_mvc-Effort_e_Amp_err...2 & Force Corrected-Uncorrected & 1.4e+01 & 8.6e+00 & 1.8e+01 & 0.000000 & ***\\
+\hspace{1em}Occ_mvc-Occ_Dropped_mvc...3 & Force Corrected-Dropped Frames & 9.3e+00 & 4.4e+00 & 1.4e+01 & 0.000034 & ***\\
+\addlinespace[0.5em]
+\multicolumn{7}{l}{\textit{Hand Experiment}}\\
+\hspace{1em}Occ_Dropped_mvc-Effort_e_Amp_err...4 & Dropped Frames-Uncorrected & 2.1e+01 & 1.1e+01 & 3.0e+01 & 0.000001 & ***\\
+\hspace{1em}Occ_mvc-Effort_e_Amp_err...5 & Force Corrected-Uncorrected & 2.4e+01 & 1.4e+01 & 3.3e+01 & 0.000000 & ***\\
+\hspace{1em}Occ_mvc-Occ_Dropped_mvc...6 & Force Corrected-Dropped Frames & 2.8e+00 & -6.5e+00 & 1.2e+01 & 0.757884 & ns\\
+\bottomrule
+\multicolumn{7}{l}{\rule{0pt}{1em}\textit{Note:} *** p < 0.001, ** p < 0.01, * p < 0.05}\\
+\end{tabular}
+\end{table}

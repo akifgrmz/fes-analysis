@@ -1,0 +1,16 @@
+\begin{table}[!h]
+\centering
+\caption{Tukey HSD Post-hoc Comparisons for Occlusion Correction Methods}
+\centering
+\fontsize{10}{12}\selectfont
+\begin{tabular}[t]{llrrrrc}
+\toprule
+  & Comparison & Difference & Lower CI & Upper CI & Adj. p-value & Sig.\\
+\midrule
+Occ_Dropped_mvc-Effort_e_Amp_err & Dropped Frames - Uncorrected & 1.51e+01 & 8.76e+00 & 2.15e+01 & 0.0000001 & ***\\
+Occ_mvc-Effort_e_Amp_err & Force Corrected - Uncorrected & 2.02e+01 & 1.38e+01 & 2.66e+01 & 0.0000000 & ***\\
+Occ_mvc-Occ_Dropped_mvc & Force Corrected - Dropped Frames & 5.06e+00 & -1.32e+00 & 1.14e+01 & 0.1506351 & ns\\
+\bottomrule
+\multicolumn{7}{l}{\rule{0pt}{1em}\textit{Note:} *** p < 0.001, ** p < 0.01, * p < 0.05, ns = not significant}\\
+\end{tabular}
+\end{table}

@@ -43,7 +43,7 @@ occraw%>%count(Test)
 occraw2<- read_csv("occlusion_v10.csv",show_col_types = FALSE)
 occraw2%>%count(Test,EffortType)
 
-err_raw<- read_csv("occerr_embc2025.csv",show_col_types = FALSE)
+err_raw<- read_csv("occ_est_error4.csv",show_col_types = FALSE)
 err_raw%>%count(Test)
 
 trial_stats_raw<- read_csv("trial_stats2.csv",show_col_types = FALSE)
@@ -208,7 +208,7 @@ p1<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Ca
     coord_cartesian(ylim=c(-10,80)) + 
     labs(x = expression("Volitional Effort: V (% MVC)"),
     y = expression("Maintained Volitional Effort: V' (% MVC)"))+
-      theme_minimal(base_size = 17) +
+      theme_minimal(base_size = 15) +
   theme(
     strip.background = element_blank(),
     #strip.text = element_text(face = "bold"),
@@ -235,7 +235,7 @@ p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat))
     labs(x = expression("Volitional Effort: V (% MVC)"),
     y = expression("Occluded Effort (% MVC)")
     ) +
-        theme_minimal(base_size = 17) +
+        theme_minimal(base_size = 15) +
   theme(
   strip.text = element_blank(),    
     strip.background = element_blank(),
@@ -255,7 +255,9 @@ geom_text(
 
 #pdf("force_occ_lines2.pdf", width = 8, height = 10) 
 
-suppressWarnings(print(p1/p2))
+# suppressWarnings(print(p1/p2))
+
+#ggsave("figures/force_occ.pdf", plot = p1/p2, width = 11, height = 8, dpi = 300)
 
 #dev.off()
 ```
@@ -290,7 +292,7 @@ p1<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = vprime_mvc , color = MVC_Stim_Ca
     coord_cartesian(ylim=c(-10,100)) + 
     labs(x = expression("Volitional Hand Opening: V (% MFE)"),
     y = expression("Maintained Hand Opening: V' (% MFE)"))+
-      theme_minimal(base_size = 17) +
+      theme_minimal(base_size = 15) +
   theme(
     strip.background = element_blank(),
     #strip.text = element_text(face = "bold"),
@@ -320,7 +322,7 @@ p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat))
     labs(x = expression("Volitional Hand Opening: V (% MFE)"),
     y = expression("Occluded Hand Opening (% MFE)")
     ) +
-        theme_minimal(base_size = 17) +
+        theme_minimal(base_size = 15) +
   theme(
     strip.background = element_blank(),
     #strip.text = element_text(face = "bold"),
@@ -337,10 +339,12 @@ p2<-ggplot(plot_tibble, aes(x =  MVC_Voli , y = Occ_mvc , color = MVC_Stim_Cat))
     size = 7, color = "black",fontface = "bold"
   )
 
-
 #pdf("finger_occ_lines3.pdf", width = 8, height = 10) 
 suppressWarnings(print(p1/p2))
 #dev.off()
+
+#ggsave("figures/hand_occ.pdf", plot = p1/p2, width = 11, height = 8, dpi = 300)
+
 ```
 
 
@@ -476,10 +480,10 @@ occ_err_long1<-occ_err_long1%>%mutate(Occ_Error_Type=recode(Occ_Error_Type,
 p2<-ggplot(occ_err_long1, aes(x =  Occ_Error_Type , y = Error+7, color=Occ_Error_Type )) +
   geom_boxplot(notch=TRUE)+
   geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
-  ylim(-50, 45)+
+  ylim(-60, 60)+
   annotate("text", x=0.55, y=39, label= "(d)", size=6,fontface = "bold") +  
   
- # geom_signif(comparisons = list(c("Uncorrected","Force\nCorrected")),
+ geom_signif(comparisons = list(c("Uncorrected","Force\nCorrected")),
 #              y_position = 30, 
    #           tip_length = 0.02, 
    #           vjust = 0.1, 
@@ -502,7 +506,9 @@ p2<-ggplot(occ_err_long1, aes(x =  Occ_Error_Type , y = Error+7, color=Occ_Error
   labs(x = NULL,
        y = "Estimation Error (% Effort)")+
   #subtitle = "                           (c)  ")+
-  scale_color_hue(labels=c('Uncorrected','Dropped Frames\n Corrected', 'Force Corrected'),
+  scale_color_hue(labels=c('Uncorrected',
+                           'Dropped Frames\n Corrected', 
+                           'Force Corrected'),
                   name="Correction Methods"
                   )+
   theme_minimal(base_size = 14
@@ -520,7 +526,7 @@ p3<-ggplot(occ_err_long2, aes(x =  Filt , y = Error+7, color = Filt)) +
     geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
     #geom_smooth(method = "lm")+ 
     #geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
-  ylim(-50, 45)+
+  ylim(-60, 60)+
     annotate("text", x=0.55, y=39, label= "(e)", size=6,fontface = "bold") +  
     geom_signif(comparisons = list(c("Unfilt","GS")), 
                 y_position = 15, 
@@ -555,9 +561,12 @@ suppressWarnings(print(p1/(p2-p3)))
 
 #pdf("occerr_the2.pdf", width = 7, height = 8)  # specify dimensions in inches
 
-#suppressWarnings(print(p1/(p2-p3)))
+# suppressWarnings(print(p1/(p2-p3)))
 
 #dev.off()
+
+# ggsave("figures/corrected_effort.pdf", plot = p2-p3, width = 8, height = 5, dpi = 300)
+
 ```
 
 
@@ -713,4 +722,256 @@ g1/p1
 # 
 # dev.off()
 
+```
+
+
+```{r occ2025}
+
+filt="GS"
+type='Occ_Hybrid_mvc'
+Log=FALSE
+occ_err<-filter(err, MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log)%>%
+  select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC,EffortType,Filt)
+
+occ_err_wide<-occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
+
+occ_err_long<-occ_err_wide%>%pivot_longer(cols=c('Occ_mvc','Effort_e_Amp_err','Occ_Dropped_mvc'),
+                                    names_to='Occ_Error_Type',
+                                    values_to='Error')%>%mutate(Occ_Error_Type = as.factor(Occ_Error_Type)) %>%
+  mutate(
+    Occ_Error_Type = as.factor(Occ_Error_Type),
+    Error = case_when(
+      Occ_Error_Type == "Occ_Dropped_mvc" ~ Error,
+      TRUE ~ Error  # Keep other values unchanged
+    )
+  )
+
+occ_err1<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log)
+
+occ_err_long <- occ_err_long %>%
+  mutate(Occ_Error_Type = relevel(Occ_Error_Type, ref = "Effort_e_Amp_err"))
+
+#my_labeller <- as_labeller(c(Occ_mvc="E[o]+E[e]", Effort_e_Amp_err="E[e]", Occ_Dropped_mvc="E[d]+E[e]"),
+ #                         default = label_parsed)
+
+my_labeller <- as_labeller(c(Occ_mvc="Corrected", Effort_e_Amp_err="Uncorrected",Occ_Dropped_mvc="DroppedFrames"),
+                           default = label_parsed)
+
+annotation_df <- data.frame(
+  EffortType = unique(occ_err_long1$EffortType),
+  label = c("(a)", "(b)"),  # Adjust based on number of facets
+  x = 0.55,
+  y = 55
+)
+
+occ_err_long1<-filter(occ_err_long, Filt==filt)
+
+p2<-ggplot(occ_err_long1, aes(x =  Occ_Error_Type , y = Error, color=Occ_Error_Type )) +
+  geom_boxplot(notch=TRUE)+
+  geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
+  facet_wrap(~EffortType)+
+  ylim(-60, 60)+
+geom_text(data = annotation_df, 
+            aes(x = x, y = y, label = label),
+            inherit.aes = FALSE,
+            size = 6, 
+            fontface = "bold",
+            color = "black") +  
+  # annotate("text", x=0.55, y=39, label= "(d)", size=6,fontface = "bold") +  
+ geom_signif(comparisons = list(c("Uncorrected","Force\nCorrected")),
+#              y_position = 30, 
+   #           tip_length = 0.02, 
+   #           vjust = 0.1, 
+    #          size = 0.8, 
+              textsize = 8, 
+   #           map_signif_level=TRUE,
+              annotation = c("*"),
+              color = "black"
+              ) +
+  geom_signif(comparisons = list(c("Uncorrected","Dropped\nFrames")), 
+              y_position = 15, 
+              tip_length = 0.02, 
+              vjust = 0.1, 
+              size = 0.8, 
+              textsize = 8, 
+              map_signif_level=TRUE,
+              annotation = c("*"),
+              color = "black"
+              ) +
+  labs(x = NULL,
+       y = "Estimation Error (% Effort)")+
+  #subtitle = "                           (c)  ")+
+  scale_color_hue(labels=c('Uncorrected',
+                           'Dropped Frames\n Corrected', 
+                           'Maintained Effort Corrected'),
+                  name="Correction Methods"
+                  )+
+  theme_minimal(base_size = 14
+                ) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.9, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+    )
+
+p2
+#ggsave("figures/corrected_effort.pdf", plot = p2, width = 8, height = 5, dpi = 300)
+
+```
+
+
+```{r Anova for occlusion correction}
+
+tb_force<-occ_err_long1 %>%filter(EffortType=="Hand")
+model <- aov(Error ~  EffortType * Occ_Error_Type, data = occ_err_long1)
+
+tidy_results <- tidy(model) %>%
+  mutate(across(where(is.numeric), round, 3)) %>%
+  select(term, df, sumsq, meansq, statistic, p.value)
+
+print(tidy_results)
+# Post-hoc for Filt
+TukeyHSD(model)
+# Post-hoc for MVC_Voli_Cat
+ # TukeyHSD(model, "Occ_Error_Type")
+
+```
+
+```{r }
+library(broom)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+
+# Run separate ANOVAs for Force and Hand
+occ_err_force <- occ_err_long1 %>% filter(EffortType == "Force")
+occ_err_hand <- occ_err_long1 %>% filter(EffortType == "Hand")
+
+model_force <- aov(Error ~ Occ_Error_Type, data = occ_err_force)
+model_hand <- aov(Error ~ Occ_Error_Type, data = occ_err_hand)
+
+# Tukey HSD post-hoc tests
+tukey_force <- TukeyHSD(model_force)
+tukey_hand <- TukeyHSD(model_hand)
+
+# Extract and process Force comparisons
+tukey_force_df <- as.data.frame(tukey_force$Occ_Error_Type)
+tukey_force_df$Comparison <- rownames(tukey_force_df)
+tukey_force_filtered <- tukey_force_df %>%
+  filter(Comparison %in% c("Occ_Dropped_mvc-Effort_e_Amp_err",
+                           "Occ_mvc-Effort_e_Amp_err",
+                           "Occ_mvc-Occ_Dropped_mvc")) %>%
+  select(Comparison, diff, lwr, upr, `p adj`) %>%
+  mutate(
+    Comparison = case_when(
+      Comparison == "Occ_Dropped_mvc-Effort_e_Amp_err" ~ "Dropped Frames-Uncorrected",
+      Comparison == "Occ_mvc-Effort_e_Amp_err" ~ "Force Corrected-Uncorrected",
+      Comparison == "Occ_mvc-Occ_Dropped_mvc" ~ "Force Corrected-Dropped Frames",
+      TRUE ~ Comparison
+    ),
+    Difference = formatC(diff, format = "e", digits = 1),
+    `Lower CI` = formatC(lwr, format = "e", digits = 1),
+    `Upper CI` = formatC(upr, format = "e", digits = 1),
+    `Adj. p-value` = formatC(`p adj`, format = "f", digits = 6),
+    Sig. = case_when(
+      `p adj` < 0.001 ~ "***",
+      `p adj` < 0.01 ~ "**",
+      `p adj` < 0.05 ~ "*",
+      TRUE ~ "ns"
+    )
+  ) %>%
+  select(Comparison, Difference, `Lower CI`, `Upper CI`, `Adj. p-value`, Sig.)
+
+# Extract and process Hand comparisons
+tukey_hand_df <- as.data.frame(tukey_hand$Occ_Error_Type)
+tukey_hand_df$Comparison <- rownames(tukey_hand_df)
+tukey_hand_filtered <- tukey_hand_df %>%
+  filter(Comparison %in% c("Occ_Dropped_mvc-Effort_e_Amp_err",
+                           "Occ_mvc-Effort_e_Amp_err",
+                           "Occ_mvc-Occ_Dropped_mvc")) %>%
+  select(Comparison, diff, lwr, upr, `p adj`) %>%
+  mutate(
+    Comparison = case_when(
+      Comparison == "Occ_Dropped_mvc-Effort_e_Amp_err" ~ "Dropped Frames-Uncorrected",
+      Comparison == "Occ_mvc-Effort_e_Amp_err" ~ "Force Corrected-Uncorrected",
+      Comparison == "Occ_mvc-Occ_Dropped_mvc" ~ "Force Corrected-Dropped Frames",
+      TRUE ~ Comparison
+    ),
+    Difference = formatC(diff, format = "e", digits = 1),
+    `Lower CI` = formatC(lwr, format = "e", digits = 1),
+    `Upper CI` = formatC(upr, format = "e", digits = 1),
+    `Adj. p-value` = formatC(`p adj`, format = "f", digits = 6),
+    Sig. = case_when(
+      `p adj` < 0.001 ~ "***",
+      `p adj` < 0.01 ~ "**",
+      `p adj` < 0.05 ~ "*",
+      TRUE ~ "ns"
+    )
+  ) %>% select(Comparison, Difference, `Lower CI`, `Upper CI`, `Adj. p-value`, Sig.)
+
+# Add experiment labels
+tukey_force_final <- tukey_force_filtered %>%
+  mutate(Experiment = "Force Experiment") %>%
+  select(Experiment, everything())
+
+tukey_hand_final <- tukey_hand_filtered %>%
+  mutate(Experiment = "Hand Experiment") %>%
+  select(Experiment, everything())
+
+# Combine both experiments
+tukey_combined <- bind_rows(tukey_force_final, tukey_hand_final)
+
+# Create LaTeX table in the style of the reference
+tukey_latex <- tukey_combined %>%
+  kable(format = "latex", 
+        booktabs = TRUE,
+        caption = "TUKEY HSD POST-HOC COMPARISONS FOR OCCLUSION CORRECTION METHODS",
+        col.names = c("", "Comparison", "Difference", "Lower CI", "Upper CI", "Adj. p-value", "Sig."),
+        align = c("l", "l", "r", "r", "r", "r", "c"),
+        escape = FALSE,
+        linesep = c("", "", "\\addlinespace")) %>%
+  kable_styling(latex_options = c("hold_position"),
+                font_size = 10,
+                position = "center") %>%
+  pack_rows("Force Experiment", 1, 3, latex_gap_space = "0.5em", bold = FALSE, italic = TRUE) %>%
+  pack_rows("Hand Experiment", 4, 6, latex_gap_space = "0.5em", bold = FALSE, italic = TRUE) %>%
+  footnote(general = "*** p < 0.001, ** p < 0.01, * p < 0.05",
+           general_title = "Note:",
+           footnote_as_chunk = TRUE,
+           escape = FALSE)
+
+# Alternative: Remove the Experiment column and use row grouping only
+tukey_latex_alt <- bind_rows(
+  tukey_force_filtered,
+  tukey_hand_filtered
+) %>%
+  kable(format = "latex", 
+        booktabs = TRUE,
+        caption = "TUKEY HSD POST-HOC COMPARISONS FOR OCCLUSION CORRECTION METHODS",
+        col.names = c("", "Difference", "Lower CI", "Upper CI", "Adj. p-value", "Sig."),
+        align = c("l", "r", "r", "r", "r", "c"),
+        escape = FALSE,
+        linesep = c("", "", "\\addlinespace")) %>%
+  kable_styling(latex_options = c("hold_position"),
+                font_size = 10,
+                position = "center") %>%
+  pack_rows("Force Experiment", 1, 3, latex_gap_space = "0.5em", bold = FALSE, italic = TRUE) %>%
+  pack_rows("Hand Experiment", 4, 6, latex_gap_space = "0.5em", bold = FALSE, italic = TRUE) %>%
+  footnote(general = "*** p < 0.001, ** p < 0.01, * p < 0.05",
+           general_title = "Note:",
+           footnote_as_chunk = TRUE,
+           escape = FALSE)
+
+# Print tables
+cat("\nCombined Table with Experiment Column:\n")
+cat(tukey_latex)
+cat("\n\nCombined Table with Row Grouping:\n")
+cat(tukey_latex_alt)
+
+# Save to files
+writeLines(tukey_latex, "tukey_occlusion_combined.tex")
+writeLines(tukey_latex_alt, "tukey_occlusion_grouped.tex")
+
+# Print to console
+print(tukey_combined)
 ```

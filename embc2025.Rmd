@@ -311,3 +311,113 @@ suppressWarnings(print(p1/(p2-p3)))
 #mean_err<-mean_err%>%add_row(occ_err %>% filter(LogModel==Log) %>% group_by(MVC_Voli_Cat) %>% summarise( "Mean"= round(mean(Effort_Amp_err),2), "RMS"=round(sqrt(mean(Effort_Amp_err^2)),2),"Est"='After Correction',"Log"=Log) )
 
 ```
+
+```{r }
+
+
+filt="GS"
+type='Occ_Hybrid_mvc'
+Log=FALSE
+occ_err<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log)%>%
+  select(Occ_Type,Effort_Amp_err,Effort_e_Amp_err,MVC_Stim_Cat,VoliMVC,Filt)
+
+occ_err_wide<-occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
+
+occ_err_long<-occ_err_wide%>%pivot_longer(cols=c('Occ_mvc','Effort_e_Amp_err','Occ_Dropped_mvc'),
+                                    names_to='Occ_Error_Type',
+                                    values_to='Error')%>%mutate(Occ_Error_Type = as.factor(Occ_Error_Type))
+
+
+occ_err1<-filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log)
+
+occ_err_long <- occ_err_long %>%
+  mutate(Occ_Error_Type = relevel(Occ_Error_Type, ref = "Effort_e_Amp_err"))
+
+#my_labeller <- as_labeller(c(Occ_mvc="E[o]+E[e]", Effort_e_Amp_err="E[e]", Occ_Dropped_mvc="E[d]+E[e]"),
+ #                         default = label_parsed)
+
+my_labeller <- as_labeller(c(Occ_mvc="Corrected", Occ_Dropped_mvc="Dropped",Effort_e_Amp_err="Uncorrected"),
+                           default = label_parsed)
+
+occ_err_long1<-filter(occ_err_long, Filt==filt)
+
+p1<-ggplot(occ_err_long1, aes(x =  VoliMVC , y = Error+5 , color = MVC_Stim_Cat)) +
+    geom_point( size = 3) +
+    geom_smooth(method = "lm", size = 2,se = FALSE)+ 
+    geom_segment(aes(x = 9, y = 0, xend = 41, yend = 0, color='Zero Error'))+
+    facet_wrap(~Occ_Error_Type,labeller=my_labeller)+
+    ylim(-50, 25)+
+    #annotate("text", x=0.5, y=20, label= "(a)", size=6)+
+    labs(x = expression("Volitional Effort (V) "),
+    y = "Estimation Error (% Effort)",
+    #subtitle = sprintf('                          (a)                                                      (b)                           ',type, filt)
+    )+
+    scale_color_hue(labels=c('10% Stim', '20% Stim', '30% Stim','Zero Error'),name=expression("Stim. Effort (S)"))+
+    theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.6, 0.25),
+    legend.background = element_rect(fill = alpha("white", 0.6)))
+p1<-tag_facet(p1, size= 6,hjust = -1)
+
+
+occ_err_long1<-occ_err_long1%>%mutate(Occ_Error_Type=recode(Occ_Error_Type,
+                                             'Effort_e_Amp_err' = 'Uncorrected',
+                                             'Occ_Dropped_mvc' = 'Dropped Corrected',
+                                             'Occ_mvc' = 'Occlusion Corrected')
+                                      )
+
+p2<-ggplot(occ_err_long1, aes(x =  Occ_Error_Type , y = Error+7, color=Occ_Error_Type )) +
+  geom_boxplot(notch=TRUE)+
+  geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
+  ylim(-50, 40)+
+  annotate("text", x=0.55, y=32, label= "(c)", size=6,fontface = "bold") +  
+  geom_signif(comparisons = list(c("Uncorrected","Occlusion Corrected")), 
+                y_position = 15, tip_length = 0.02, vjust = 0.1, size = 0.8, textsize = 8, map_signif_level=TRUE,annotation = c("*"),color = "black") +
+
+  labs(x = NULL,
+  y = "Estimation Error (% Effort)")+
+  #subtitle = "                           (c)  ")+
+  scale_color_hue(labels=c('Uncorrected', 'Corrected'),name="Correction \nMethods")+
+    theme_minimal(base_size = 17) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = c(0.8, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6)))
+
+occ_err_long2<-filter(occ_err_long, Occ_Error_Type=="Occ_mvc")
+
+p3<-ggplot(occ_err_long2, aes(x =  Filt , y = Error+7, color = Filt)) +
+    geom_boxplot(notch=TRUE)+
+    geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  # Add scatter points with jitter
+    #geom_smooth(method = "lm")+ 
+    #geom_segment(aes(x = 10, y = 0, xend = 40, yend = 0, color='Zero Error'))+
+    ylim(-50, 40)+
+    annotate("text", x=0.55, y=32, label= "(d)", size=6,fontface = "bold") +  
+    geom_signif(comparisons = list(c("Comb","Unfilt")), 
+                y_position = 40, tip_length = 0.02, vjust = 0.1,size = 0.5, map_signif_level=TRUE,annotation = c("*"),color = "black") +
+    geom_signif(comparisons = list(c("GS","Comb")),
+                y_position = 35, tip_length = 0.02, vjust = 0.1, map_signif_level=TRUE,annotation = c("*"),color = "black")+
+    geom_signif(comparisons = list(c("Unfilt","GS")), 
+                y_position = 15, tip_length = 0.01, vjust = 0.1, size = 0.8, textsize = 8, map_signif_level=TRUE,annotation = c("*"),color = "black") +
+    labs(x = NULL,
+    y = NULL) + # Removes y-axis labels
+    #title = "",
+    #subtitle = "                        (d)")+
+    scale_color_hue(labels=c('Comb', 'GS', 'Unfiltered'),name="Filter")+
+    theme_minimal(base_size = 17) +
+    theme(
+    strip.background = element_blank(),
+    legend.position = c(0.8, 0.2),
+    legend.background = element_rect(fill = alpha("white", 0.6)),
+    axis.text.y = element_blank(),  # Removes y-axis text
+    axis.ticks.y = element_blank() # Removes y-axis ticks
+  )
+
+
+#pdf("occ_err_embc2.pdf", width = 8, height = 8)  # specify dimensions in inches
+
+suppressWarnings(print(p1/(p2-p3)))
+
+
+```

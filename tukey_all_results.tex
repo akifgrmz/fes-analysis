@@ -1,0 +1,61 @@
+% Force Experiment
+\begin{table}[!h]
+\centering
+\caption{Tukey HSD Post-hoc Comparisons for Force Experiment}
+\centering
+\fontsize{10}{12}\selectfont
+\begin{tabular}[t]{llrrrrc}
+\toprule
+  & Comparison & Difference & Lower CI & Upper CI & Adj. p-value & Sig.\\
+\midrule
+Occ_Dropped_mvc-Effort_e_Amp_err & Dropped Frames - Uncorrected & 4.23e+00 & -6.99e-01 & 9.15e+00 & 0.1089561 & ns\\
+Occ_mvc-Effort_e_Amp_err & Force Corrected - Uncorrected & 1.36e+01 & 8.63e+00 & 1.85e+01 & 0.0000000 & ***\\
+Occ_mvc-Occ_Dropped_mvc & Force Corrected - Dropped Frames & 9.33e+00 & 4.40e+00 & 1.43e+01 & 0.0000337 & ***\\
+\bottomrule
+\multicolumn{7}{l}{\rule{0pt}{1em}\textit{Note:} *** p < 0.001, ** p < 0.01, * p < 0.05, ns = not significant}\\
+\end{tabular}
+\end{table}
+
+% Hand Experiment
+\begin{table}[!h]
+\centering
+\caption{Tukey HSD Post-hoc Comparisons for Hand Experiment}
+\centering
+\fontsize{10}{12}\selectfont
+\begin{tabular}[t]{llrrrrc}
+\toprule
+  & Comparison & Difference & Lower CI & Upper CI & Adj. p-value & Sig.\\
+\midrule
+Occ_Dropped_mvc-Effort_e_Amp_err & Dropped Frames - Uncorrected & 2.08e+01 & 1.15e+01 & 3.02e+01 & 0.0000007 & ***\\
+Occ_mvc-Effort_e_Amp_err & Force Corrected - Uncorrected & 2.37e+01 & 1.43e+01 & 3.30e+01 & 0.0000000 & ***\\
+Occ_mvc-Occ_Dropped_mvc & Force Corrected - Dropped Frames & 2.83e+00 & -6.54e+00 & 1.22e+01 & 0.7578844 & ns\\
+\bottomrule
+\multicolumn{7}{l}{\rule{0pt}{1em}\textit{Note:} *** p < 0.001, ** p < 0.01, * p < 0.05, ns = not significant}\\
+\end{tabular}
+\end{table}
+
+% Combined Results
+\begin{table}[!h]
+\centering
+\caption{Tukey HSD Post-hoc Comparisons for Force and Hand Experiments}
+\centering
+\fontsize{9}{11}\selectfont
+\begin{tabular}[t]{lllrrrrc}
+\toprule
+  & Experiment & Comparison & Difference & Lower CI & Upper CI & Adj. p-value & Sig.\\
+\midrule
+Occ_Dropped_mvc-Effort_e_Amp_err...1 & Force & Dropped Frames - Uncorrected & 4.23e+00 & -6.99e-01 & 9.15e+00 & 0.1089561 & ns\\
+\cmidrule{1-8}
+Occ_mvc-Effort_e_Amp_err...2 & Force & Force Corrected - Uncorrected & 1.36e+01 & 8.63e+00 & 1.85e+01 & 0.0000000 & ***\\
+\cmidrule{1-8}
+Occ_mvc-Occ_Dropped_mvc...3 & Force & Force Corrected - Dropped Frames & 9.33e+00 & 4.40e+00 & 1.43e+01 & 0.0000337 & ***\\
+\cmidrule{1-8}
+Occ_Dropped_mvc-Effort_e_Amp_err...4 & Hand & Dropped Frames - Uncorrected & 2.08e+01 & 1.15e+01 & 3.02e+01 & 0.0000007 & ***\\
+\cmidrule{1-8}
+Occ_mvc-Effort_e_Amp_err...5 & Hand & Force Corrected - Uncorrected & 2.37e+01 & 1.43e+01 & 3.30e+01 & 0.0000000 & ***\\
+\cmidrule{1-8}
+Occ_mvc-Occ_Dropped_mvc...6 & Hand & Force Corrected - Dropped Frames & 2.83e+00 & -6.54e+00 & 1.22e+01 & 0.7578844 & ns\\
+\bottomrule
+\multicolumn{8}{l}{\rule{0pt}{1em}\textit{Note:} *** p < 0.001, ** p < 0.01, * p < 0.05, ns = not significant}\\
+\end{tabular}
+\end{table}

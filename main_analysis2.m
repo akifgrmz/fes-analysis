@@ -1531,7 +1531,7 @@ for iTest=1:length(TestFolders)
             MAV_filt=S.(AnaLabel).(ExpLabel).(TrialLabel).(FiltLabel).Feats(FrameRangeInd,:).('MAV_vEMG');
 
             Error_Type="MAV";
-            T=[T; mean(MAV_filt) Error_Type "false" MVC_Voli MVC_Stim iTrial 1 FiltLabel EffortType TestFolders(iTest)];
+            T=[T; mean(MAV_filt) Error_Type "false" MVC_Voli MVC_Stim iTrial 50 FiltLabel EffortType TestFolders(iTest)];
                 
             clear MAV_ref
             for iRefTrial=1:length(RefIndTrial)
