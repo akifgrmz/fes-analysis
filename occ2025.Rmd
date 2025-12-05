@@ -709,7 +709,11 @@ library(broom)
 library(dplyr)
 library(patchwork)
 
-
+plot_tibble<-filter(occ2, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')
+NumofTest<-length(unique(plot_tibble$Test) )
+# default_colors <- hue_pal()(length(unique(plot_tibble$MVC_Stim_Cat)))
+plot_tibble<-plot_tibble%>%mutate(Feat=recode(Feat,
+                                             'EffortMea' = 'Hand Opening'))
 
 annotation_data1 <- data.frame(Feat = c("Hand Opening", "MAV"), 
                               x = 20, 
@@ -853,7 +857,7 @@ p2 <- ggplot(plot_tibble, aes(x = MVC_Voli, y = Occ_mvc, color = MVC_Stim_Cat)) 
   geom_point(size = 2) +
   geom_smooth(method = "lm", size = 2, se = FALSE) +
   facet_grid(~Feat) +
-  coord_cartesian(ylim = c(-10, 90)) +  # Extended upper limit for annotations
+  coord_cartesian(ylim = c(-10, 87)) +  # Extended upper limit for annotations
   labs(
     x = expression("Volitional Hand Opening: V (% MFE)"),
     y = expression("Occluded Effort (% MFE)")
@@ -895,6 +899,216 @@ ggsave("figures/hand_occ.pdf", plot = combined_plot, width = 8, height = 10, dpi
 
 ```
 
+
+```{r Force Occlusion}
+
+library(broom)
+library(dplyr)
+library(patchwork)
+
+# Filter data for Force effort type only
+plot_tibble_force <- filter(occ, 
+                            MVC_Stim_Cat != "Stim_0",
+                            Tau == "3*tau",
+                            Filt == 'Unfilt',
+                            Feat != 'Amp_Modul',
+                            EffortType == "Force")
+
+NumofTest <- length(unique(plot_tibble_force$Test))
+
+# Recode feature names
+plot_tibble_force <- plot_tibble_force %>%
+  mutate(Feat = recode(Feat, 'EffortMea' = 'Force'))
+
+# Create annotation data for Force plots
+annotation_data1_force <- data.frame(
+  Feat = c("Force", "MAV"),
+  x = 10, 
+  y = 95, 
+  label = c("(a)", "(b)")
+)
+
+annotation_data2_force <- data.frame(
+  Feat = c("Force", "MAV"),
+  x = 10, 
+  y = 75, 
+  label = c("(c)", "(d)")
+)
+
+# Calculate linear regression statistics
+get_slope_stats <- function(data, response_var) {
+  data %>%
+    group_by(MVC_Stim_Cat, Feat) %>%
+    do({
+      formula_str <- paste(response_var, "~ MVC_Voli")
+      model <- lm(as.formula(formula_str), data = .)
+      
+      # Get model statistics
+      model_summary <- glance(model)
+      coef_summary <- tidy(model) %>% filter(term == "MVC_Voli")
+      
+      data.frame(
+        n = nrow(.),
+        slope = coef_summary$estimate,
+        r_squared = model_summary$r.squared,
+        p.value = coef_summary$p.value
+      )
+    }) %>%
+    ungroup() %>%
+    mutate(
+      p_label = case_when(
+        p.value < 0.001 ~ "p < 0.001***",
+        p.value < 0.01 ~ sprintf("p = %.3f**", p.value),
+        p.value < 0.05 ~ sprintf("p = %.3f*", p.value),
+        TRUE ~ sprintf("p = %.3f", p.value)
+      )
+    )
+}
+
+# Calculate statistics for both response variables
+stats_data1_force <- get_slope_stats(plot_tibble_force, "vprime_mvc")
+stats_data2_force <- get_slope_stats(plot_tibble_force, "Occ_mvc")
+
+# Create p-value annotations
+create_pval_annotation <- function(stats_data) {
+  stats_data %>%
+    arrange(MVC_Stim_Cat) %>%
+    group_by(Feat) %>%
+    summarise(
+      pval_text = paste(
+        paste(sprintf("%s (n=%d): s=%.3f, %s", 
+                      MVC_Stim_Cat, 
+                      n, 
+                      slope,
+                      p_label), 
+              collapse = "\n"),
+        sep = ""
+      ),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      x = 13,
+      y = 110
+    )
+}
+
+pval_annotation1_force <- create_pval_annotation(stats_data1_force)
+pval_annotation2_force <- create_pval_annotation(stats_data2_force) %>%
+  mutate(y = 85)
+
+# Get unique stimulation categories and create color palette
+stim_cats_force <- sort(unique(plot_tibble_force$MVC_Stim_Cat))
+n_stim_force <- length(stim_cats_force)
+
+# Define colors for all stimulation levels
+stim_colors <- c("Stim_10" = "#00BA38", 
+                 "Stim_20" = "#F8766D", 
+                 "Stim_30" = "#619CFF",
+                 "Stim_40" = "#C77CFF")
+color_values_force <- stim_colors[stim_cats_force]
+color_values_force["No Occlusion Level"] <- "black"
+
+# Create dynamic labels based on actual stimulation levels
+stim_labels <- gsub("Stim_", "", stim_cats_force)
+stim_labels <- paste0(stim_labels, "% Stim")
+legend_labels_force <- c('No occlusion level', stim_labels)
+
+# Plot 1: Maintained Effort (V') - Force
+p1_force <- ggplot(plot_tibble_force, aes(x = MVC_Voli, y = vprime_mvc, color = MVC_Stim_Cat)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", size = 2, se = FALSE) +
+  geom_segment(aes(x = 10, y = 10, xend = 40, yend = 40, color = 'No Occlusion Level'), 
+               size = 2) +
+  facet_grid(~ Feat) +
+  coord_cartesian(ylim = c(0, 110)) +
+  labs(
+    x = expression("Volitional Force: V (% MVC)"),
+    y = expression("Maintained Effort: V' (% MVC)")
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = "top",
+    legend.background = element_rect(fill = alpha("white", 0.6)),
+    axis.title.y = element_text(size = 14),
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    strip.text = element_text(size = 14)
+  ) +
+  scale_color_manual(
+    name = expression(""),
+    values = color_values_force,
+    breaks = c('No Occlusion Level', stim_cats_force),
+    labels = legend_labels_force
+  ) +
+  geom_text(
+    data = annotation_data1_force, 
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black", fontface = "bold"
+  ) +
+  geom_label(
+    data = pval_annotation1_force,
+    aes(x = x, y = y, label = pval_text),
+    inherit.aes = FALSE,
+    hjust = 0,
+    vjust = 1,
+    size = 3.5,
+    fill = alpha("white", 0.85),
+    label.padding = unit(0.4, "lines"),
+    label.size = 0.25,
+    color = "black"
+  )
+
+# Plot 2: Occluded Effort - Force
+p2_force <- ggplot(plot_tibble_force, aes(x = MVC_Voli, y = Occ_mvc, color = MVC_Stim_Cat)) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", size = 2, se = FALSE) +
+  facet_grid(~ Feat) +
+  coord_cartesian(ylim = c(-10, 87)) +
+  labs(
+    x = expression("Volitional Force: V (% MVC)"),
+    y = expression("Occluded Effort (% MVC)")
+  ) +
+  theme_minimal(base_size = 18) +
+  theme(
+    strip.background = element_blank(),
+    legend.position = "none",
+    axis.title.x = element_text(size = 14),
+    axis.title.y = element_text(size = 14),
+    strip.text = element_text(size = 14)
+  ) +
+  scale_color_manual(
+    values = stim_colors[stim_cats_force]
+  ) +
+  geom_text(
+    data = annotation_data2_force,
+    aes(x = x, y = y, label = label), 
+    size = 7, color = "black", fontface = "bold"
+  ) +
+  geom_label(
+    data = pval_annotation2_force,
+    aes(x = x, y = y, label = pval_text),
+    inherit.aes = FALSE,
+    hjust = 0,
+    vjust = 1,
+    size = 3.5,
+    fill = alpha("white", 0.85),
+    label.padding = unit(0.4, "lines"),
+    label.size = 0.25,
+    color = "black"
+  )
+
+# Combine Force plots
+combined_plot_force <- p1_force / p2_force
+combined_plot_force
+
+# Save the Force figure
+ggsave("figures/force_occ.pdf", 
+       plot = combined_plot_force, 
+       width = 8, 
+       height = 10, 
+       dpi = 300)
+```
 
 ```{r }
 plot_tibble<-filter(occ2, MVC_Stim_Cat!="Stim_0",Tau=="3*tau",Filt=='Unfilt',Feat!='Amp_Modul')

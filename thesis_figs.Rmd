@@ -758,7 +758,7 @@ my_labeller <- as_labeller(c(Occ_mvc="Corrected", Effort_e_Amp_err="Uncorrected"
                            default = label_parsed)
 
 annotation_df <- data.frame(
-  EffortType = unique(occ_err_long1$EffortType),
+  EffortType = unique(occ_err_long$EffortType),
   label = c("(a)", "(b)"),  # Adjust based on number of facets
   x = 0.55,
   y = 55
@@ -818,7 +818,200 @@ p2
 #ggsave("figures/corrected_effort.pdf", plot = p2, width = 8, height = 5, dpi = 300)
 
 ```
+```{r }
+filt="GS"
+type='Occ_Hybrid_mvc'
+Log=FALSE
 
+# Use dplyr::select() explicitly to avoid conflicts
+occ_err <- filter(err, MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log) %>%
+  dplyr::select(Occ_Type, Effort_Amp_err, Effort_e_Amp_err, MVC_Stim_Cat, VoliMVC, EffortType, Filt)
+
+occ_err_wide <- occ_err %>% pivot_wider(names_from = Occ_Type, values_from = Effort_Amp_err)
+
+occ_err_long <- occ_err_wide %>% 
+  pivot_longer(cols=c('Occ_mvc','Effort_e_Amp_err','Occ_Dropped_mvc'),
+               names_to='Occ_Error_Type',
+               values_to='Error') %>%
+  mutate(Occ_Error_Type = as.factor(Occ_Error_Type)) %>%
+  mutate(
+    Occ_Error_Type = as.factor(Occ_Error_Type),
+    Error = case_when(
+      Occ_Error_Type == "Occ_Dropped_mvc" ~ Error,
+      TRUE ~ Error
+    )
+  )
+
+occ_err1 <- filter(err, EffortType=="Force", MVC_Stim_Cat!="Stim_0", Occ_Type!=type, LogModel==Log)
+
+occ_err_long <- occ_err_long %>%
+  mutate(Occ_Error_Type = relevel(Occ_Error_Type, ref = "Effort_e_Amp_err"))
+
+my_labeller <- as_labeller(c(Occ_mvc="Corrected", Effort_e_Amp_err="Uncorrected", Occ_Dropped_mvc="DroppedFrames"),
+                           default = label_parsed)
+
+annotation_df <- data.frame(
+  EffortType = unique(occ_err_long$EffortType),
+  label = c("(a)", "(b)"),
+  x = 0.55,
+  y = 95
+)
+
+occ_err_long1 <- filter(occ_err_long, Filt==filt)
+
+# Load required libraries
+library(ggsignif)
+
+# Function to get significance annotation
+get_signif_annotation <- function(p_value) {
+  if (is.na(p_value)) return("ns")
+  if (p_value < 0.001) return("***")
+  if (p_value < 0.01) return("**")
+  if (p_value < 0.05) return("*") 
+  return("ns")
+}
+
+# Function to safely extract p-value from Tukey result
+get_tukey_pvalue <- function(tukey_matrix, comp_name) {
+  # Try both possible orders of the comparison
+  if (comp_name %in% rownames(tukey_matrix)) {
+    return(tukey_matrix[comp_name, "p adj"])
+  }
+  # Try reverse order
+  parts <- strsplit(comp_name, "-")[[1]]
+  reverse_name <- paste(parts[2], parts[1], sep="-")
+  if (reverse_name %in% rownames(tukey_matrix)) {
+    return(tukey_matrix[reverse_name, "p adj"])
+  }
+  return(NA)
+}
+
+# Perform Tukey's test and extract annotations automatically
+effort_types <- unique(occ_err_long1$EffortType)
+annotations_df <- data.frame()
+
+for (effort_type in effort_types) {
+  data_subset <- occ_err_long1 %>% filter(EffortType == effort_type)
+  
+  # Check if we have enough data
+  if (nrow(data_subset) > 0 && length(unique(data_subset$Occ_Error_Type)) > 1) {
+    aov_result <- aov(Error ~ Occ_Error_Type, data = data_subset)
+    tukey_result <- TukeyHSD(aov_result)
+    
+    # Print results for reference
+    cat("\n=== Tukey HSD Results for", effort_type, "===\n")
+    print(tukey_result)
+    cat("\nAvailable comparisons:\n")
+    print(rownames(tukey_result$Occ_Error_Type))
+    
+    # Extract p-values for each comparison using safe extraction
+    comparisons <- tukey_result$Occ_Error_Type
+    
+    p1 <- get_tukey_pvalue(comparisons, "Occ_mvc-Effort_e_Amp_err")
+    p2 <- get_tukey_pvalue(comparisons, "Occ_Dropped_mvc-Effort_e_Amp_err")
+    p3 <- get_tukey_pvalue(comparisons, "Occ_Dropped_mvc-Occ_mvc")
+    
+    # Create a dataframe with annotations for this effort type
+    temp_df <- data.frame(
+      EffortType = effort_type,
+      comparison = c("Occ_mvc-Effort_e_Amp_err", 
+                     "Occ_Dropped_mvc-Effort_e_Amp_err", 
+                     "Occ_Dropped_mvc-Occ_mvc"),
+      annotation = c(
+        get_signif_annotation(p1),
+        get_signif_annotation(p2),
+        get_signif_annotation(p3)
+      ),
+      p_value = c(p1, p2, p3),
+      stringsAsFactors = FALSE
+    )
+    
+    annotations_df <- rbind(annotations_df, temp_df)
+  }
+}
+
+# Print the annotations dataframe
+cat("\n=== Annotations Summary ===\n")
+print(annotations_df)
+
+# Create separate plots for each EffortType if needed, or use the same annotations for all facets
+# Extract annotations - if you have multiple effort types, you may need different annotations per facet
+if (nrow(annotations_df) > 0) {
+  # For simplicity, using the first effort type's annotations
+  # If you need different annotations per facet, you'll need to modify geom_signif approach
+  annot_comp1 <- annotations_df[annotations_df$comparison == "Occ_mvc-Effort_e_Amp_err", "annotation"][1]
+  annot_comp2 <- annotations_df[annotations_df$comparison == "Occ_Dropped_mvc-Effort_e_Amp_err", "annotation"][1]
+  annot_comp3 <- annotations_df[annotations_df$comparison == "Occ_Dropped_mvc-Occ_mvc", "annotation"][1]
+  
+  # If all are NA, set to "ns"
+  if (is.na(annot_comp1)) annot_comp1 <- "ns"
+  if (is.na(annot_comp2)) annot_comp2 <- "ns"
+  if (is.na(annot_comp3)) annot_comp3 <- "ns"
+} else {
+  annot_comp1 <- "ns"
+  annot_comp2 <- "ns"
+  annot_comp3 <- "ns"
+}
+
+p <- ggplot(occ_err_long1, aes(x = Occ_Error_Type, y = Error, color=Occ_Error_Type)) +
+  geom_boxplot(notch=TRUE)+
+  geom_jitter(width = 0.2, alpha = 0.5, size = 3) +  
+  facet_wrap(~EffortType)+
+  ylim(-80, 100)+
+  geom_text(data = annotation_df, 
+            aes(x = x, y = y, label = label),
+            inherit.aes = FALSE,
+            size = 6, 
+            fontface = "bold",
+            color = "black") +  
+  # Comparison 1: Uncorrected vs Corrected (Occ_mvc)
+  geom_signif(comparisons = list(c("Effort_e_Amp_err","Occ_mvc")),
+              y_position = 50,
+              tip_length = 0.01,
+              vjust = 0.5,
+              size = 0.8,
+              textsize = 5,
+              annotations = annot_comp1,
+              color = "black"
+  ) +
+  # Comparison 2: Uncorrected vs Dropped Frames
+  geom_signif(comparisons = list(c("Effort_e_Amp_err","Occ_Dropped_mvc")), 
+              y_position = 35, 
+              tip_length = 0.01, 
+              vjust = 0.1, 
+              size = 0.8, 
+              textsize = 5, 
+              annotations = annot_comp2,  
+              color = "black"
+  ) +
+  # Comparison 3: Corrected vs Dropped Frames
+  # geom_signif(comparisons = list(c("Occ_mvc","Occ_Dropped_mvc")), 
+  #             y_position = 52, 
+  #             tip_length = 0.01, 
+  #             vjust = 0.6, 
+  #             size = 0.8, 
+  #             textsize = 5, 
+  #             annotations = annot_comp3,  
+  #             color = "black"
+  # ) +
+  labs(x = NULL,
+       y = "Estimation Error (% Effort)")+
+  scale_color_hue(labels=c('Uncorrected',
+                           'Corrected', 
+                           'Dropped Frames\nCorrected'),
+                  name="Correction Methods"
+  )+
+  theme_minimal(base_size = 16) +
+  theme(
+    strip.background = element_blank(),
+    axis.text.x = element_blank(),      # Remove x-axis text labels
+    legend.position = c(0.86, 0.15),
+    legend.background = element_rect(fill = alpha("white", 0.6))
+  )
+p
+  ggsave("figures/corrected_effort2.pdf", plot = p, width = 8, height = 6, dpi = 300)
+
+```
 
 ```{r Anova for occlusion correction}
 

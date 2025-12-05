@@ -3626,3 +3626,282 @@ MedFreq = medfreq(psd,freq);
 MeanFreq = meanfreq(psd,freq);
 
 end
+
+function [MWaveFrames, vEMGFrames, filter_metrics] = FiltKalman(x_frames, varargin)
+%FILTKALMAN Kalman filter-based M-wave removal from vEMG frames
+%
+%   [MWaveFrames, vEMGFrames] = FiltKalman(x_frames)
+%   [MWaveFrames, vEMGFrames] = FiltKalman(x_frames, fs)
+%   [MWaveFrames, vEMGFrames, metrics] = FiltKalman(x_frames, fs, options)
+%
+% INPUTS:
+%   x_frames - EMG signal matrix [frame_length x num_frames]
+%              Each column is one frame (between stimulation pulses)
+%              NOTE: Blanking should already be applied to x_frames
+%   fs       - (Optional) Sampling frequency (Hz), default: 2000 Hz
+%              Only needed if you want to specify time-based parameters
+%   options  - (Optional) Structure with filter parameters:
+%              .template_method - 'adaptive' (default) or 'fixed'
+%              .template_length - Template length in samples (default: 40 for 20ms@2kHz)
+%              .process_noise   - Process noise variance (default: 0.05)
+%              .meas_noise      - Measurement noise variance (default: 0.01)
+%
+% OUTPUTS:
+%   MWaveFrames - Estimated M-wave component [frame_length x num_frames]
+%   vEMGFrames  - Estimated voluntary EMG [frame_length x num_frames]
+%   filter_metrics - Structure containing:
+%                    .amplitude_estimates - Estimated M-wave amplitudes per frame
+%                    .posterior_variance  - Uncertainty estimates per frame
+%                    .innovation_rms      - RMS prediction error per frame
+%                    .kalman_gains        - Kalman gain history
+%
+% DESCRIPTION:
+%   Uses a Bayesian Kalman filter to separate M-waves from voluntary EMG.
+%   The filter estimates a time-varying amplitude scaling factor for an
+%   M-wave template, adapting to changes in stimulation intensity and
+%   muscle fatigue.
+%
+%   Works directly on blanked frames - no fs needed if defaults are OK!
+%
+% EXAMPLE:
+%   % Simplest usage (no fs needed, uses blanked frames):
+%   [MWave, vEMG] = FiltKalman(BlankEMGFrames);
+%
+%   % With sampling frequency for time-based parameters:
+%   fs = 2000;
+%   [MWave, vEMG, metrics] = FiltKalman(BlankEMGFrames, fs);
+%
+%   % With custom options:
+%   opts.process_noise = 0.08;
+%   opts.template_length = 50; % samples instead of time
+%   [MWave, vEMG, metrics] = FiltKalman(BlankEMGFrames, 2000, opts);
+%
+% See also: FiltComb, SUB_GS_filter
+
+% Author: Integration with mainana_func workflow
+% Date: 2024
+% Compatible with: MATLAB R2019b and later
+
+%% Parse inputs flexibly
+% FiltKalman(x_frames) - no fs, no options
+% FiltKalman(x_frames, fs) - with fs, no options  
+% FiltKalman(x_frames, options) - no fs, with options
+% FiltKalman(x_frames, fs, options) - all three
+
+if nargin < 1
+    error('FiltKalman requires at least 1 input: x_frames');
+end
+
+% Default values
+fs = 2000; % Default sampling frequency
+options = struct();
+
+% Parse variable arguments
+if nargin >= 2
+    if isstruct(varargin{1})
+        % Second arg is options
+        options = varargin{1};
+    else
+        % Second arg is fs
+        fs = varargin{1};
+        if nargin >= 3 && isstruct(varargin{2})
+            options = varargin{2};
+        end
+    end
+end
+
+%% Set default options (can work without fs!)
+if ~isfield(options, 'template_method')
+    options.template_method = 'adaptive';
+end
+if ~isfield(options, 'template_length')
+    % Default: 20ms at 2kHz = 40 samples
+    % If fs provided, calculate; otherwise use default
+    options.template_length = round(0.020 * fs);
+end
+if ~isfield(options, 'process_noise')
+    options.process_noise = 0.05;
+end
+if ~isfield(options, 'meas_noise')
+    options.meas_noise = 0.01;
+end
+
+%% Get dimensions
+[frame_length, num_frames] = size(x_frames);
+
+% Initialize outputs
+MWaveFrames = zeros(frame_length, num_frames);
+vEMGFrames = zeros(frame_length, num_frames);
+
+% Initialize filter metrics
+filter_metrics.amplitude_estimates = zeros(1, num_frames);
+filter_metrics.posterior_variance = zeros(1, num_frames);
+filter_metrics.innovation_rms = zeros(1, num_frames);
+filter_metrics.kalman_gains = zeros(1, num_frames);
+
+%% Create M-wave template
+% Generate biphasic M-wave template based on typical morphology
+mwave_samples = options.template_length;
+t_mwave = linspace(0, 1, mwave_samples); % Normalized time [0,1]
+
+% Biphasic template: two overlapping Gaussian derivatives
+% Using normalized time coordinates
+t1 = 0.25; % First peak timing
+t2 = 0.60; % Second peak timing
+sigma = 0.15; % Width parameter
+
+mwave_template = 5 * (t_mwave - t1) .* exp(-((t_mwave - t1)/sigma).^2) - ...
+                 3 * (t_mwave - t2) .* exp(-((t_mwave - t2)/sigma).^2);
+mwave_template = mwave_template / max(abs(mwave_template));
+
+% Ensure template is column vector
+mwave_template = mwave_template(:);
+
+%% Adaptive template estimation (use first few frames)
+if strcmp(options.template_method, 'adaptive') && num_frames >= 3
+    % Average first 3 frames (assuming minimal voluntary activity initially)
+    template_frames = x_frames(:, 1:min(3, num_frames));
+    avg_frame = mean(template_frames, 2);
+    
+    % Find M-wave region (high energy in first 20ms)
+    if length(avg_frame) >= mwave_samples
+        % Use cross-correlation to align and extract M-wave shape
+        [corr_val, lag] = xcorr(avg_frame(1:mwave_samples), mwave_template);
+        [~, max_idx] = max(abs(corr_val));
+        optimal_lag = lag(max_idx);
+        
+        if abs(optimal_lag) < mwave_samples/2
+            % Update template with actual data
+            start_idx = max(1, 1 - optimal_lag);
+            end_idx = min(length(avg_frame), mwave_samples - optimal_lag);
+            extracted_length = end_idx - start_idx + 1;
+            
+            if extracted_length > mwave_samples/2
+                mwave_template_new = avg_frame(start_idx:end_idx);
+                mwave_template_new = mwave_template_new / max(abs(mwave_template_new));
+                
+                % Resample to standard length
+                mwave_template = interp1(1:length(mwave_template_new), ...
+                                        mwave_template_new, ...
+                                        linspace(1, length(mwave_template_new), mwave_samples), ...
+                                        'linear', 0);
+                mwave_template = mwave_template(:);
+            end
+        end
+    end
+end
+
+%% Initialize Kalman filter state
+% State: amplitude scaling factor for M-wave template
+amplitude_estimate = 1.0;
+variance_estimate = 0.1;
+
+% Extract processing parameters
+Q = options.process_noise;  % Process noise variance
+R = options.meas_noise;     % Measurement noise variance
+
+%% Process each frame with Kalman filter
+for iFrame = 1:num_frames
+    
+    % Get current frame (already blanked in your workflow)
+    current_frame = x_frames(:, iFrame);
+    current_length = length(current_frame);
+    
+    % Use entire frame (blanking already applied in your workflow)
+    y_observed = current_frame;
+    
+    % Adjust template length to match observation
+    if current_length > mwave_samples
+        % Pad template with zeros
+        template_segment = [mwave_template; zeros(current_length - mwave_samples, 1)];
+    else
+        % Truncate template
+        template_segment = mwave_template(1:current_length);
+    end
+    
+    % Ensure both are column vectors
+    y_observed = y_observed(:);
+    template_segment = template_segment(:);
+    
+    %% KALMAN FILTER UPDATE
+    
+    % 1. PREDICTION STEP
+    amplitude_pred = amplitude_estimate;
+    variance_pred = variance_estimate + Q;
+    
+    % 2. INNOVATION (prediction error)
+    predicted_mwave = amplitude_pred * template_segment;
+    innovation = y_observed - predicted_mwave;
+    
+    % 3. KALMAN GAIN CALCULATION
+    % Measurement matrix energy
+    H_squared = sum(template_segment.^2);
+    
+    % Innovation covariance
+    S = H_squared * variance_pred + R * current_length;
+    
+    % Kalman gain (how much to trust measurement vs prediction)
+    if S > 1e-10  % Avoid division by zero
+        K = variance_pred * sum(template_segment .* innovation) / S;
+    else
+        K = 0;
+    end
+    
+    % 4. UPDATE STEP
+    amplitude_estimate = amplitude_pred + K;
+    variance_estimate = (1 - K * H_squared / S) * variance_pred;
+    
+    % Ensure variance stays positive and bounded
+    variance_estimate = max(variance_estimate, 1e-6);
+    variance_estimate = min(variance_estimate, 1.0);
+    
+    % Enforce physical constraints on amplitude (non-negative, reasonable range)
+    amplitude_estimate = max(0, min(amplitude_estimate, 5.0));
+    
+    %% GENERATE OUTPUT FOR THIS FRAME
+    
+    %Reconstruct M-wave estimate for full frame
+    estimated_mwave_segment = amplitude_estimate * template_segment;
+    
+    % Remove M-wave from observation to get vEMG
+    vemg_segment = y_observed - estimated_mwave_segment;
+    
+    % Fill output matrices
+    MWaveFrames(:, iFrame) = estimated_mwave_segment;
+    vEMGFrames(:, iFrame) = vemg_segment;
+    
+    %% Store filter metrics
+    filter_metrics.amplitude_estimates(iFrame) = amplitude_estimate;
+    filter_metrics.posterior_variance(iFrame) = variance_estimate;
+    filter_metrics.innovation_rms(iFrame) = rms(innovation);
+    filter_metrics.kalman_gains(iFrame) = K;
+    
+end
+
+%% Post-processing: Remove any remaining NaN or Inf values
+MWaveFrames(isnan(MWaveFrames)) = 0;
+MWaveFrames(isinf(MWaveFrames)) = 0;
+vEMGFrames(isnan(vEMGFrames)) = 0;
+vEMGFrames(isinf(vEMGFrames)) = 0;
+
+end
+
+
+%% HELPER FUNCTION: Alternative UKF-based version (more advanced)
+function [MWaveFrames, vEMGFrames, filter_metrics] = FiltUKF(x_frames, fs, options)
+%FILTUKF Unscented Kalman Filter for M-wave removal with template adaptation
+%
+% This is an advanced version that can track template variations
+% (duration scaling, time shifts) but is computationally more expensive.
+%
+% Usage: Same as FiltKalman, but estimates additional parameters:
+%        - Amplitude scaling
+%        - Time shift (electrode drift)
+%        - Duration scaling (fatigue effects)
+
+% [Implementation would go here - significantly more complex]
+% This function is a placeholder for future UKF implementation
+
+error('FiltUKF not yet implemented. Use FiltKalman for now.');
+
+end
